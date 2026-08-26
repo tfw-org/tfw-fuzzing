@@ -2,31 +2,31 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_ByteIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/ByteIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f7e41cbcab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f58e2712ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 4034736972
+INFO: Seed: 2770594135
 MERGE-OUTER: 62 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_ByteIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/ByteIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f9838767ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f1152a6cab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1619696432
+INFO: Seed: 3096889730
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge635.txt'
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge625.txt'
 MERGE-INNER: 62 total files; 0 processed earlier; will process 62 files now
-#1	pulse  exec/s: 0 rss: 104Mb
-#2	pulse  exec/s: 0 rss: 104Mb
-#4	pulse  exec/s: 0 rss: 104Mb
-#8	pulse  exec/s: 0 rss: 104Mb
-#16	pulse  exec/s: 0 rss: 104Mb
-#32	pulse  exec/s: 0 rss: 104Mb
-#62	DONE   exec/s: 0 rss: 104Mb
+#1	pulse  exec/s: 0 rss: 102Mb
+#2	pulse  exec/s: 0 rss: 102Mb
+#4	pulse  exec/s: 0 rss: 102Mb
+#8	pulse  exec/s: 0 rss: 102Mb
+#16	pulse  exec/s: 0 rss: 102Mb
+#32	pulse  exec/s: 0 rss: 102Mb
+#62	DONE   exec/s: 0 rss: 102Mb
 MERGE-OUTER: successful in 1 attempt(s)
 MERGE-OUTER: the control file has 8017 bytes
-MERGE-OUTER: consumed 0Mb (92Mb rss) to parse the control file
+MERGE-OUTER: consumed 0Mb (93Mb rss) to parse the control file
 MERGE-OUTER: 0 new files with 0 new features added; 0 new coverage edges

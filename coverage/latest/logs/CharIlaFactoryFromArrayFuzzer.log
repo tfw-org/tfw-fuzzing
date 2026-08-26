@@ -2,22 +2,22 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f3c71914ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7fa6ed0adab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 4037999675
+INFO: Seed: 2777903083
 MERGE-OUTER: 72 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f8bb08f3ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f4948868ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 3081412752
+INFO: Seed: 566501089
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1039.txt'
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1034.txt'
 MERGE-INNER: 72 total files; 0 processed earlier; will process 72 files now
 #1	pulse  exec/s: 0 rss: 105Mb
 #2	pulse  exec/s: 0 rss: 105Mb
