@@ -2,31 +2,32 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_ShortIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/ShortIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7fce0cd6fab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f18e5de0ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 2762705199
-MERGE-OUTER: 63 files, 0 in the initial corpus, 0 processed earlier
+INFO: Seed: 3524009517
+MERGE-OUTER: 64 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_ShortIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/ShortIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7fe574833ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7fc7a5f71ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 2886150058
+INFO: Seed: 822964497
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge200.txt'
-MERGE-INNER: 63 total files; 0 processed earlier; will process 63 files now
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge202.txt'
+MERGE-INNER: 64 total files; 0 processed earlier; will process 64 files now
 #1	pulse  exec/s: 0 rss: 102Mb
 #2	pulse  exec/s: 0 rss: 102Mb
 #4	pulse  exec/s: 0 rss: 102Mb
 #8	pulse  exec/s: 0 rss: 102Mb
 #16	pulse  exec/s: 0 rss: 102Mb
-#32	pulse  exec/s: 0 rss: 103Mb
-#63	DONE   exec/s: 0 rss: 103Mb
+#32	pulse  exec/s: 0 rss: 102Mb
+#64	pulse  exec/s: 0 rss: 102Mb
+#64	DONE   exec/s: 0 rss: 102Mb
 MERGE-OUTER: successful in 1 attempt(s)
-MERGE-OUTER: the control file has 8212 bytes
-MERGE-OUTER: consumed 0Mb (94Mb rss) to parse the control file
+MERGE-OUTER: the control file has 8342 bytes
+MERGE-OUTER: consumed 0Mb (91Mb rss) to parse the control file
 MERGE-OUTER: 0 new files with 0 new features added; 0 new coverage edges
