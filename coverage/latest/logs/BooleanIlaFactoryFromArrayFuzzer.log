@@ -2,29 +2,29 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_BooleanIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/BooleanIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f236e510ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f453ad18ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 3578463535
+INFO: Seed: 3998284803
 MERGE-OUTER: 69 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_BooleanIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/BooleanIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7fcbf0189ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f9f45769ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1555869094
+INFO: Seed: 1651765006
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge634.txt'
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge837.txt'
 MERGE-INNER: 69 total files; 0 processed earlier; will process 69 files now
-#1	pulse  exec/s: 0 rss: 103Mb
-#2	pulse  exec/s: 0 rss: 103Mb
-#4	pulse  exec/s: 0 rss: 103Mb
-#8	pulse  exec/s: 0 rss: 103Mb
-#16	pulse  exec/s: 0 rss: 103Mb
-#32	pulse  exec/s: 0 rss: 103Mb
+#1	pulse  exec/s: 0 rss: 104Mb
+#2	pulse  exec/s: 0 rss: 104Mb
+#4	pulse  exec/s: 0 rss: 104Mb
+#8	pulse  exec/s: 0 rss: 104Mb
+#16	pulse  exec/s: 0 rss: 104Mb
+#32	pulse  exec/s: 0 rss: 104Mb
 #64	pulse  exec/s: 0 rss: 104Mb
 #69	DONE   exec/s: 0 rss: 104Mb
 MERGE-OUTER: successful in 1 attempt(s)
