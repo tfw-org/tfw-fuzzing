@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectIlaUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.objectila</a> &gt; <span class="el_source">ObjectIlaUtil.java</span></div><h1>ObjectIlaUtil.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.objectila;
+
+import java.io.IOException;
+import java.util.Arrays;
+
+public final class ObjectIlaUtil {
+    private ObjectIlaUtil() {}
+
+    public static &lt;T&gt; T[] toArray(final ObjectIla&lt;T&gt; objectIla, T[] array) throws IOException {
+<span class="nc" id="L10">        return toArray(objectIla, 0, (int) Math.min(objectIla.length(), Integer.MAX_VALUE), array);</span>
+    }
+
+    public static &lt;T&gt; T[] toArray(final ObjectIla&lt;T&gt; objectIla, final long ilaStart, final int length, final T[] array)
+            throws IOException {
+<span class="nc" id="L15">        final int intObjectIlaLength = (int) Math.min(objectIla.length(), Integer.MAX_VALUE);</span>
+
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        if (array.length &lt; intObjectIlaLength) {</span>
+<span class="nc" id="L18">            T[] copy = Arrays.copyOf(array, length);</span>
+<span class="nc" id="L19">            objectIla.get(copy, 0, ilaStart, length);</span>
+
+<span class="nc" id="L21">            return copy;</span>
+        } else {
+<span class="nc" id="L23">            objectIla.get(array, 0, ilaStart, length);</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">            if (array.length &gt; intObjectIlaLength) {</span>
+<span class="nc" id="L25">                array[intObjectIlaLength] = null;</span>
+            }
+
+<span class="nc" id="L28">            return array;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

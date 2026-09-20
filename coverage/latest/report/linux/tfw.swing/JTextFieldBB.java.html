@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JTextFieldBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JTextFieldBB.java</span></div><h1>JTextFieldBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import java.awt.event.ActionListener;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentListener;
+import tfw.check.Argument;
+import tfw.swing.event.DocumentListenerFactory;
+import tfw.swing.event.SetEnabledFactory;
+import tfw.swing.event.SetTextFactory;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Commit;
+import tfw.tsm.Initiator;
+import tfw.tsm.StateQueueFactory;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.StringECD;
+
+public class JTextFieldBB extends JTextField implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final transient Branch branch;
+
+<span class="nc" id="L22">    public JTextFieldBB(Branch branch) {</span>
+<span class="nc" id="L23">        Argument.assertNotNull(branch, &quot;branch&quot;);</span>
+
+<span class="nc" id="L25">        this.branch = branch;</span>
+<span class="nc" id="L26">    }</span>
+
+    public void addActionListenerToBoth(ActionListener actionListener) {
+<span class="nc" id="L29">        SwingUtil.addObjectToBranch(actionListener, branch);</span>
+<span class="nc" id="L30">        addActionListener(actionListener);</span>
+<span class="nc" id="L31">    }</span>
+
+    public void removeActionListenerFromBoth(ActionListener actionListener) {
+<span class="nc" id="L34">        SwingUtil.removeObjectFromBranch(actionListener, branch);</span>
+<span class="nc" id="L35">        removeActionListener(actionListener);</span>
+<span class="nc" id="L36">    }</span>
+
+    public void addDocumentListenerToBoth(DocumentListener documentListener) {
+<span class="nc" id="L39">        SwingUtil.addObjectToBranch(documentListener, branch);</span>
+<span class="nc" id="L40">        getDocument().addDocumentListener(documentListener);</span>
+<span class="nc" id="L41">    }</span>
+
+    public void removeDocumentListenerFromBoth(DocumentListener documentListener) {
+<span class="nc" id="L44">        SwingUtil.removeObjectFromBranch(documentListener, branch);</span>
+<span class="nc" id="L45">        getDocument().removeDocumentListener(documentListener);</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L50">        return branch;</span>
+    }
+
+    public static JTextFieldBBBuilder builder() {
+<span class="nc" id="L54">        return new JTextFieldBBBuilder();</span>
+    }
+
+<span class="nc" id="L57">    public static class JTextFieldBBBuilder {</span>
+<span class="nc" id="L58">        private String name = null;</span>
+<span class="nc" id="L59">        private BooleanECD enabledInputECD = null;</span>
+<span class="nc" id="L60">        private StringECD textInputOutputECD = null;</span>
+        private StateQueueFactory textOutputStateQueueFactory;
+
+        public JTextFieldBBBuilder setName(final String name) {
+<span class="nc" id="L64">            this.name = name;</span>
+
+<span class="nc" id="L66">            return this;</span>
+        }
+
+        public JTextFieldBBBuilder setEnabledInputECD(final BooleanECD enabledInputECD) {
+<span class="nc" id="L70">            this.enabledInputECD = enabledInputECD;</span>
+
+<span class="nc" id="L72">            return this;</span>
+        }
+
+        public JTextFieldBBBuilder setTextInputOutputECD(final StringECD textInputOutputECD) {
+<span class="nc" id="L76">            this.textInputOutputECD = textInputOutputECD;</span>
+
+<span class="nc" id="L78">            return this;</span>
+        }
+
+        public JTextFieldBBBuilder setTextOutputStateQueueFactory(StateQueueFactory textOutputStateQueueFactory) {
+<span class="nc" id="L82">            this.textOutputStateQueueFactory = textOutputStateQueueFactory;</span>
+
+<span class="nc" id="L84">            return this;</span>
+        }
+
+        public JTextFieldBB build() {
+<span class="nc" id="L88">            Argument.assertNotNull(name, &quot;name&quot;);</span>
+
+<span class="nc" id="L90">            final JTextFieldBB jTextFieldBB = new JTextFieldBB(new Branch(&quot;JTextFieldBB[&quot; + name + &quot;]&quot;));</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (enabledInputECD != null) {</span>
+<span class="nc" id="L93">                jTextFieldBB.getBranch().add(SetEnabledFactory.create(name, enabledInputECD, jTextFieldBB, null));</span>
+            }
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (textInputOutputECD != null) {</span>
+<span class="nc" id="L97">                final DocumentListener documentListener =</span>
+<span class="nc" id="L98">                        DocumentListenerFactory.create(name, textInputOutputECD, textOutputStateQueueFactory);</span>
+<span class="nc" id="L99">                final Initiator[] initiators = new Initiator[] {(Initiator) documentListener};</span>
+<span class="nc" id="L100">                final Commit setTextCommit = SetTextFactory.create(name, textInputOutputECD, jTextFieldBB, initiators);</span>
+
+<span class="nc" id="L102">                jTextFieldBB.addDocumentListenerToBoth(documentListener);</span>
+<span class="nc" id="L103">                jTextFieldBB.getBranch().add(setTextCommit);</span>
+            }
+
+<span class="nc" id="L106">            return jTextFieldBB;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

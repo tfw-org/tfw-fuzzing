@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RollbackTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">RollbackTest.java</span></div><h1>RollbackTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.StringRollbackECD;
+
+<span class="nc" id="L13">final class RollbackTest {</span>
+    private static final String VALID = &quot;valid&quot;;
+    private static final String INVALID = &quot;invalid&quot;;
+
+<span class="nc" id="L17">    private final StringECD aECD = new StringECD(&quot;a&quot;);</span>
+<span class="nc" id="L18">    private final StringECD bECD = new StringECD(&quot;b&quot;);</span>
+<span class="nc" id="L19">    private final StringECD cECD = new StringECD(&quot;c&quot;);</span>
+<span class="nc" id="L20">    private final StringRollbackECD error1ECD = new StringRollbackECD(&quot;error1&quot;);</span>
+<span class="nc" id="L21">    private final StringRollbackECD error2ECD = new StringRollbackECD(&quot;error2&quot;);</span>
+<span class="nc" id="L22">    private final String aInitialState = &quot;aInitialState&quot;;</span>
+<span class="nc" id="L23">    private final String bInitialState = &quot;bInitialState&quot;;</span>
+<span class="nc" id="L24">    private final String cInitialState = &quot;cInitialState&quot;;</span>
+<span class="nc" id="L25">    private final Initiator initiator = new Initiator(&quot;Initiator&quot;, new StringECD[] {aECD, bECD, cECD});</span>
+
+<span class="nc" id="L27">    private String errorState1 = null;</span>
+<span class="nc" id="L28">    private String aCommitState = null;</span>
+<span class="nc" id="L29">    private String bCommitState = null;</span>
+<span class="nc" id="L30">    private String cCommitState = null;</span>
+<span class="nc" id="L31">    private EventChannelState aErrorState = new EventChannelState(error1ECD, &quot;A is invalid&quot;);</span>
+<span class="nc" id="L32">    private EventChannelState cErrorState = new EventChannelState(error1ECD, &quot;C is invalid&quot;);</span>
+
+<span class="nc" id="L34">    private final Validator aValidator =</span>
+<span class="nc" id="L35">            new Validator(&quot;A Validator&quot;, new StringECD[] {aECD}, new StringRollbackECD[] {error1ECD}) {</span>
+                @Override
+                protected void validateState() {
+<span class="nc" id="L38">                    String state = (String) get(aECD);</span>
+
+                    // System.out.println(&quot;validating a: &quot; + state);
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                    if (state.equals(&quot;invalid&quot;)) {</span>
+<span class="nc" id="L42">                        rollback(error1ECD, aErrorState.getState());</span>
+                    }
+<span class="nc" id="L44">                }</span>
+            };
+
+<span class="nc" id="L47">    private Validator bValidator =</span>
+<span class="nc" id="L48">            new Validator(&quot;B Validator&quot;, new StringECD[] {bECD}, new StringRollbackECD[] {error1ECD}) {</span>
+                @Override
+                protected void validateState() {
+<span class="nc" id="L51">                    String state = (String) get(bECD);</span>
+
+                    // System.out.println(&quot;validating b: &quot; + state);
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                    if (state.equals(&quot;invalid&quot;)) {</span>
+                        // rollback(new EventChannelState[]
+                        // {
+                        // aRollbackState, bRollbackState, cRollbackState,
+                        // bErrorState
+                        // });
+                    }
+<span class="nc" id="L61">                }</span>
+            };
+
+<span class="nc" id="L64">    private Validator cValidator =</span>
+<span class="nc" id="L65">            new Validator(&quot;C Validator&quot;, new StringECD[] {cECD}, new StringRollbackECD[] {error1ECD}) {</span>
+                @Override
+                protected void validateState() {
+<span class="nc" id="L68">                    String state = (String) get(cECD);</span>
+
+                    //            System.out.println(&quot;validating c: &quot; + state);
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                    if (state.equals(&quot;invalid&quot;)) {</span>
+<span class="nc" id="L72">                        rollback(error1ECD, cErrorState.getState());</span>
+                    }
+<span class="nc" id="L74">                }</span>
+            };
+
+<span class="nc" id="L77">    private Commit commit = new Commit(&quot;Commit&quot;, new ObjectECD[] {aECD, bECD, cECD}) {</span>
+        @Override
+        protected void commit() {
+            // System.out.println(&quot;commit.commit() reached&quot;);
+<span class="nc" id="L81">            aCommitState = (String) get(aECD);</span>
+<span class="nc" id="L82">            bCommitState = (String) get(bECD);</span>
+<span class="nc" id="L83">            cCommitState = (String) get(cECD);</span>
+<span class="nc" id="L84">        }</span>
+
+        @Override
+        protected void debugCommit() {
+            //            System.out.println(&quot;commit.debugCommit() called&quot; + get());
+<span class="nc" id="L89">        }</span>
+    };
+
+<span class="nc" id="L92">    private Commit errorHandler1 = new Commit(&quot;Error Handler 1&quot;, new ObjectECD[] {error1ECD}) {</span>
+        @Override
+        protected void commit() {
+            //            System.out.println(&quot;errorHandler1.commit()&quot;);
+<span class="nc" id="L96">            errorState1 = (String) get(error1ECD);</span>
+<span class="nc" id="L97">        }</span>
+
+        @Override
+        protected void debugCommit() {
+            // System.out.println(&quot;errorHandler1.debugCommit()&quot;);
+<span class="nc" id="L102">        }</span>
+    };
+
+    @Test
+    void rollbackArgumentsTest() {
+<span class="nc" id="L107">        TestRollbackHandler handler = new TestRollbackHandler();</span>
+<span class="nc" id="L108">        Object object = new Object();</span>
+
+<span class="nc" id="L110">        assertThatThrownBy(() -&gt; handler.testRollback(null, object))</span>
+<span class="nc" id="L111">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L112">                .hasMessage(&quot;ecd == null not allowed!&quot;);</span>
+<span class="nc" id="L113">        assertThatThrownBy(() -&gt; handler.testRollback(error1ECD, null))</span>
+<span class="nc" id="L114">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L115">                .hasMessage(&quot;state == null not allowed!&quot;);</span>
+<span class="nc" id="L116">        assertThatThrownBy(() -&gt; handler.testRollback(null))</span>
+<span class="nc" id="L117">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L118">                .hasMessage(&quot;eventChannelState == null not allowed!&quot;);</span>
+<span class="nc" id="L119">        assertThatThrownBy(() -&gt; handler.testRollback(new EventChannelState[] {null}))</span>
+<span class="nc" id="L120">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L121">                .hasMessage(&quot;eventChannelState[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L122">    }</span>
+
+    @Test
+    void converterTest() throws InterruptedException {
+<span class="nc" id="L126">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L127">        final Root root = Root.builder()</span>
+<span class="nc" id="L128">                .setName(&quot;Test branch&quot;)</span>
+<span class="nc" id="L129">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L130">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L131">                .addRollbackECD(error1ECD)</span>
+<span class="nc" id="L132">                .addRollbackECD(error2ECD)</span>
+<span class="nc" id="L133">                .addObjectECD(aECD, aInitialState)</span>
+<span class="nc" id="L134">                .addObjectECD(bECD, bInitialState)</span>
+<span class="nc" id="L135">                .addObjectECD(cECD, cInitialState)</span>
+<span class="nc" id="L136">                .build();</span>
+
+<span class="nc" id="L138">        root.add(initiator);</span>
+<span class="nc" id="L139">        root.add(aValidator);</span>
+<span class="nc" id="L140">        root.add(bValidator);</span>
+<span class="nc" id="L141">        root.add(cValidator);</span>
+<span class="nc" id="L142">        root.add(commit);</span>
+<span class="nc" id="L143">        root.add(errorHandler1);</span>
+
+<span class="nc" id="L145">        initiator.set(aECD, &quot;valid&quot;);</span>
+<span class="nc" id="L146">        initiator.set(bECD, &quot;valid&quot;);</span>
+<span class="nc" id="L147">        initiator.set(cECD, &quot;invalid&quot;);</span>
+<span class="nc" id="L148">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L150">        assertThat(aCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L151">        assertThat(bCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L152">        assertThat(cInitialState).isEqualTo(cCommitState);</span>
+<span class="nc" id="L153">        assertThat(cErrorState.getState()).isEqualTo(errorState1);</span>
+
+<span class="nc" id="L155">        errorState1 = null;</span>
+<span class="nc" id="L156">        initiator.set(cECD, &quot;valid&quot;);</span>
+<span class="nc" id="L157">        queue.waitTilEmpty();</span>
+<span class="nc" id="L158">        assertThat(aCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L159">        assertThat(bCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L160">        assertThat(cCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L161">        assertThat(errorState1).isNull();</span>
+
+<span class="nc" id="L163">        initiator.set(aECD, &quot;invalid&quot;);</span>
+<span class="nc" id="L164">        queue.waitTilEmpty();</span>
+<span class="nc" id="L165">        assertThat(aCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L166">        assertThat(bCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L167">        assertThat(cCommitState).isEqualTo(&quot;valid&quot;);</span>
+<span class="nc" id="L168">        assertThat(aErrorState.getState()).isEqualTo(errorState1);</span>
+
+<span class="nc" id="L170">        errorState1 = null;</span>
+<span class="nc" id="L171">        initiator.set(bECD, &quot;invalid&quot;);</span>
+<span class="nc" id="L172">        queue.waitTilEmpty();</span>
+
+        // assertEquals(&quot;A Commit&quot;, aRollbackState.getState(), aCommitState);
+        // assertEquals(&quot;B Commit&quot;, bRollbackState.getState(), bCommitState);
+        // assertEquals(&quot;C Commit&quot;, cRollbackState.getState(), cCommitState);
+        // assertEquals(&quot;error Commit&quot;, aErrorState.getState(), errorState1);
+<span class="nc" id="L178">    }</span>
+
+    @Test
+    void simpleRollbackTest() throws InterruptedException {
+<span class="nc" id="L182">        String errorMsg = &quot;An error occurred&quot;;</span>
+<span class="nc" id="L183">        TestCommit aCommit = new TestCommit(aECD, null);</span>
+<span class="nc" id="L184">        TestCommit errorCommit = new TestCommit(error1ECD, null);</span>
+<span class="nc" id="L185">        Validator validator = new TestValidator(aECD, error1ECD, errorMsg);</span>
+<span class="nc" id="L186">        Initiator initiator = new Initiator(&quot;Test initiator&quot;, aECD);</span>
+
+<span class="nc" id="L188">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L189">        final Root root = Root.builder()</span>
+<span class="nc" id="L190">                .setName(&quot;SimpleRollbackTest&quot;)</span>
+<span class="nc" id="L191">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L192">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L193">                .addObjectECD(aECD, null)</span>
+<span class="nc" id="L194">                .addRollbackECD(error1ECD)</span>
+<span class="nc" id="L195">                .build();</span>
+
+<span class="nc" id="L197">        root.add(aCommit);</span>
+<span class="nc" id="L198">        root.add(errorCommit);</span>
+<span class="nc" id="L199">        root.add(validator);</span>
+<span class="nc" id="L200">        root.add(initiator);</span>
+<span class="nc" id="L201">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L203">        initiator.set(aECD, VALID);</span>
+<span class="nc" id="L204">        queue.waitTilEmpty();</span>
+<span class="nc" id="L205">        assertThat(aCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L206">        assertThat(errorCommit.commitValue).isNull();</span>
+
+<span class="nc" id="L208">        aCommit.commitValue = null;</span>
+<span class="nc" id="L209">        initiator.set(aECD, INVALID);</span>
+<span class="nc" id="L210">        queue.waitTilEmpty();</span>
+<span class="nc" id="L211">        assertThat(aCommit.commitValue).isNull();</span>
+<span class="nc" id="L212">        assertThat(errorCommit.commitValue).isEqualTo(errorMsg);</span>
+<span class="nc" id="L213">    }</span>
+
+    @Test
+    void daisyChainedMultiCycleRollbackTest() throws InterruptedException {
+<span class="nc" id="L217">        String cErrorMsg = &quot;An error occurred&quot;;</span>
+<span class="nc" id="L218">        Initiator initiator = new Initiator(&quot;Test initiator&quot;, aECD);</span>
+<span class="nc" id="L219">        TestCommit aCommit = new TestCommit(aECD, null);</span>
+<span class="nc" id="L220">        TestCommit bCommit = new TestCommit(bECD, null);</span>
+<span class="nc" id="L221">        TestCommit cCommit = new TestCommit(cECD, null);</span>
+<span class="nc" id="L222">        TestConverter aConverter = new TestConverter(&quot;A converter&quot;, aECD, bECD);</span>
+<span class="nc" id="L223">        TestConverter bConverter = new TestConverter(&quot;B converter&quot;, bECD, cECD);</span>
+<span class="nc" id="L224">        Validator cValidator = new TestValidator(cECD, error1ECD, cErrorMsg);</span>
+<span class="nc" id="L225">        TestCommit errorCommit = new TestCommit(error1ECD, new StringECD[] {aECD, bECD, cECD});</span>
+
+<span class="nc" id="L227">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L228">        final Root root = Root.builder()</span>
+<span class="nc" id="L229">                .setName(&quot;SimpleRollbackTest&quot;)</span>
+<span class="nc" id="L230">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L231">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L232">                .addObjectECD(aECD, null)</span>
+<span class="nc" id="L233">                .addObjectECD(bECD, null)</span>
+<span class="nc" id="L234">                .addObjectECD(cECD, null)</span>
+<span class="nc" id="L235">                .addRollbackECD(error1ECD)</span>
+<span class="nc" id="L236">                .build();</span>
+
+<span class="nc" id="L238">        root.add(aCommit);</span>
+<span class="nc" id="L239">        root.add(bCommit);</span>
+<span class="nc" id="L240">        root.add(cCommit);</span>
+<span class="nc" id="L241">        root.add(aConverter);</span>
+<span class="nc" id="L242">        root.add(bConverter);</span>
+<span class="nc" id="L243">        root.add(errorCommit);</span>
+<span class="nc" id="L244">        root.add(cValidator);</span>
+<span class="nc" id="L245">        root.add(initiator);</span>
+<span class="nc" id="L246">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L248">        initiator.set(aECD, VALID);</span>
+<span class="nc" id="L249">        queue.waitTilEmpty();</span>
+<span class="nc" id="L250">        assertThat(aConverter.inValue).isEqualTo(VALID);</span>
+<span class="nc" id="L251">        assertThat(bConverter.inValue).isEqualTo(VALID);</span>
+<span class="nc" id="L252">        assertThat(aCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L253">        assertThat(bCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L254">        assertThat(cCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L255">        assertThat(errorCommit.commitValue).isNull();</span>
+
+<span class="nc" id="L257">        initiator.set(aECD, INVALID);</span>
+<span class="nc" id="L258">        queue.waitTilEmpty();</span>
+<span class="nc" id="L259">        assertThat(aConverter.inValue).isEqualTo(INVALID);</span>
+<span class="nc" id="L260">        assertThat(bConverter.inValue).isEqualTo(INVALID);</span>
+<span class="nc" id="L261">        assertThat(aCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L262">        assertThat(bCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L263">        assertThat(cCommit.commitValue).isEqualTo(VALID);</span>
+<span class="nc" id="L264">        assertThat(cErrorMsg).isEqualTo(errorCommit.commitValue);</span>
+<span class="nc" id="L265">        assertThat(errorCommit.stateMap)</span>
+<span class="nc" id="L266">                .containsEntry(aECD, VALID)</span>
+<span class="nc" id="L267">                .containsEntry(bECD, VALID)</span>
+<span class="nc" id="L268">                .containsEntry(cECD, VALID);</span>
+<span class="nc" id="L269">    }</span>
+
+    @Test
+    void multiValueRollbackTest() throws InterruptedException {
+<span class="nc" id="L273">        String error1msg = &quot;Error notification on error channel one&quot;;</span>
+<span class="nc" id="L274">        String error2msg = &quot;Error notification on error channel two&quot;;</span>
+<span class="nc" id="L275">        EventChannelState[] rollbackState = new EventChannelState[] {</span>
+            new EventChannelState(error1ECD, error1msg), new EventChannelState(error2ECD, error2msg)
+        };
+
+<span class="nc" id="L279">        Initiator initiator = new Initiator(&quot;Test initiator&quot;, aECD);</span>
+<span class="nc" id="L280">        Validator aValidator = new TestValidator(aECD, new RollbackECD[] {error1ECD, error2ECD}, rollbackState);</span>
+<span class="nc" id="L281">        TestCommit errorCommit1 = new TestCommit(error1ECD, null);</span>
+<span class="nc" id="L282">        TestCommit errorCommit2 = new TestCommit(error2ECD, null);</span>
+
+<span class="nc" id="L284">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L285">        final Root root = Root.builder()</span>
+<span class="nc" id="L286">                .setName(&quot;SimpleRollbackTest&quot;)</span>
+<span class="nc" id="L287">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L288">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L289">                .addObjectECD(aECD, null)</span>
+<span class="nc" id="L290">                .addRollbackECD(error1ECD)</span>
+<span class="nc" id="L291">                .addRollbackECD(error2ECD)</span>
+<span class="nc" id="L292">                .build();</span>
+
+<span class="nc" id="L294">        root.add(aValidator);</span>
+<span class="nc" id="L295">        root.add(initiator);</span>
+<span class="nc" id="L296">        root.add(errorCommit1);</span>
+<span class="nc" id="L297">        root.add(errorCommit2);</span>
+<span class="nc" id="L298">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L300">        initiator.set(aECD, VALID);</span>
+<span class="nc" id="L301">        queue.waitTilEmpty();</span>
+<span class="nc" id="L302">        assertThat(errorCommit1.commitValue).isNull();</span>
+<span class="nc" id="L303">        assertThat(errorCommit2.commitValue).isNull();</span>
+
+<span class="nc" id="L305">        initiator.set(aECD, INVALID);</span>
+<span class="nc" id="L306">        queue.waitTilEmpty();</span>
+<span class="nc" id="L307">        assertThat(error1msg).isEqualTo(errorCommit1.commitValue);</span>
+<span class="nc" id="L308">        assertThat(error2msg).isEqualTo(errorCommit2.commitValue);</span>
+<span class="nc" id="L309">    }</span>
+
+    private static class TestValidator extends Validator {
+        private final StringECD triggerECD;
+
+        private final StringRollbackECD rollbackECD;
+
+        private final String errorMsg;
+
+        private final EventChannelState[] rollbackState;
+
+        public TestValidator(StringECD triggerECD, RollbackECD[] rollbackECDs, EventChannelState[] rollbackState) {
+<span class="nc" id="L321">            super(&quot;Test Validator &quot; + triggerECD.getEventChannelName(), new StringECD[] {triggerECD}, rollbackECDs);</span>
+<span class="nc" id="L322">            this.triggerECD = triggerECD;</span>
+<span class="nc" id="L323">            this.errorMsg = null;</span>
+<span class="nc" id="L324">            this.rollbackECD = null;</span>
+<span class="nc" id="L325">            this.rollbackState = rollbackState;</span>
+<span class="nc" id="L326">        }</span>
+
+        public TestValidator(StringECD triggerECD, StringRollbackECD rollbackECD, String errorMsg) {
+<span class="nc" id="L329">            super(</span>
+<span class="nc" id="L330">                    &quot;Test Validator &quot; + triggerECD.getEventChannelName(),</span>
+                    new StringECD[] {triggerECD},
+                    new RollbackECD[] {rollbackECD});
+<span class="nc" id="L333">            this.triggerECD = triggerECD;</span>
+<span class="nc" id="L334">            this.rollbackECD = rollbackECD;</span>
+<span class="nc" id="L335">            this.errorMsg = errorMsg;</span>
+<span class="nc" id="L336">            this.rollbackState = null;</span>
+<span class="nc" id="L337">        }</span>
+
+        @Override
+        public void validateState() {
+<span class="nc" id="L341">            String state = (String) get(triggerECD);</span>
+
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (state.equals(&quot;invalid&quot;)) {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                if (rollbackECD != null) {</span>
+<span class="nc" id="L345">                    rollback(rollbackECD, errorMsg);</span>
+                } else {
+<span class="nc" id="L347">                    rollback(rollbackState);</span>
+                }
+            }
+<span class="nc" id="L350">        }</span>
+    }
+
+    private static class TestCommit extends Commit {
+<span class="nc" id="L354">        String commitValue = null;</span>
+
+<span class="nc" id="L356">        Map&lt;ObjectECD, Object&gt; stateMap = null;</span>
+
+        private final ObjectECD trigger;
+
+        public TestCommit(ObjectECD trigger, ObjectECD[] nontriggers) {
+<span class="nc" id="L361">            super(&quot;Test Commit &quot; + trigger.getEventChannelName(), new ObjectECD[] {trigger}, nontriggers, null);</span>
+<span class="nc" id="L362">            this.trigger = trigger;</span>
+<span class="nc" id="L363">        }</span>
+
+        @Override
+        public void commit() {
+<span class="nc" id="L367">            stateMap = this.get();</span>
+<span class="nc" id="L368">            commitValue = (String) get(trigger);</span>
+<span class="nc" id="L369">        }</span>
+    }
+
+    private class TestRollbackHandler extends Validator {
+<span class="nc" id="L373">        public TestRollbackHandler() {</span>
+<span class="nc" id="L374">            super(&quot;Test&quot;, new ObjectECD[] {aECD}, new RollbackECD[] {error1ECD});</span>
+<span class="nc" id="L375">        }</span>
+
+        @Override
+<span class="nc" id="L378">        public void validateState() {}</span>
+
+        public void testRollback(RollbackECD sourceECD, Object state) {
+<span class="nc" id="L381">            rollback(sourceECD, state);</span>
+<span class="nc" id="L382">        }</span>
+
+        public void testRollback(EventChannelState[] ecs) {
+<span class="nc" id="L385">            rollback(ecs);</span>
+<span class="nc" id="L386">        }</span>
+    }
+
+    private static class TestConverter extends Converter {
+        private final StringECD input;
+
+        private final StringECD output;
+
+        private String inValue;
+
+        public TestConverter(String name, StringECD input, StringECD output) {
+<span class="nc" id="L397">            super(name, new StringECD[] {input}, new StringECD[] {output});</span>
+<span class="nc" id="L398">            this.input = input;</span>
+<span class="nc" id="L399">            this.output = output;</span>
+<span class="nc" id="L400">        }</span>
+
+        @Override
+        protected void convert() {
+<span class="nc" id="L404">            this.inValue = (String) get(input);</span>
+<span class="nc" id="L405">            set(output, this.inValue);</span>
+<span class="nc" id="L406">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntIlaFromByteIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.intila</a> &gt; <span class="el_source">IntIlaFromByteIla.java</span></div><h1>IntIlaFromByteIla.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.intila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaIterator;
+import tfw.immutable.ila.byteila.ByteIlaSegment;
+
+public final class IntIlaFromByteIla {
+    private IntIlaFromByteIla() {}
+
+    public static IntIla create(final ByteIla byteIla, final int bufferSize) {
+<span class="nc" id="L13">        Argument.assertNotNull(byteIla, &quot;byteIla&quot;);</span>
+<span class="nc" id="L14">        Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L16">        return new IntIlaImpl(byteIla, bufferSize);</span>
+    }
+
+    private static class IntIlaImpl extends AbstractIntIla {
+        private final ByteIla byteIla;
+        private final int bufferSize;
+
+<span class="nc" id="L23">        private IntIlaImpl(final ByteIla byteIla, final int bufferSize) {</span>
+<span class="nc" id="L24">            this.byteIla = byteIla;</span>
+<span class="nc" id="L25">            this.bufferSize = bufferSize;</span>
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L30">            return byteIla.length() / 4;</span>
+        }
+
+        @Override
+        protected void getImpl(int[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L35">            ByteIlaIterator bii =</span>
+<span class="nc" id="L36">                    new ByteIlaIterator(ByteIlaSegment.create(byteIla, 4L * start, 4L * length), new byte[bufferSize]);</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L39">                array[offset + i] = ((bii.next() &amp; 0xFF) &lt;&lt; 24)</span>
+<span class="nc" id="L40">                        | ((bii.next() &amp; 0xFF) &lt;&lt; 16)</span>
+<span class="nc" id="L41">                        | ((bii.next() &amp; 0xFF) &lt;&lt; 8)</span>
+<span class="nc" id="L42">                        | (bii.next() &amp; 0xFF);</span>
+            }
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L48">            byteIla.close();</span>
+<span class="nc" id="L49">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

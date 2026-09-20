@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HelloWorldTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm.demo</a> &gt; <span class="el_source">HelloWorldTest.java</span></div><h1>HelloWorldTest.java</h1><pre class="source lang-java linenums">package tfw.tsm.demo;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tfw.test.LogRecordComparator;
+import tfw.test.TestHelper;
+import tfw.test.ThreadSafeTestHandler;
+
+<span class="nc" id="L18">final class HelloWorldTest {</span>
+    private Logger logger;
+    private ThreadSafeTestHandler handler;
+
+    @BeforeEach
+    void beforeEach() {
+<span class="nc" id="L24">        logger = Logger.getLogger(HelloWorld.class.getName());</span>
+
+<span class="nc" id="L26">        handler = TestHelper.beforeEach(logger);</span>
+<span class="nc" id="L27">    }</span>
+
+    @AfterEach
+    void afterEach() {
+<span class="nc" id="L31">        TestHelper.afterEach(logger, handler);</span>
+<span class="nc" id="L32">    }</span>
+
+    @Test
+    void testHelloWorld() throws InterruptedException {
+<span class="nc" id="L36">        final List&lt;LogRecord&gt; expectedLogRecords = new ArrayList&lt;&gt;(</span>
+<span class="nc" id="L37">                Arrays.asList(new LogRecord[] {new LogRecord(Level.INFO, HelloWorld.HELLO_WORLD_STRING)}));</span>
+
+<span class="nc" id="L39">        HelloWorld.main(new String[0]);</span>
+
+<span class="nc" id="L41">        List&lt;LogRecord&gt; actualLogRecords = handler.getRecords();</span>
+
+<span class="nc" id="L43">        assertThat(actualLogRecords)</span>
+<span class="nc" id="L44">                .usingElementComparator(new LogRecordComparator())</span>
+<span class="nc" id="L45">                .containsExactlyElementsOf(expectedLogRecords);</span>
+<span class="nc" id="L46">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

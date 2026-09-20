@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIisFactoryFromBitIlaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iisf.bitiisf</a> &gt; <span class="el_source">BitIisFactoryFromBitIlaTest.java</span></div><h1>BitIisFactoryFromBitIlaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.iisf.bitiisf;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.iis.bitiis.BitIis;
+import tfw.immutable.ila.bitila.BitIla;
+import tfw.immutable.ila.bitila.BitIlaFromLongIla;
+import tfw.immutable.ila.longila.LongIla;
+import tfw.immutable.ila.longila.LongIlaFromArray;
+
+<span class="nc" id="L14">final class BitIisFactoryFromBitIlaTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L17">        assertThatThrownBy(() -&gt; BitIisFactoryFromBitIla.create(null)).isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L18">    }</span>
+
+    @Test
+    void factoryTest() throws IOException {
+<span class="nc" id="L22">        final long[] expectedArray = new long[1];</span>
+<span class="nc" id="L23">        final LongIla longIla = LongIlaFromArray.create(expectedArray);</span>
+<span class="nc" id="L24">        final BitIla ila = BitIlaFromLongIla.create(longIla, 0, 12);</span>
+<span class="nc" id="L25">        final BitIisFactory iisf = BitIisFactoryFromBitIla.create(ila);</span>
+<span class="nc" id="L26">        final BitIis iis = iisf.create();</span>
+<span class="nc" id="L27">        final long[] actualArray = new long[expectedArray.length];</span>
+
+<span class="nc" id="L29">        assertThat(iis.read(actualArray, 0, actualArray.length)).isEqualTo(actualArray.length);</span>
+<span class="nc" id="L30">        assertThat(actualArray).isEqualTo(expectedArray);</span>
+<span class="nc" id="L31">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

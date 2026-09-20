@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Source.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Source.java</span></div><h1>Source.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.tsm.ecd.EventChannelDescription;
+
+public abstract class Source extends Port {
+    Source(String name, EventChannelDescription ecd) {
+<span class="nc" id="L7">        super(name, ecd);</span>
+<span class="nc" id="L8">    }</span>
+
+    abstract void setState(Object state);
+
+    abstract Object fire();
+
+    boolean isStateSource() {
+<span class="nc bnc" id="L15" title="All 2 branches missed.">        return eventChannel.getCurrentStateSource() == this;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L20">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L21">        sb.append(super.toString());</span>
+<span class="nc" id="L22">        sb.append(&quot;[name = &quot;).append(getFullyQualifiedName());</span>
+<span class="nc" id="L23">        sb.append(&quot;, eventChannelName = &quot;).append(ecd.getEventChannelName());</span>
+        //        sb.append(&quot;, stateQueue = &quot;).append(stateQueue).append(&quot;]&quot;);
+
+<span class="nc" id="L26">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

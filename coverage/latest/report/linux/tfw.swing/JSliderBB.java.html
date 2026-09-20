@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSliderBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JSliderBB.java</span></div><h1>JSliderBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import javax.swing.JSlider;
+import tfw.awt.component.EnabledCommit;
+import tfw.swing.slider.SetModelCommit;
+import tfw.swing.slider.SliderChangeInitiator;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.IntegerECD;
+
+public class JSliderBB extends JSlider implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JSliderBB(
+            String name,
+            IntegerECD valueECD,
+            IntegerECD valueAdjECD,
+            IntegerECD extentECD,
+            IntegerECD minimumECD,
+            IntegerECD maximumECD,
+            BooleanECD enabledECD) {
+<span class="nc" id="L25">        this(</span>
+                new Branch(&quot;JSliderBB[&quot; + name + &quot;]&quot;),
+                valueECD,
+                valueAdjECD,
+                extentECD,
+                minimumECD,
+                maximumECD,
+                enabledECD);
+<span class="nc" id="L33">    }</span>
+
+    public JSliderBB(
+            Branch branch,
+            IntegerECD valueECD,
+            IntegerECD valueAdjECD,
+            IntegerECD extentECD,
+            IntegerECD minimumECD,
+            IntegerECD maximumECD,
+<span class="nc" id="L42">            BooleanECD enabledECD) {</span>
+<span class="nc" id="L43">        this.branch = branch;</span>
+
+<span class="nc" id="L45">        SliderChangeInitiator sliderChangeInitiator =</span>
+<span class="nc" id="L46">                new SliderChangeInitiator(branch.getName(), valueECD, valueAdjECD, this);</span>
+<span class="nc" id="L47">        branch.add(sliderChangeInitiator);</span>
+<span class="nc" id="L48">        addChangeListener(sliderChangeInitiator);</span>
+
+<span class="nc" id="L50">        SetModelCommit setModelCommit = new SetModelCommit(</span>
+<span class="nc" id="L51">                branch.getName(),</span>
+                valueECD,
+                extentECD,
+                minimumECD,
+                maximumECD,
+                new Initiator[] {sliderChangeInitiator},
+                this);
+<span class="nc" id="L58">        branch.add(setModelCommit);</span>
+
+<span class="nc" id="L60">        EnabledCommit setEnabledCommit = new EnabledCommit(branch.getName(), enabledECD, this, null);</span>
+<span class="nc" id="L61">        branch.add(setEnabledCommit);</span>
+
+<span class="nc" id="L63">        setEnabled(false);</span>
+<span class="nc" id="L64">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L68">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

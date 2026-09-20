@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JButtonBBDemo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.demo</a> &gt; <span class="el_source">JButtonBBDemo.java</span></div><h1>JButtonBBDemo.java</h1><pre class="source lang-java linenums">package tfw.swing.demo;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import tfw.swing.JButtonBB;
+import tfw.tsm.AWTTransactionQueue;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Initiator;
+import tfw.tsm.Root;
+import tfw.tsm.TriggeredCommit;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+public class JButtonBBDemo {
+<span class="nc" id="L23">    private static final BooleanECD ENABLE_ECD = new BooleanECD(&quot;enable&quot;);</span>
+<span class="nc" id="L24">    private static final StatelessTriggerECD TRIGGER_ECD = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+    private static final String PREFIX = &quot;Button pressed: &quot;;
+
+<span class="nc" id="L27">    private static long buttonPresses = 0;</span>
+
+    private JButtonBBDemo() {}
+
+    public static final void main(String[] args) {
+<span class="nc" id="L32">        final JLabel l = new JLabel();</span>
+<span class="nc" id="L33">        l.setText(PREFIX + buttonPresses);</span>
+
+<span class="nc" id="L35">        final TriggeredCommit commit = new TriggeredCommit(&quot;JBttonBBTest&quot;, TRIGGER_ECD, null, null) {</span>
+            @Override
+            protected void commit() {
+<span class="nc" id="L38">                l.setText(PREFIX + ++buttonPresses);</span>
+<span class="nc" id="L39">            }</span>
+        };
+
+<span class="nc" id="L42">        final Initiator initiator = new Initiator(&quot;JButtonBBTest&quot;, new ObjectECD[] {ENABLE_ECD});</span>
+
+<span class="nc" id="L44">        final JCheckBox cb = new JCheckBox();</span>
+<span class="nc" id="L45">        cb.setText(&quot;Enable Button&quot;);</span>
+<span class="nc" id="L46">        cb.addActionListener(new ActionListener() {</span>
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                initiator.set(ENABLE_ECD, cb.isSelected() ? Boolean.TRUE : Boolean.FALSE);</span>
+<span class="nc" id="L50">            }</span>
+        });
+
+<span class="nc" id="L53">        JButtonBB b = JButtonBB.builder()</span>
+<span class="nc" id="L54">                .setName(&quot;JButtonBBTest&quot;)</span>
+<span class="nc" id="L55">                .setEnabledInput(ENABLE_ECD)</span>
+<span class="nc" id="L56">                .setActionOutput(TRIGGER_ECD)</span>
+<span class="nc" id="L57">                .build();</span>
+<span class="nc" id="L58">        b.setText(&quot;Press Me!&quot;);</span>
+
+<span class="nc" id="L60">        final JPanel p = new JPanel();</span>
+<span class="nc" id="L61">        p.setLayout(new BorderLayout());</span>
+<span class="nc" id="L62">        p.add(cb, BorderLayout.NORTH);</span>
+<span class="nc" id="L63">        p.add(l, BorderLayout.SOUTH);</span>
+
+<span class="nc" id="L65">        final Root r = Root.builder()</span>
+<span class="nc" id="L66">                .setName(&quot;JButtonBBTest&quot;)</span>
+<span class="nc" id="L67">                .setTransactionQueue(new AWTTransactionQueue())</span>
+<span class="nc" id="L68">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L69">                .addObjectECD(ENABLE_ECD, Boolean.FALSE)</span>
+<span class="nc" id="L70">                .addStatelessTriggerECD(TRIGGER_ECD)</span>
+<span class="nc" id="L71">                .build();</span>
+
+<span class="nc" id="L73">        r.add(commit);</span>
+<span class="nc" id="L74">        r.add(initiator);</span>
+<span class="nc" id="L75">        r.add(b);</span>
+
+<span class="nc" id="L77">        final JFrame f = new JFrame();</span>
+<span class="nc" id="L78">        f.getContentPane().add(b, BorderLayout.NORTH);</span>
+<span class="nc" id="L79">        f.getContentPane().add(p, BorderLayout.SOUTH);</span>
+<span class="nc" id="L80">        f.addWindowListener(new WindowAdapter() {</span>
+            @Override
+            public void windowClosing(WindowEvent e) {
+<span class="nc" id="L83">                System.exit(0);</span>
+<span class="nc" id="L84">            }</span>
+        });
+<span class="nc" id="L86">        f.pack();</span>
+<span class="nc" id="L87">        f.setVisible(true);</span>
+<span class="nc" id="L88">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

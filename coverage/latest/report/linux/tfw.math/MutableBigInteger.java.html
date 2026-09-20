@@ -1,0 +1,2344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableBigInteger.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.math</a> &gt; <span class="el_source">MutableBigInteger.java</span></div><h1>MutableBigInteger.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the &quot;Classpath&quot; exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package tfw.math;
+
+/**
+ * A class used to represent multiprecision integers that makes efficient
+ * use of allocated space by allowing a number to occupy only part of
+ * an array so that the arrays do not have to be reallocated as often.
+ * When performing an operation with many iterations the array used to
+ * hold a number is only reallocated when necessary and does not have to
+ * be the same size as the number it represents. A mutable number allows
+ * calculations to occur on the same number without having to create
+ * a new number for every step of the calculation as occurs with
+ * BigIntegers.
+ *
+ * @see     BigInteger
+ * @author  Michael McCloskey
+ * @author  Timothy Buktu
+ * @since   1.3
+ */
+
+import static tfw.math.BigDecimal.INFLATED;
+import static tfw.math.BigInteger.LONG_MASK;
+import java.util.Arrays;
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">class MutableBigInteger {</span>
+    /**
+     * Holds the magnitude of this MutableBigInteger in big endian order.
+     * The magnitude may start at an offset into the value array, and it may
+     * end before the length of the value array.
+     */
+    int[] value;
+
+    /**
+     * The number of ints of the value array that are currently used
+     * to hold the magnitude of this MutableBigInteger. The magnitude starts
+     * at an offset and offset + intLen may be less than value.length.
+     */
+    int intLen;
+
+    /**
+     * The offset into the value array where the magnitude of this
+     * MutableBigInteger begins.
+     */
+<span class="nc" id="L68">    int offset = 0;</span>
+
+    // Constants
+    /**
+     * MutableBigInteger with one element value array with the value 1. Used by
+     * BigDecimal divideAndRound to increment the quotient. Use this constant
+     * only when the method is not going to modify this object.
+     */
+<span class="nc" id="L76">    static final MutableBigInteger ONE = new MutableBigInteger(1);</span>
+
+    /**
+     * The minimum {@code intLen} for cancelling powers of two before
+     * dividing.
+     * If the number of ints is less than this threshold,
+     * {@code divideKnuth} does not eliminate common powers of two from
+     * the dividend and divisor.
+     */
+    static final int KNUTH_POW2_THRESH_LEN = 6;
+
+    /**
+     * The minimum number of trailing zero ints for cancelling powers of two
+     * before dividing.
+     * If the dividend and divisor don't share at least this many zero ints
+     * at the end, {@code divideKnuth} does not eliminate common powers
+     * of two from the dividend and divisor.
+     */
+    static final int KNUTH_POW2_THRESH_ZEROS = 3;
+
+    // Constructors
+
+    /**
+     * The default constructor. An empty MutableBigInteger is created with
+     * a one word capacity.
+     */
+<span class="nc" id="L102">    MutableBigInteger() {</span>
+<span class="nc" id="L103">        value = new int[1];</span>
+<span class="nc" id="L104">        intLen = 0;</span>
+<span class="nc" id="L105">    }</span>
+
+    /**
+     * Construct a new MutableBigInteger with a magnitude specified by
+     * the int val.
+     */
+<span class="nc" id="L111">    MutableBigInteger(int val) {</span>
+<span class="nc" id="L112">        value = new int[1];</span>
+<span class="nc" id="L113">        intLen = 1;</span>
+<span class="nc" id="L114">        value[0] = val;</span>
+<span class="nc" id="L115">    }</span>
+
+    /**
+     * Construct a new MutableBigInteger with the specified value array
+     * up to the length of the array supplied.
+     */
+<span class="nc" id="L121">    MutableBigInteger(int[] val) {</span>
+<span class="nc" id="L122">        value = val;</span>
+<span class="nc" id="L123">        intLen = val.length;</span>
+<span class="nc" id="L124">    }</span>
+
+    /**
+     * Construct a new MutableBigInteger with a magnitude equal to the
+     * specified BigInteger.
+     */
+<span class="nc" id="L130">    MutableBigInteger(BigInteger b) {</span>
+<span class="nc" id="L131">        intLen = b.mag.length;</span>
+<span class="nc" id="L132">        value = Arrays.copyOf(b.mag, intLen);</span>
+<span class="nc" id="L133">    }</span>
+
+    /**
+     * Construct a new MutableBigInteger with a magnitude equal to the
+     * specified MutableBigInteger.
+     */
+<span class="nc" id="L139">    MutableBigInteger(MutableBigInteger val) {</span>
+<span class="nc" id="L140">        intLen = val.intLen;</span>
+<span class="nc" id="L141">        value = Arrays.copyOfRange(val.value, val.offset, val.offset + intLen);</span>
+<span class="nc" id="L142">    }</span>
+
+    /**
+     * Makes this number an {@code n}-int number all of whose bits are ones.
+     * Used by Burnikel-Ziegler division.
+     * @param n number of ints in the {@code value} array
+     * @return a number equal to {@code ((1&lt;&lt;(32*n)))-1}
+     */
+    private void ones(int n) {
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (n &gt; value.length)</span>
+<span class="nc" id="L152">            value = new int[n];</span>
+<span class="nc" id="L153">        Arrays.fill(value, -1);</span>
+<span class="nc" id="L154">        offset = 0;</span>
+<span class="nc" id="L155">        intLen = n;</span>
+<span class="nc" id="L156">    }</span>
+
+    /**
+     * Internal helper method to return the magnitude array. The caller is not
+     * supposed to modify the returned array.
+     */
+    private int[] getMagnitudeArray() {
+<span class="nc bnc" id="L163" title="All 4 branches missed.">        if (offset &gt; 0 || value.length != intLen)</span>
+<span class="nc" id="L164">            return Arrays.copyOfRange(value, offset, offset + intLen);</span>
+<span class="nc" id="L165">        return value;</span>
+    }
+
+    /**
+     * Convert this MutableBigInteger to a long value. The caller has to make
+     * sure this MutableBigInteger can be fit into long.
+     */
+    private long toLong() {
+<span class="nc bnc" id="L173" title="All 4 branches missed.">        assert (intLen &lt;= 2) : &quot;this MutableBigInteger exceeds the range of long&quot;;</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L175">            return 0;</span>
+<span class="nc" id="L176">        long d = value[offset] &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        return (intLen == 2) ? d &lt;&lt; 32 | (value[offset + 1] &amp; LONG_MASK) : d;</span>
+    }
+
+    /**
+     * Convert this MutableBigInteger to a BigInteger object.
+     */
+    BigInteger toBigInteger(int sign) {
+<span class="nc bnc" id="L184" title="All 4 branches missed.">        if (intLen == 0 || sign == 0)</span>
+<span class="nc" id="L185">            return BigInteger.ZERO;</span>
+<span class="nc" id="L186">        return new BigInteger(getMagnitudeArray(), sign);</span>
+    }
+
+    /**
+     * Converts this number to a nonnegative {@code BigInteger}.
+     */
+    BigInteger toBigInteger() {
+<span class="nc" id="L193">        normalize();</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        return toBigInteger(isZero() ? 0 : 1);</span>
+    }
+
+    /**
+     * Convert this MutableBigInteger to BigDecimal object with the specified sign
+     * and scale.
+     */
+    BigDecimal toBigDecimal(int sign, int scale) {
+<span class="nc bnc" id="L202" title="All 4 branches missed.">        if (intLen == 0 || sign == 0)</span>
+<span class="nc" id="L203">            return BigDecimal.zeroValueOf(scale);</span>
+<span class="nc" id="L204">        int[] mag = getMagnitudeArray();</span>
+<span class="nc" id="L205">        int len = mag.length;</span>
+<span class="nc" id="L206">        int d = mag[0];</span>
+        // If this MutableBigInteger can't be fit into long, we need to
+        // make a BigInteger object for the resultant BigDecimal object.
+<span class="nc bnc" id="L209" title="All 6 branches missed.">        if (len &gt; 2 || (d &lt; 0 &amp;&amp; len == 2))</span>
+<span class="nc" id="L210">            return new BigDecimal(new BigInteger(mag, sign), INFLATED, scale, 0);</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        long v = (len == 2) ?</span>
+<span class="nc" id="L212">            ((mag[1] &amp; LONG_MASK) | (d &amp; LONG_MASK) &lt;&lt; 32) :</span>
+<span class="nc" id="L213">            d &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        return BigDecimal.valueOf(sign == -1 ? -v : v, scale);</span>
+    }
+
+    /**
+     * This is for internal use in converting from a MutableBigInteger
+     * object into a long value given a specified sign.
+     * returns INFLATED if value is not fit into long
+     */
+    long toCompactValue(int sign) {
+<span class="nc bnc" id="L223" title="All 4 branches missed.">        if (intLen == 0 || sign == 0)</span>
+<span class="nc" id="L224">            return 0L;</span>
+<span class="nc" id="L225">        int[] mag = getMagnitudeArray();</span>
+<span class="nc" id="L226">        int len = mag.length;</span>
+<span class="nc" id="L227">        int d = mag[0];</span>
+        // If this MutableBigInteger can not be fitted into long, we need to
+        // make a BigInteger object for the resultant BigDecimal object.
+<span class="nc bnc" id="L230" title="All 6 branches missed.">        if (len &gt; 2 || (d &lt; 0 &amp;&amp; len == 2))</span>
+<span class="nc" id="L231">            return INFLATED;</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        long v = (len == 2) ?</span>
+<span class="nc" id="L233">            ((mag[1] &amp; LONG_MASK) | (d &amp; LONG_MASK) &lt;&lt; 32) :</span>
+<span class="nc" id="L234">            d &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        return sign == -1 ? -v : v;</span>
+    }
+
+    /**
+     * Clear out a MutableBigInteger for reuse.
+     */
+    void clear() {
+<span class="nc" id="L242">        offset = intLen = 0;</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        for (int index=0, n=value.length; index &lt; n; index++)</span>
+<span class="nc" id="L244">            value[index] = 0;</span>
+<span class="nc" id="L245">    }</span>
+
+    /**
+     * Set a MutableBigInteger to zero, removing its offset.
+     */
+    void reset() {
+<span class="nc" id="L251">        offset = intLen = 0;</span>
+<span class="nc" id="L252">    }</span>
+
+    /**
+     * Compare the magnitude of two MutableBigIntegers. Returns -1, 0 or 1
+     * as this MutableBigInteger is numerically less than, equal to, or
+     * greater than {@code b}.
+     */
+    final int compare(MutableBigInteger b) {
+<span class="nc" id="L260">        int blen = b.intLen;</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if (intLen &lt; blen)</span>
+<span class="nc" id="L262">            return -1;</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (intLen &gt; blen)</span>
+<span class="nc" id="L264">           return 1;</span>
+
+        // Add Integer.MIN_VALUE to make the comparison act as unsigned integer
+        // comparison.
+<span class="nc" id="L268">        int[] bval = b.value;</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        for (int i = offset, j = b.offset; i &lt; intLen + offset; i++, j++) {</span>
+<span class="nc" id="L270">            int b1 = value[i] + 0x80000000;</span>
+<span class="nc" id="L271">            int b2 = bval[j]  + 0x80000000;</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (b1 &lt; b2)</span>
+<span class="nc" id="L273">                return -1;</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            if (b1 &gt; b2)</span>
+<span class="nc" id="L275">                return 1;</span>
+        }
+<span class="nc" id="L277">        return 0;</span>
+    }
+
+    /**
+     * Returns a value equal to what {@code b.leftShift(32*ints); return compare(b);}
+     * would return, but doesn't change the value of {@code b}.
+     */
+    private int compareShifted(MutableBigInteger b, int ints) {
+<span class="nc" id="L285">        int blen = b.intLen;</span>
+<span class="nc" id="L286">        int alen = intLen - ints;</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (alen &lt; blen)</span>
+<span class="nc" id="L288">            return -1;</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        if (alen &gt; blen)</span>
+<span class="nc" id="L290">           return 1;</span>
+
+        // Add Integer.MIN_VALUE to make the comparison act as unsigned integer
+        // comparison.
+<span class="nc" id="L294">        int[] bval = b.value;</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        for (int i = offset, j = b.offset; i &lt; alen + offset; i++, j++) {</span>
+<span class="nc" id="L296">            int b1 = value[i] + 0x80000000;</span>
+<span class="nc" id="L297">            int b2 = bval[j]  + 0x80000000;</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">            if (b1 &lt; b2)</span>
+<span class="nc" id="L299">                return -1;</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            if (b1 &gt; b2)</span>
+<span class="nc" id="L301">                return 1;</span>
+        }
+<span class="nc" id="L303">        return 0;</span>
+    }
+
+    /**
+     * Compare this against half of a MutableBigInteger object (Needed for
+     * remainder tests).
+     * Assumes no leading unnecessary zeros, which holds for results
+     * from divide().
+     */
+    final int compareHalf(MutableBigInteger b) {
+<span class="nc" id="L313">        int blen = b.intLen;</span>
+<span class="nc" id="L314">        int len = intLen;</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        if (len &lt;= 0)</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            return blen &lt;= 0 ? 0 : -1;</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        if (len &gt; blen)</span>
+<span class="nc" id="L318">            return 1;</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (len &lt; blen - 1)</span>
+<span class="nc" id="L320">            return -1;</span>
+<span class="nc" id="L321">        int[] bval = b.value;</span>
+<span class="nc" id="L322">        int bstart = 0;</span>
+<span class="nc" id="L323">        int carry = 0;</span>
+        // Only 2 cases left:len == blen or len == blen - 1
+<span class="nc bnc" id="L325" title="All 2 branches missed.">        if (len != blen) { // len == blen - 1</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if (bval[bstart] == 1) {</span>
+<span class="nc" id="L327">                ++bstart;</span>
+<span class="nc" id="L328">                carry = 0x80000000;</span>
+            } else
+<span class="nc" id="L330">                return -1;</span>
+        }
+        // compare values with right-shifted values of b,
+        // carrying shifted-out bits across words
+<span class="nc" id="L334">        int[] val = value;</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        for (int i = offset, j = bstart; i &lt; len + offset;) {</span>
+<span class="nc" id="L336">            int bv = bval[j++];</span>
+<span class="nc" id="L337">            long hb = ((bv &gt;&gt;&gt; 1) + carry) &amp; LONG_MASK;</span>
+<span class="nc" id="L338">            long v = val[i++] &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">            if (v != hb)</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">                return v &lt; hb ? -1 : 1;</span>
+<span class="nc" id="L341">            carry = (bv &amp; 1) &lt;&lt; 31; // carray will be either 0x80000000 or 0</span>
+<span class="nc" id="L342">        }</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        return carry == 0 ? 0 : -1;</span>
+    }
+
+    /**
+     * Return the index of the lowest set bit in this MutableBigInteger. If the
+     * magnitude of this MutableBigInteger is zero, -1 is returned.
+     */
+    private final int getLowestSetBit() {
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L352">            return -1;</span>
+        int j, b;
+<span class="nc bnc" id="L354" title="All 4 branches missed.">        for (j=intLen-1; (j &gt; 0) &amp;&amp; (value[j+offset] == 0); j--)</span>
+            ;
+<span class="nc" id="L356">        b = value[j+offset];</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (b == 0)</span>
+<span class="nc" id="L358">            return -1;</span>
+<span class="nc" id="L359">        return ((intLen-1-j)&lt;&lt;5) + Integer.numberOfTrailingZeros(b);</span>
+    }
+
+    /**
+     * Return the int in use in this MutableBigInteger at the specified
+     * index. This method is not used because it is not inlined on all
+     * platforms.
+     */
+    private final int getInt(int index) {
+<span class="nc" id="L368">        return value[offset+index];</span>
+    }
+
+    /**
+     * Return a long which is equal to the unsigned value of the int in
+     * use in this MutableBigInteger at the specified index. This method is
+     * not used because it is not inlined on all platforms.
+     */
+    private final long getLong(int index) {
+<span class="nc" id="L377">        return value[offset+index] &amp; LONG_MASK;</span>
+    }
+
+    /**
+     * Ensure that the MutableBigInteger is in normal form, specifically
+     * making sure that there are no leading zeros, and that if the
+     * magnitude is zero, then intLen is zero.
+     */
+    final void normalize() {
+<span class="nc bnc" id="L386" title="All 2 branches missed.">        if (intLen == 0) {</span>
+<span class="nc" id="L387">            offset = 0;</span>
+<span class="nc" id="L388">            return;</span>
+        }
+
+<span class="nc" id="L391">        int index = offset;</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        if (value[index] != 0)</span>
+<span class="nc" id="L393">            return;</span>
+
+<span class="nc" id="L395">        int indexBound = index+intLen;</span>
+        do {
+<span class="nc" id="L397">            index++;</span>
+<span class="nc bnc" id="L398" title="All 4 branches missed.">        } while(index &lt; indexBound &amp;&amp; value[index] == 0);</span>
+
+<span class="nc" id="L400">        int numZeros = index - offset;</span>
+<span class="nc" id="L401">        intLen -= numZeros;</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">        offset = (intLen == 0 ?  0 : offset+numZeros);</span>
+<span class="nc" id="L403">    }</span>
+
+    /**
+     * If this MutableBigInteger cannot hold len words, increase the size
+     * of the value array to len words.
+     */
+    protected final void ensureCapacity(int len) {
+<span class="nc bnc" id="L410" title="All 2 branches missed.">        if (value.length &lt; len) {</span>
+<span class="nc" id="L411">            value = new int[len];</span>
+<span class="nc" id="L412">            offset = 0;</span>
+<span class="nc" id="L413">            intLen = len;</span>
+        }
+<span class="nc" id="L415">    }</span>
+
+    /**
+     * Convert this MutableBigInteger into an int array with no leading
+     * zeros, of a length that is equal to this MutableBigInteger's intLen.
+     */
+    int[] toIntArray() {
+<span class="nc" id="L422">        int[] result = new int[intLen];</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        for(int i=0; i &lt; intLen; i++)</span>
+<span class="nc" id="L424">            result[i] = value[offset+i];</span>
+<span class="nc" id="L425">        return result;</span>
+    }
+
+    /**
+     * Sets the int at index+offset in this MutableBigInteger to val.
+     * This does not get inlined on all platforms so it is not used
+     * as often as originally intended.
+     */
+    void setInt(int index, int val) {
+<span class="nc" id="L434">        value[offset + index] = val;</span>
+<span class="nc" id="L435">    }</span>
+
+    /**
+     * Sets this MutableBigInteger's value array to the specified array.
+     * The intLen is set to the specified length.
+     */
+    void setValue(int[] val, int length) {
+<span class="nc" id="L442">        value = val;</span>
+<span class="nc" id="L443">        intLen = length;</span>
+<span class="nc" id="L444">        offset = 0;</span>
+<span class="nc" id="L445">    }</span>
+
+    /**
+     * Sets this MutableBigInteger's value array to a copy of the specified
+     * array. The intLen is set to the length of the new array.
+     */
+    void copyValue(MutableBigInteger src) {
+<span class="nc" id="L452">        int len = src.intLen;</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        if (value.length &lt; len)</span>
+<span class="nc" id="L454">            value = new int[len];</span>
+<span class="nc" id="L455">        System.arraycopy(src.value, src.offset, value, 0, len);</span>
+<span class="nc" id="L456">        intLen = len;</span>
+<span class="nc" id="L457">        offset = 0;</span>
+<span class="nc" id="L458">    }</span>
+
+    /**
+     * Sets this MutableBigInteger's value array to a copy of the specified
+     * array. The intLen is set to the length of the specified array.
+     */
+    void copyValue(int[] val) {
+<span class="nc" id="L465">        int len = val.length;</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (value.length &lt; len)</span>
+<span class="nc" id="L467">            value = new int[len];</span>
+<span class="nc" id="L468">        System.arraycopy(val, 0, value, 0, len);</span>
+<span class="nc" id="L469">        intLen = len;</span>
+<span class="nc" id="L470">        offset = 0;</span>
+<span class="nc" id="L471">    }</span>
+
+    /**
+     * Returns true iff this MutableBigInteger has a value of one.
+     */
+    boolean isOne() {
+<span class="nc bnc" id="L477" title="All 4 branches missed.">        return (intLen == 1) &amp;&amp; (value[offset] == 1);</span>
+    }
+
+    /**
+     * Returns true iff this MutableBigInteger has a value of zero.
+     */
+    boolean isZero() {
+<span class="nc bnc" id="L484" title="All 2 branches missed.">        return (intLen == 0);</span>
+    }
+
+    /**
+     * Returns true iff this MutableBigInteger is even.
+     */
+    boolean isEven() {
+<span class="nc bnc" id="L491" title="All 4 branches missed.">        return (intLen == 0) || ((value[offset + intLen - 1] &amp; 1) == 0);</span>
+    }
+
+    /**
+     * Returns true iff this MutableBigInteger is odd.
+     */
+    boolean isOdd() {
+<span class="nc bnc" id="L498" title="All 4 branches missed.">        return isZero() ? false : ((value[offset + intLen - 1] &amp; 1) == 1);</span>
+    }
+
+    /**
+     * Returns true iff this MutableBigInteger is in normal form. A
+     * MutableBigInteger is in normal form if it has no leading zeros
+     * after the offset, and intLen + offset &lt;= value.length.
+     */
+    boolean isNormal() {
+<span class="nc bnc" id="L507" title="All 2 branches missed.">        if (intLen + offset &gt; value.length)</span>
+<span class="nc" id="L508">            return false;</span>
+<span class="nc bnc" id="L509" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L510">            return true;</span>
+<span class="nc bnc" id="L511" title="All 2 branches missed.">        return (value[offset] != 0);</span>
+    }
+
+    /**
+     * Returns a String representation of this MutableBigInteger in radix 10.
+     */
+    public String toString() {
+<span class="nc" id="L518">        BigInteger b = toBigInteger(1);</span>
+<span class="nc" id="L519">        return b.toString();</span>
+    }
+
+    /**
+     * Like {@link #rightShift(int)} but {@code n} can be greater than the length of the number.
+     */
+    void safeRightShift(int n) {
+<span class="nc bnc" id="L526" title="All 2 branches missed.">        if (n/32 &gt;= intLen) {</span>
+<span class="nc" id="L527">            reset();</span>
+        } else {
+<span class="nc" id="L529">            rightShift(n);</span>
+        }
+<span class="nc" id="L531">    }</span>
+
+    /**
+     * Right shift this MutableBigInteger n bits. The MutableBigInteger is left
+     * in normal form.
+     */
+    void rightShift(int n) {
+<span class="nc bnc" id="L538" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L539">            return;</span>
+<span class="nc" id="L540">        int nInts = n &gt;&gt;&gt; 5;</span>
+<span class="nc" id="L541">        int nBits = n &amp; 0x1F;</span>
+<span class="nc" id="L542">        this.intLen -= nInts;</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">        if (nBits == 0)</span>
+<span class="nc" id="L544">            return;</span>
+<span class="nc" id="L545">        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">        if (nBits &gt;= bitsInHighWord) {</span>
+<span class="nc" id="L547">            this.primitiveLeftShift(32 - nBits);</span>
+<span class="nc" id="L548">            this.intLen--;</span>
+        } else {
+<span class="nc" id="L550">            primitiveRightShift(nBits);</span>
+        }
+<span class="nc" id="L552">    }</span>
+
+    /**
+     * Like {@link #leftShift(int)} but {@code n} can be zero.
+     */
+    void safeLeftShift(int n) {
+<span class="nc bnc" id="L558" title="All 2 branches missed.">        if (n &gt; 0) {</span>
+<span class="nc" id="L559">            leftShift(n);</span>
+        }
+<span class="nc" id="L561">    }</span>
+
+    /**
+     * Left shift this MutableBigInteger n bits.
+     */
+    void leftShift(int n) {
+        /*
+         * If there is enough storage space in this MutableBigInteger already
+         * the available space will be used. Space to the right of the used
+         * ints in the value array is faster to utilize, so the extra space
+         * will be taken from the right if possible.
+         */
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L574">           return;</span>
+<span class="nc" id="L575">        int nInts = n &gt;&gt;&gt; 5;</span>
+<span class="nc" id="L576">        int nBits = n&amp;0x1F;</span>
+<span class="nc" id="L577">        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);</span>
+
+        // If shift can be done without moving words, do so
+<span class="nc bnc" id="L580" title="All 2 branches missed.">        if (n &lt;= (32-bitsInHighWord)) {</span>
+<span class="nc" id="L581">            primitiveLeftShift(nBits);</span>
+<span class="nc" id="L582">            return;</span>
+        }
+
+<span class="nc" id="L585">        int newLen = intLen + nInts +1;</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">        if (nBits &lt;= (32-bitsInHighWord))</span>
+<span class="nc" id="L587">            newLen--;</span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">        if (value.length &lt; newLen) {</span>
+            // The array must grow
+<span class="nc" id="L590">            int[] result = new int[newLen];</span>
+<span class="nc bnc" id="L591" title="All 2 branches missed.">            for (int i=0; i &lt; intLen; i++)</span>
+<span class="nc" id="L592">                result[i] = value[offset+i];</span>
+<span class="nc" id="L593">            setValue(result, newLen);</span>
+<span class="nc bnc" id="L594" title="All 2 branches missed.">        } else if (value.length - offset &gt;= newLen) {</span>
+            // Use space on right
+<span class="nc bnc" id="L596" title="All 2 branches missed.">            for(int i=0; i &lt; newLen - intLen; i++)</span>
+<span class="nc" id="L597">                value[offset+intLen+i] = 0;</span>
+        } else {
+            // Must use space on left
+<span class="nc bnc" id="L600" title="All 2 branches missed.">            for (int i=0; i &lt; intLen; i++)</span>
+<span class="nc" id="L601">                value[i] = value[offset+i];</span>
+<span class="nc bnc" id="L602" title="All 2 branches missed.">            for (int i=intLen; i &lt; newLen; i++)</span>
+<span class="nc" id="L603">                value[i] = 0;</span>
+<span class="nc" id="L604">            offset = 0;</span>
+        }
+<span class="nc" id="L606">        intLen = newLen;</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (nBits == 0)</span>
+<span class="nc" id="L608">            return;</span>
+<span class="nc bnc" id="L609" title="All 2 branches missed.">        if (nBits &lt;= (32-bitsInHighWord))</span>
+<span class="nc" id="L610">            primitiveLeftShift(nBits);</span>
+        else
+<span class="nc" id="L612">            primitiveRightShift(32 -nBits);</span>
+<span class="nc" id="L613">    }</span>
+
+    /**
+     * A primitive used for division. This method adds in one multiple of the
+     * divisor a back to the dividend result at a specified offset. It is used
+     * when qhat was estimated too large, and must be adjusted.
+     */
+    private int divadd(int[] a, int[] result, int offset) {
+<span class="nc" id="L621">        long carry = 0;</span>
+
+<span class="nc bnc" id="L623" title="All 2 branches missed.">        for (int j=a.length-1; j &gt;= 0; j--) {</span>
+<span class="nc" id="L624">            long sum = (a[j] &amp; LONG_MASK) +</span>
+                       (result[j+offset] &amp; LONG_MASK) + carry;
+<span class="nc" id="L626">            result[j+offset] = (int)sum;</span>
+<span class="nc" id="L627">            carry = sum &gt;&gt;&gt; 32;</span>
+        }
+<span class="nc" id="L629">        return (int)carry;</span>
+    }
+
+    /**
+     * This method is used for division. It multiplies an n word input a by one
+     * word input x, and subtracts the n word product from q. This is needed
+     * when subtracting qhat*divisor from dividend.
+     */
+    private int mulsub(int[] q, int[] a, int x, int len, int offset) {
+<span class="nc" id="L638">        long xLong = x &amp; LONG_MASK;</span>
+<span class="nc" id="L639">        long carry = 0;</span>
+<span class="nc" id="L640">        offset += len;</span>
+
+<span class="nc bnc" id="L642" title="All 2 branches missed.">        for (int j=len-1; j &gt;= 0; j--) {</span>
+<span class="nc" id="L643">            long product = (a[j] &amp; LONG_MASK) * xLong + carry;</span>
+<span class="nc" id="L644">            long difference = q[offset] - product;</span>
+<span class="nc" id="L645">            q[offset--] = (int)difference;</span>
+<span class="nc" id="L646">            carry = (product &gt;&gt;&gt; 32)</span>
+<span class="nc bnc" id="L647" title="All 2 branches missed.">                     + (((difference &amp; LONG_MASK) &gt;</span>
+<span class="nc" id="L648">                         (((~(int)product) &amp; LONG_MASK))) ? 1:0);</span>
+        }
+<span class="nc" id="L650">        return (int)carry;</span>
+    }
+
+    /**
+     * The method is the same as mulsun, except the fact that q array is not
+     * updated, the only result of the method is borrow flag.
+     */
+    private int mulsubBorrow(int[] q, int[] a, int x, int len, int offset) {
+<span class="nc" id="L658">        long xLong = x &amp; LONG_MASK;</span>
+<span class="nc" id="L659">        long carry = 0;</span>
+<span class="nc" id="L660">        offset += len;</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">        for (int j=len-1; j &gt;= 0; j--) {</span>
+<span class="nc" id="L662">            long product = (a[j] &amp; LONG_MASK) * xLong + carry;</span>
+<span class="nc" id="L663">            long difference = q[offset--] - product;</span>
+<span class="nc" id="L664">            carry = (product &gt;&gt;&gt; 32)</span>
+<span class="nc bnc" id="L665" title="All 2 branches missed.">                     + (((difference &amp; LONG_MASK) &gt;</span>
+<span class="nc" id="L666">                         (((~(int)product) &amp; LONG_MASK))) ? 1:0);</span>
+        }
+<span class="nc" id="L668">        return (int)carry;</span>
+    }
+
+    /**
+     * Right shift this MutableBigInteger n bits, where n is
+     * less than 32.
+     * Assumes that intLen &gt; 0, n &gt; 0 for speed
+     */
+    private final void primitiveRightShift(int n) {
+<span class="nc" id="L677">        int[] val = value;</span>
+<span class="nc" id="L678">        int n2 = 32 - n;</span>
+<span class="nc bnc" id="L679" title="All 2 branches missed.">        for (int i=offset+intLen-1, c=val[i]; i &gt; offset; i--) {</span>
+<span class="nc" id="L680">            int b = c;</span>
+<span class="nc" id="L681">            c = val[i-1];</span>
+<span class="nc" id="L682">            val[i] = (c &lt;&lt; n2) | (b &gt;&gt;&gt; n);</span>
+        }
+<span class="nc" id="L684">        val[offset] &gt;&gt;&gt;= n;</span>
+<span class="nc" id="L685">    }</span>
+
+    /**
+     * Left shift this MutableBigInteger n bits, where n is
+     * less than 32.
+     * Assumes that intLen &gt; 0, n &gt; 0 for speed
+     */
+    private final void primitiveLeftShift(int n) {
+<span class="nc" id="L693">        int[] val = value;</span>
+<span class="nc" id="L694">        int n2 = 32 - n;</span>
+<span class="nc bnc" id="L695" title="All 2 branches missed.">        for (int i=offset, c=val[i], m=i+intLen-1; i &lt; m; i++) {</span>
+<span class="nc" id="L696">            int b = c;</span>
+<span class="nc" id="L697">            c = val[i+1];</span>
+<span class="nc" id="L698">            val[i] = (b &lt;&lt; n) | (c &gt;&gt;&gt; n2);</span>
+        }
+<span class="nc" id="L700">        val[offset+intLen-1] &lt;&lt;= n;</span>
+<span class="nc" id="L701">    }</span>
+
+    /**
+     * Returns a {@code BigInteger} equal to the {@code n}
+     * low ints of this number.
+     */
+    private BigInteger getLower(int n) {
+<span class="nc bnc" id="L708" title="All 2 branches missed.">        if (isZero()) {</span>
+<span class="nc" id="L709">            return BigInteger.ZERO;</span>
+<span class="nc bnc" id="L710" title="All 2 branches missed.">        } else if (intLen &lt; n) {</span>
+<span class="nc" id="L711">            return toBigInteger(1);</span>
+        } else {
+            // strip zeros
+<span class="nc" id="L714">            int len = n;</span>
+<span class="nc bnc" id="L715" title="All 4 branches missed.">            while (len &gt; 0 &amp;&amp; value[offset+intLen-len] == 0)</span>
+<span class="nc" id="L716">                len--;</span>
+<span class="nc bnc" id="L717" title="All 2 branches missed.">            int sign = len &gt; 0 ? 1 : 0;</span>
+<span class="nc" id="L718">            return new BigInteger(Arrays.copyOfRange(value, offset+intLen-len, offset+intLen), sign);</span>
+        }
+    }
+
+    /**
+     * Discards all ints whose index is greater than {@code n}.
+     */
+    private void keepLower(int n) {
+<span class="nc bnc" id="L726" title="All 2 branches missed.">        if (intLen &gt;= n) {</span>
+<span class="nc" id="L727">            offset += intLen - n;</span>
+<span class="nc" id="L728">            intLen = n;</span>
+        }
+<span class="nc" id="L730">    }</span>
+
+    /**
+     * Adds the contents of two MutableBigInteger objects.The result
+     * is placed within this MutableBigInteger.
+     * The contents of the addend are not changed.
+     */
+    void add(MutableBigInteger addend) {
+<span class="nc" id="L738">        int x = intLen;</span>
+<span class="nc" id="L739">        int y = addend.intLen;</span>
+<span class="nc bnc" id="L740" title="All 2 branches missed.">        int resultLen = (intLen &gt; addend.intLen ? intLen : addend.intLen);</span>
+<span class="nc bnc" id="L741" title="All 2 branches missed.">        int[] result = (value.length &lt; resultLen ? new int[resultLen] : value);</span>
+
+<span class="nc" id="L743">        int rstart = result.length-1;</span>
+        long sum;
+<span class="nc" id="L745">        long carry = 0;</span>
+
+        // Add common parts of both numbers
+<span class="nc bnc" id="L748" title="All 4 branches missed.">        while(x &gt; 0 &amp;&amp; y &gt; 0) {</span>
+<span class="nc" id="L749">            x--; y--;</span>
+<span class="nc" id="L750">            sum = (value[x+offset] &amp; LONG_MASK) +</span>
+                (addend.value[y+addend.offset] &amp; LONG_MASK) + carry;
+<span class="nc" id="L752">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L753">            carry = sum &gt;&gt;&gt; 32;</span>
+        }
+
+        // Add remainder of the longer number
+<span class="nc bnc" id="L757" title="All 2 branches missed.">        while(x &gt; 0) {</span>
+<span class="nc" id="L758">            x--;</span>
+<span class="nc bnc" id="L759" title="All 6 branches missed.">            if (carry == 0 &amp;&amp; result == value &amp;&amp; rstart == (x + offset))</span>
+<span class="nc" id="L760">                return;</span>
+<span class="nc" id="L761">            sum = (value[x+offset] &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L762">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L763">            carry = sum &gt;&gt;&gt; 32;</span>
+        }
+<span class="nc bnc" id="L765" title="All 2 branches missed.">        while(y &gt; 0) {</span>
+<span class="nc" id="L766">            y--;</span>
+<span class="nc" id="L767">            sum = (addend.value[y+addend.offset] &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L768">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L769">            carry = sum &gt;&gt;&gt; 32;</span>
+        }
+
+<span class="nc bnc" id="L772" title="All 2 branches missed.">        if (carry &gt; 0) { // Result must grow in length</span>
+<span class="nc" id="L773">            resultLen++;</span>
+<span class="nc bnc" id="L774" title="All 2 branches missed.">            if (result.length &lt; resultLen) {</span>
+<span class="nc" id="L775">                int temp[] = new int[resultLen];</span>
+                // Result one word longer from carry-out; copy low-order
+                // bits into new result.
+<span class="nc" id="L778">                System.arraycopy(result, 0, temp, 1, result.length);</span>
+<span class="nc" id="L779">                temp[0] = 1;</span>
+<span class="nc" id="L780">                result = temp;</span>
+<span class="nc" id="L781">            } else {</span>
+<span class="nc" id="L782">                result[rstart--] = 1;</span>
+            }
+        }
+
+<span class="nc" id="L786">        value = result;</span>
+<span class="nc" id="L787">        intLen = resultLen;</span>
+<span class="nc" id="L788">        offset = result.length - resultLen;</span>
+<span class="nc" id="L789">    }</span>
+
+    /**
+     * Adds the value of {@code addend} shifted {@code n} ints to the left.
+     * Has the same effect as {@code addend.leftShift(32*ints); add(addend);}
+     * but doesn't change the value of {@code addend}.
+     */
+    void addShifted(MutableBigInteger addend, int n) {
+<span class="nc bnc" id="L797" title="All 2 branches missed.">        if (addend.isZero()) {</span>
+<span class="nc" id="L798">            return;</span>
+        }
+
+<span class="nc" id="L801">        int x = intLen;</span>
+<span class="nc" id="L802">        int y = addend.intLen + n;</span>
+<span class="nc bnc" id="L803" title="All 2 branches missed.">        int resultLen = (intLen &gt; y ? intLen : y);</span>
+<span class="nc bnc" id="L804" title="All 2 branches missed.">        int[] result = (value.length &lt; resultLen ? new int[resultLen] : value);</span>
+
+<span class="nc" id="L806">        int rstart = result.length-1;</span>
+        long sum;
+<span class="nc" id="L808">        long carry = 0;</span>
+
+        // Add common parts of both numbers
+<span class="nc bnc" id="L811" title="All 4 branches missed.">        while (x &gt; 0 &amp;&amp; y &gt; 0) {</span>
+<span class="nc" id="L812">            x--; y--;</span>
+<span class="nc bnc" id="L813" title="All 2 branches missed.">            int bval = y+addend.offset &lt; addend.value.length ? addend.value[y+addend.offset] : 0;</span>
+<span class="nc" id="L814">            sum = (value[x+offset] &amp; LONG_MASK) +</span>
+                (bval &amp; LONG_MASK) + carry;
+<span class="nc" id="L816">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L817">            carry = sum &gt;&gt;&gt; 32;</span>
+<span class="nc" id="L818">        }</span>
+
+        // Add remainder of the longer number
+<span class="nc bnc" id="L821" title="All 2 branches missed.">        while (x &gt; 0) {</span>
+<span class="nc" id="L822">            x--;</span>
+<span class="nc bnc" id="L823" title="All 6 branches missed.">            if (carry == 0 &amp;&amp; result == value &amp;&amp; rstart == (x + offset)) {</span>
+<span class="nc" id="L824">                return;</span>
+            }
+<span class="nc" id="L826">            sum = (value[x+offset] &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L827">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L828">            carry = sum &gt;&gt;&gt; 32;</span>
+        }
+<span class="nc bnc" id="L830" title="All 2 branches missed.">        while (y &gt; 0) {</span>
+<span class="nc" id="L831">            y--;</span>
+<span class="nc bnc" id="L832" title="All 2 branches missed.">            int bval = y+addend.offset &lt; addend.value.length ? addend.value[y+addend.offset] : 0;</span>
+<span class="nc" id="L833">            sum = (bval &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L834">            result[rstart--] = (int)sum;</span>
+<span class="nc" id="L835">            carry = sum &gt;&gt;&gt; 32;</span>
+<span class="nc" id="L836">        }</span>
+
+<span class="nc bnc" id="L838" title="All 2 branches missed.">        if (carry &gt; 0) { // Result must grow in length</span>
+<span class="nc" id="L839">            resultLen++;</span>
+<span class="nc bnc" id="L840" title="All 2 branches missed.">            if (result.length &lt; resultLen) {</span>
+<span class="nc" id="L841">                int temp[] = new int[resultLen];</span>
+                // Result one word longer from carry-out; copy low-order
+                // bits into new result.
+<span class="nc" id="L844">                System.arraycopy(result, 0, temp, 1, result.length);</span>
+<span class="nc" id="L845">                temp[0] = 1;</span>
+<span class="nc" id="L846">                result = temp;</span>
+<span class="nc" id="L847">            } else {</span>
+<span class="nc" id="L848">                result[rstart--] = 1;</span>
+            }
+        }
+
+<span class="nc" id="L852">        value = result;</span>
+<span class="nc" id="L853">        intLen = resultLen;</span>
+<span class="nc" id="L854">        offset = result.length - resultLen;</span>
+<span class="nc" id="L855">    }</span>
+
+    /**
+     * Like {@link #addShifted(MutableBigInteger, int)} but {@code this.intLen} must
+     * not be greater than {@code n}. In other words, concatenates {@code this}
+     * and {@code addend}.
+     */
+    void addDisjoint(MutableBigInteger addend, int n) {
+<span class="nc bnc" id="L863" title="All 2 branches missed.">        if (addend.isZero())</span>
+<span class="nc" id="L864">            return;</span>
+
+<span class="nc" id="L866">        int x = intLen;</span>
+<span class="nc" id="L867">        int y = addend.intLen + n;</span>
+<span class="nc bnc" id="L868" title="All 2 branches missed.">        int resultLen = (intLen &gt; y ? intLen : y);</span>
+        int[] result;
+<span class="nc bnc" id="L870" title="All 2 branches missed.">        if (value.length &lt; resultLen)</span>
+<span class="nc" id="L871">            result = new int[resultLen];</span>
+        else {
+<span class="nc" id="L873">            result = value;</span>
+<span class="nc" id="L874">            Arrays.fill(value, offset+intLen, value.length, 0);</span>
+        }
+
+<span class="nc" id="L877">        int rstart = result.length-1;</span>
+
+        // copy from this if needed
+<span class="nc" id="L880">        System.arraycopy(value, offset, result, rstart+1-x, x);</span>
+<span class="nc" id="L881">        y -= x;</span>
+<span class="nc" id="L882">        rstart -= x;</span>
+
+<span class="nc" id="L884">        int len = Math.min(y, addend.value.length-addend.offset);</span>
+<span class="nc" id="L885">        System.arraycopy(addend.value, addend.offset, result, rstart+1-y, len);</span>
+
+        // zero the gap
+<span class="nc bnc" id="L888" title="All 2 branches missed.">        for (int i=rstart+1-y+len; i &lt; rstart+1; i++)</span>
+<span class="nc" id="L889">            result[i] = 0;</span>
+
+<span class="nc" id="L891">        value = result;</span>
+<span class="nc" id="L892">        intLen = resultLen;</span>
+<span class="nc" id="L893">        offset = result.length - resultLen;</span>
+<span class="nc" id="L894">    }</span>
+
+    /**
+     * Adds the low {@code n} ints of {@code addend}.
+     */
+    void addLower(MutableBigInteger addend, int n) {
+<span class="nc" id="L900">        MutableBigInteger a = new MutableBigInteger(addend);</span>
+<span class="nc bnc" id="L901" title="All 2 branches missed.">        if (a.offset + a.intLen &gt;= n) {</span>
+<span class="nc" id="L902">            a.offset = a.offset + a.intLen - n;</span>
+<span class="nc" id="L903">            a.intLen = n;</span>
+        }
+<span class="nc" id="L905">        a.normalize();</span>
+<span class="nc" id="L906">        add(a);</span>
+<span class="nc" id="L907">    }</span>
+
+    /**
+     * Subtracts the smaller of this and b from the larger and places the
+     * result into this MutableBigInteger.
+     */
+    int subtract(MutableBigInteger b) {
+<span class="nc" id="L914">        MutableBigInteger a = this;</span>
+
+<span class="nc" id="L916">        int[] result = value;</span>
+<span class="nc" id="L917">        int sign = a.compare(b);</span>
+
+<span class="nc bnc" id="L919" title="All 2 branches missed.">        if (sign == 0) {</span>
+<span class="nc" id="L920">            reset();</span>
+<span class="nc" id="L921">            return 0;</span>
+        }
+<span class="nc bnc" id="L923" title="All 2 branches missed.">        if (sign &lt; 0) {</span>
+<span class="nc" id="L924">            MutableBigInteger tmp = a;</span>
+<span class="nc" id="L925">            a = b;</span>
+<span class="nc" id="L926">            b = tmp;</span>
+        }
+
+<span class="nc" id="L929">        int resultLen = a.intLen;</span>
+<span class="nc bnc" id="L930" title="All 2 branches missed.">        if (result.length &lt; resultLen)</span>
+<span class="nc" id="L931">            result = new int[resultLen];</span>
+
+<span class="nc" id="L933">        long diff = 0;</span>
+<span class="nc" id="L934">        int x = a.intLen;</span>
+<span class="nc" id="L935">        int y = b.intLen;</span>
+<span class="nc" id="L936">        int rstart = result.length - 1;</span>
+
+        // Subtract common parts of both numbers
+<span class="nc bnc" id="L939" title="All 2 branches missed.">        while (y &gt; 0) {</span>
+<span class="nc" id="L940">            x--; y--;</span>
+
+<span class="nc" id="L942">            diff = (a.value[x+a.offset] &amp; LONG_MASK) -</span>
+                   (b.value[y+b.offset] &amp; LONG_MASK) - ((int)-(diff&gt;&gt;32));
+<span class="nc" id="L944">            result[rstart--] = (int)diff;</span>
+        }
+        // Subtract remainder of longer number
+<span class="nc bnc" id="L947" title="All 2 branches missed.">        while (x &gt; 0) {</span>
+<span class="nc" id="L948">            x--;</span>
+<span class="nc" id="L949">            diff = (a.value[x+a.offset] &amp; LONG_MASK) - ((int)-(diff&gt;&gt;32));</span>
+<span class="nc" id="L950">            result[rstart--] = (int)diff;</span>
+        }
+
+<span class="nc" id="L953">        value = result;</span>
+<span class="nc" id="L954">        intLen = resultLen;</span>
+<span class="nc" id="L955">        offset = value.length - resultLen;</span>
+<span class="nc" id="L956">        normalize();</span>
+<span class="nc" id="L957">        return sign;</span>
+    }
+
+    /**
+     * Subtracts the smaller of a and b from the larger and places the result
+     * into the larger. Returns 1 if the answer is in a, -1 if in b, 0 if no
+     * operation was performed.
+     */
+    private int difference(MutableBigInteger b) {
+<span class="nc" id="L966">        MutableBigInteger a = this;</span>
+<span class="nc" id="L967">        int sign = a.compare(b);</span>
+<span class="nc bnc" id="L968" title="All 2 branches missed.">        if (sign == 0)</span>
+<span class="nc" id="L969">            return 0;</span>
+<span class="nc bnc" id="L970" title="All 2 branches missed.">        if (sign &lt; 0) {</span>
+<span class="nc" id="L971">            MutableBigInteger tmp = a;</span>
+<span class="nc" id="L972">            a = b;</span>
+<span class="nc" id="L973">            b = tmp;</span>
+        }
+
+<span class="nc" id="L976">        long diff = 0;</span>
+<span class="nc" id="L977">        int x = a.intLen;</span>
+<span class="nc" id="L978">        int y = b.intLen;</span>
+
+        // Subtract common parts of both numbers
+<span class="nc bnc" id="L981" title="All 2 branches missed.">        while (y &gt; 0) {</span>
+<span class="nc" id="L982">            x--; y--;</span>
+<span class="nc" id="L983">            diff = (a.value[a.offset+ x] &amp; LONG_MASK) -</span>
+                (b.value[b.offset+ y] &amp; LONG_MASK) - ((int)-(diff&gt;&gt;32));
+<span class="nc" id="L985">            a.value[a.offset+x] = (int)diff;</span>
+        }
+        // Subtract remainder of longer number
+<span class="nc bnc" id="L988" title="All 2 branches missed.">        while (x &gt; 0) {</span>
+<span class="nc" id="L989">            x--;</span>
+<span class="nc" id="L990">            diff = (a.value[a.offset+ x] &amp; LONG_MASK) - ((int)-(diff&gt;&gt;32));</span>
+<span class="nc" id="L991">            a.value[a.offset+x] = (int)diff;</span>
+        }
+
+<span class="nc" id="L994">        a.normalize();</span>
+<span class="nc" id="L995">        return sign;</span>
+    }
+
+    /**
+     * Multiply the contents of two MutableBigInteger objects. The result is
+     * placed into MutableBigInteger z. The contents of y are not changed.
+     */
+    void multiply(MutableBigInteger y, MutableBigInteger z) {
+<span class="nc" id="L1003">        int xLen = intLen;</span>
+<span class="nc" id="L1004">        int yLen = y.intLen;</span>
+<span class="nc" id="L1005">        int newLen = xLen + yLen;</span>
+
+        // Put z into an appropriate state to receive product
+<span class="nc bnc" id="L1008" title="All 2 branches missed.">        if (z.value.length &lt; newLen)</span>
+<span class="nc" id="L1009">            z.value = new int[newLen];</span>
+<span class="nc" id="L1010">        z.offset = 0;</span>
+<span class="nc" id="L1011">        z.intLen = newLen;</span>
+
+        // The first iteration is hoisted out of the loop to avoid extra add
+<span class="nc" id="L1014">        long carry = 0;</span>
+<span class="nc bnc" id="L1015" title="All 2 branches missed.">        for (int j=yLen-1, k=yLen+xLen-1; j &gt;= 0; j--, k--) {</span>
+<span class="nc" id="L1016">                long product = (y.value[j+y.offset] &amp; LONG_MASK) *</span>
+                               (value[xLen-1+offset] &amp; LONG_MASK) + carry;
+<span class="nc" id="L1018">                z.value[k] = (int)product;</span>
+<span class="nc" id="L1019">                carry = product &gt;&gt;&gt; 32;</span>
+        }
+<span class="nc" id="L1021">        z.value[xLen-1] = (int)carry;</span>
+
+        // Perform the multiplication word by word
+<span class="nc bnc" id="L1024" title="All 2 branches missed.">        for (int i = xLen-2; i &gt;= 0; i--) {</span>
+<span class="nc" id="L1025">            carry = 0;</span>
+<span class="nc bnc" id="L1026" title="All 2 branches missed.">            for (int j=yLen-1, k=yLen+i; j &gt;= 0; j--, k--) {</span>
+<span class="nc" id="L1027">                long product = (y.value[j+y.offset] &amp; LONG_MASK) *</span>
+                               (value[i+offset] &amp; LONG_MASK) +
+                               (z.value[k] &amp; LONG_MASK) + carry;
+<span class="nc" id="L1030">                z.value[k] = (int)product;</span>
+<span class="nc" id="L1031">                carry = product &gt;&gt;&gt; 32;</span>
+            }
+<span class="nc" id="L1033">            z.value[i] = (int)carry;</span>
+        }
+
+        // Remove leading zeros from product
+<span class="nc" id="L1037">        z.normalize();</span>
+<span class="nc" id="L1038">    }</span>
+
+    /**
+     * Multiply the contents of this MutableBigInteger by the word y. The
+     * result is placed into z.
+     */
+    void mul(int y, MutableBigInteger z) {
+<span class="nc bnc" id="L1045" title="All 2 branches missed.">        if (y == 1) {</span>
+<span class="nc" id="L1046">            z.copyValue(this);</span>
+<span class="nc" id="L1047">            return;</span>
+        }
+
+<span class="nc bnc" id="L1050" title="All 2 branches missed.">        if (y == 0) {</span>
+<span class="nc" id="L1051">            z.clear();</span>
+<span class="nc" id="L1052">            return;</span>
+        }
+
+        // Perform the multiplication word by word
+<span class="nc" id="L1056">        long ylong = y &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L1057" title="All 2 branches missed.">        int[] zval = (z.value.length &lt; intLen+1 ? new int[intLen + 1]</span>
+<span class="nc" id="L1058">                                              : z.value);</span>
+<span class="nc" id="L1059">        long carry = 0;</span>
+<span class="nc bnc" id="L1060" title="All 2 branches missed.">        for (int i = intLen-1; i &gt;= 0; i--) {</span>
+<span class="nc" id="L1061">            long product = ylong * (value[i+offset] &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L1062">            zval[i+1] = (int)product;</span>
+<span class="nc" id="L1063">            carry = product &gt;&gt;&gt; 32;</span>
+        }
+
+<span class="nc bnc" id="L1066" title="All 2 branches missed.">        if (carry == 0) {</span>
+<span class="nc" id="L1067">            z.offset = 1;</span>
+<span class="nc" id="L1068">            z.intLen = intLen;</span>
+        } else {
+<span class="nc" id="L1070">            z.offset = 0;</span>
+<span class="nc" id="L1071">            z.intLen = intLen + 1;</span>
+<span class="nc" id="L1072">            zval[0] = (int)carry;</span>
+        }
+<span class="nc" id="L1074">        z.value = zval;</span>
+<span class="nc" id="L1075">    }</span>
+
+     /**
+     * This method is used for division of an n word dividend by a one word
+     * divisor. The quotient is placed into quotient. The one word divisor is
+     * specified by divisor.
+     *
+     * @return the remainder of the division is returned.
+     *
+     */
+    int divideOneWord(int divisor, MutableBigInteger quotient) {
+<span class="nc" id="L1086">        long divisorLong = divisor &amp; LONG_MASK;</span>
+
+        // Special case of one word dividend
+<span class="nc bnc" id="L1089" title="All 2 branches missed.">        if (intLen == 1) {</span>
+<span class="nc" id="L1090">            long dividendValue = value[offset] &amp; LONG_MASK;</span>
+<span class="nc" id="L1091">            int q = (int) (dividendValue / divisorLong);</span>
+<span class="nc" id="L1092">            int r = (int) (dividendValue - q * divisorLong);</span>
+<span class="nc" id="L1093">            quotient.value[0] = q;</span>
+<span class="nc bnc" id="L1094" title="All 2 branches missed.">            quotient.intLen = (q == 0) ? 0 : 1;</span>
+<span class="nc" id="L1095">            quotient.offset = 0;</span>
+<span class="nc" id="L1096">            return r;</span>
+        }
+
+<span class="nc bnc" id="L1099" title="All 2 branches missed.">        if (quotient.value.length &lt; intLen)</span>
+<span class="nc" id="L1100">            quotient.value = new int[intLen];</span>
+<span class="nc" id="L1101">        quotient.offset = 0;</span>
+<span class="nc" id="L1102">        quotient.intLen = intLen;</span>
+
+        // Normalize the divisor
+<span class="nc" id="L1105">        int shift = Integer.numberOfLeadingZeros(divisor);</span>
+
+<span class="nc" id="L1107">        int rem = value[offset];</span>
+<span class="nc" id="L1108">        long remLong = rem &amp; LONG_MASK;</span>
+<span class="nc bnc" id="L1109" title="All 2 branches missed.">        if (remLong &lt; divisorLong) {</span>
+<span class="nc" id="L1110">            quotient.value[0] = 0;</span>
+        } else {
+<span class="nc" id="L1112">            quotient.value[0] = (int)(remLong / divisorLong);</span>
+<span class="nc" id="L1113">            rem = (int) (remLong - (quotient.value[0] * divisorLong));</span>
+<span class="nc" id="L1114">            remLong = rem &amp; LONG_MASK;</span>
+        }
+<span class="nc" id="L1116">        int xlen = intLen;</span>
+<span class="nc bnc" id="L1117" title="All 2 branches missed.">        while (--xlen &gt; 0) {</span>
+<span class="nc" id="L1118">            long dividendEstimate = (remLong &lt;&lt; 32) |</span>
+                    (value[offset + intLen - xlen] &amp; LONG_MASK);
+            int q;
+<span class="nc bnc" id="L1121" title="All 2 branches missed.">            if (dividendEstimate &gt;= 0) {</span>
+<span class="nc" id="L1122">                q = (int) (dividendEstimate / divisorLong);</span>
+<span class="nc" id="L1123">                rem = (int) (dividendEstimate - q * divisorLong);</span>
+            } else {
+<span class="nc" id="L1125">                long tmp = divWord(dividendEstimate, divisor);</span>
+<span class="nc" id="L1126">                q = (int) (tmp &amp; LONG_MASK);</span>
+<span class="nc" id="L1127">                rem = (int) (tmp &gt;&gt;&gt; 32);</span>
+            }
+<span class="nc" id="L1129">            quotient.value[intLen - xlen] = q;</span>
+<span class="nc" id="L1130">            remLong = rem &amp; LONG_MASK;</span>
+<span class="nc" id="L1131">        }</span>
+
+<span class="nc" id="L1133">        quotient.normalize();</span>
+        // Unnormalize
+<span class="nc bnc" id="L1135" title="All 2 branches missed.">        if (shift &gt; 0)</span>
+<span class="nc" id="L1136">            return rem % divisor;</span>
+        else
+<span class="nc" id="L1138">            return rem;</span>
+    }
+
+    /**
+     * Calculates the quotient of this div b and places the quotient in the
+     * provided MutableBigInteger objects and the remainder object is returned.
+     *
+     */
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
+<span class="nc" id="L1147">        return divide(b,quotient,true);</span>
+    }
+
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
+<span class="nc bnc" id="L1151" title="All 4 branches missed.">        if (b.intLen &lt; BigInteger.BURNIKEL_ZIEGLER_THRESHOLD ||</span>
+                intLen - b.intLen &lt; BigInteger.BURNIKEL_ZIEGLER_OFFSET) {
+<span class="nc" id="L1153">            return divideKnuth(b, quotient, needRemainder);</span>
+        } else {
+<span class="nc" id="L1155">            return divideAndRemainderBurnikelZiegler(b, quotient);</span>
+        }
+    }
+
+    /**
+     * @see #divideKnuth(MutableBigInteger, MutableBigInteger, boolean)
+     */
+    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient) {
+<span class="nc" id="L1163">        return divideKnuth(b,quotient,true);</span>
+    }
+
+    /**
+     * Calculates the quotient of this div b and places the quotient in the
+     * provided MutableBigInteger objects and the remainder object is returned.
+     *
+     * Uses Algorithm D in Knuth section 4.3.1.
+     * Many optimizations to that algorithm have been adapted from the Colin
+     * Plumb C library.
+     * It special cases one word divisors for speed. The content of b is not
+     * changed.
+     *
+     */
+    MutableBigInteger divideKnuth(MutableBigInteger b, MutableBigInteger quotient, boolean needRemainder) {
+<span class="nc bnc" id="L1178" title="All 2 branches missed.">        if (b.intLen == 0)</span>
+<span class="nc" id="L1179">            throw new ArithmeticException(&quot;BigInteger divide by zero&quot;);</span>
+
+        // Dividend is zero
+<span class="nc bnc" id="L1182" title="All 2 branches missed.">        if (intLen == 0) {</span>
+<span class="nc" id="L1183">            quotient.intLen = quotient.offset = 0;</span>
+<span class="nc bnc" id="L1184" title="All 2 branches missed.">            return needRemainder ? new MutableBigInteger() : null;</span>
+        }
+
+<span class="nc" id="L1187">        int cmp = compare(b);</span>
+        // Dividend less than divisor
+<span class="nc bnc" id="L1189" title="All 2 branches missed.">        if (cmp &lt; 0) {</span>
+<span class="nc" id="L1190">            quotient.intLen = quotient.offset = 0;</span>
+<span class="nc bnc" id="L1191" title="All 2 branches missed.">            return needRemainder ? new MutableBigInteger(this) : null;</span>
+        }
+        // Dividend equal to divisor
+<span class="nc bnc" id="L1194" title="All 2 branches missed.">        if (cmp == 0) {</span>
+<span class="nc" id="L1195">            quotient.value[0] = quotient.intLen = 1;</span>
+<span class="nc" id="L1196">            quotient.offset = 0;</span>
+<span class="nc bnc" id="L1197" title="All 2 branches missed.">            return needRemainder ? new MutableBigInteger() : null;</span>
+        }
+
+<span class="nc" id="L1200">        quotient.clear();</span>
+        // Special case one word divisor
+<span class="nc bnc" id="L1202" title="All 2 branches missed.">        if (b.intLen == 1) {</span>
+<span class="nc" id="L1203">            int r = divideOneWord(b.value[b.offset], quotient);</span>
+<span class="nc bnc" id="L1204" title="All 2 branches missed.">            if(needRemainder) {</span>
+<span class="nc bnc" id="L1205" title="All 2 branches missed.">                if (r == 0)</span>
+<span class="nc" id="L1206">                    return new MutableBigInteger();</span>
+<span class="nc" id="L1207">                return new MutableBigInteger(r);</span>
+            } else {
+<span class="nc" id="L1209">                return null;</span>
+            }
+        }
+
+        // Cancel common powers of two if we're above the KNUTH_POW2_* thresholds
+<span class="nc bnc" id="L1214" title="All 2 branches missed.">        if (intLen &gt;= KNUTH_POW2_THRESH_LEN) {</span>
+<span class="nc" id="L1215">            int trailingZeroBits = Math.min(getLowestSetBit(), b.getLowestSetBit());</span>
+<span class="nc bnc" id="L1216" title="All 2 branches missed.">            if (trailingZeroBits &gt;= KNUTH_POW2_THRESH_ZEROS*32) {</span>
+<span class="nc" id="L1217">                MutableBigInteger a = new MutableBigInteger(this);</span>
+<span class="nc" id="L1218">                b = new MutableBigInteger(b);</span>
+<span class="nc" id="L1219">                a.rightShift(trailingZeroBits);</span>
+<span class="nc" id="L1220">                b.rightShift(trailingZeroBits);</span>
+<span class="nc" id="L1221">                MutableBigInteger r = a.divideKnuth(b, quotient);</span>
+<span class="nc" id="L1222">                r.leftShift(trailingZeroBits);</span>
+<span class="nc" id="L1223">                return r;</span>
+            }
+        }
+
+<span class="nc" id="L1227">        return divideMagnitude(b, quotient, needRemainder);</span>
+    }
+
+    /**
+     * Computes {@code this/b} and {@code this%b} using the
+     * &lt;a href=&quot;http://cr.yp.to/bib/1998/burnikel.ps&quot;&gt; Burnikel-Ziegler algorithm&lt;/a&gt;.
+     * This method implements algorithm 3 from pg. 9 of the Burnikel-Ziegler paper.
+     * The parameter beta was chosen to b 2&lt;sup&gt;32&lt;/sup&gt; so almost all shifts are
+     * multiples of 32 bits.&lt;br/&gt;
+     * {@code this} and {@code b} must be nonnegative.
+     * @param b the divisor
+     * @param quotient output parameter for {@code this/b}
+     * @return the remainder
+     */
+    MutableBigInteger divideAndRemainderBurnikelZiegler(MutableBigInteger b, MutableBigInteger quotient) {
+<span class="nc" id="L1242">        int r = intLen;</span>
+<span class="nc" id="L1243">        int s = b.intLen;</span>
+
+        // Clear the quotient
+<span class="nc" id="L1246">        quotient.offset = quotient.intLen = 0;</span>
+
+<span class="nc bnc" id="L1248" title="All 2 branches missed.">        if (r &lt; s) {</span>
+<span class="nc" id="L1249">            return this;</span>
+        } else {
+            // Unlike Knuth division, we don't check for common powers of two here because
+            // BZ already runs faster if both numbers contain powers of two and cancelling them has no
+            // additional benefit.
+
+            // step 1: let m = min{2^k | (2^k)*BURNIKEL_ZIEGLER_THRESHOLD &gt; s}
+<span class="nc" id="L1256">            int m = 1 &lt;&lt; (32-Integer.numberOfLeadingZeros(s/BigInteger.BURNIKEL_ZIEGLER_THRESHOLD));</span>
+
+<span class="nc" id="L1258">            int j = (s+m-1) / m;      // step 2a: j = ceil(s/m)</span>
+<span class="nc" id="L1259">            int n = j * m;            // step 2b: block length in 32-bit units</span>
+<span class="nc" id="L1260">            long n32 = 32L * n;         // block length in bits</span>
+<span class="nc" id="L1261">            int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B &lt; beta^n}</span>
+<span class="nc" id="L1262">            MutableBigInteger bShifted = new MutableBigInteger(b);</span>
+<span class="nc" id="L1263">            bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n</span>
+<span class="nc" id="L1264">            MutableBigInteger aShifted = new MutableBigInteger (this);</span>
+<span class="nc" id="L1265">            aShifted.safeLeftShift(sigma);     // step 4b: shift a by the same amount</span>
+
+            // step 5: t is the number of blocks needed to accommodate a plus one additional bit
+<span class="nc" id="L1268">            int t = (int) ((aShifted.bitLength()+n32) / n32);</span>
+<span class="nc bnc" id="L1269" title="All 2 branches missed.">            if (t &lt; 2) {</span>
+<span class="nc" id="L1270">                t = 2;</span>
+            }
+
+            // step 6: conceptually split a into blocks a[t-1], ..., a[0]
+<span class="nc" id="L1274">            MutableBigInteger a1 = aShifted.getBlock(t-1, t, n);   // the most significant block of a</span>
+
+            // step 7: z[t-2] = [a[t-1], a[t-2]]
+<span class="nc" id="L1277">            MutableBigInteger z = aShifted.getBlock(t-2, t, n);    // the second to most significant block</span>
+<span class="nc" id="L1278">            z.addDisjoint(a1, n);   // z[t-2]</span>
+
+            // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
+<span class="nc" id="L1281">            MutableBigInteger qi = new MutableBigInteger();</span>
+            MutableBigInteger ri;
+<span class="nc bnc" id="L1283" title="All 2 branches missed.">            for (int i=t-2; i &gt; 0; i--) {</span>
+                // step 8a: compute (qi,ri) such that z=b*qi+ri
+<span class="nc" id="L1285">                ri = z.divide2n1n(bShifted, qi);</span>
+
+                // step 8b: z = [ri, a[i-1]]
+<span class="nc" id="L1288">                z = aShifted.getBlock(i-1, t, n);   // a[i-1]</span>
+<span class="nc" id="L1289">                z.addDisjoint(ri, n);</span>
+<span class="nc" id="L1290">                quotient.addShifted(qi, i*n);   // update q (part of step 9)</span>
+            }
+            // final iteration of step 8: do the loop one more time for i=0 but leave z unchanged
+<span class="nc" id="L1293">            ri = z.divide2n1n(bShifted, qi);</span>
+<span class="nc" id="L1294">            quotient.add(qi);</span>
+
+<span class="nc" id="L1296">            ri.rightShift(sigma);   // step 9: a and b were shifted, so shift back</span>
+<span class="nc" id="L1297">            return ri;</span>
+        }
+    }
+
+    /**
+     * This method implements algorithm 1 from pg. 4 of the Burnikel-Ziegler paper.
+     * It divides a 2n-digit number by a n-digit number.&lt;br/&gt;
+     * The parameter beta is 2&lt;sup&gt;32&lt;/sup&gt; so all shifts are multiples of 32 bits.
+     * &lt;br/&gt;
+     * {@code this} must be a nonnegative number such that {@code this.bitLength() &lt;= 2*b.bitLength()}
+     * @param b a positive number such that {@code b.bitLength()} is even
+     * @param quotient output parameter for {@code this/b}
+     * @return {@code this%b}
+     */
+    private MutableBigInteger divide2n1n(MutableBigInteger b, MutableBigInteger quotient) {
+<span class="nc" id="L1312">        int n = b.intLen;</span>
+
+        // step 1: base case
+<span class="nc bnc" id="L1315" title="All 4 branches missed.">        if (n%2 != 0 || n &lt; BigInteger.BURNIKEL_ZIEGLER_THRESHOLD) {</span>
+<span class="nc" id="L1316">            return divideKnuth(b, quotient);</span>
+        }
+
+        // step 2: view this as [a1,a2,a3,a4] where each ai is n/2 ints or less
+<span class="nc" id="L1320">        MutableBigInteger aUpper = new MutableBigInteger(this);</span>
+<span class="nc" id="L1321">        aUpper.safeRightShift(32*(n/2));   // aUpper = [a1,a2,a3]</span>
+<span class="nc" id="L1322">        keepLower(n/2);   // this = a4</span>
+
+        // step 3: q1=aUpper/b, r1=aUpper%b
+<span class="nc" id="L1325">        MutableBigInteger q1 = new MutableBigInteger();</span>
+<span class="nc" id="L1326">        MutableBigInteger r1 = aUpper.divide3n2n(b, q1);</span>
+
+        // step 4: quotient=[r1,this]/b, r2=[r1,this]%b
+<span class="nc" id="L1329">        addDisjoint(r1, n/2);   // this = [r1,this]</span>
+<span class="nc" id="L1330">        MutableBigInteger r2 = divide3n2n(b, quotient);</span>
+
+        // step 5: let quotient=[q1,quotient] and return r2
+<span class="nc" id="L1333">        quotient.addDisjoint(q1, n/2);</span>
+<span class="nc" id="L1334">        return r2;</span>
+    }
+
+    /**
+     * This method implements algorithm 2 from pg. 5 of the Burnikel-Ziegler paper.
+     * It divides a 3n-digit number by a 2n-digit number.&lt;br/&gt;
+     * The parameter beta is 2&lt;sup&gt;32&lt;/sup&gt; so all shifts are multiples of 32 bits.&lt;br/&gt;
+     * &lt;br/&gt;
+     * {@code this} must be a nonnegative number such that {@code 2*this.bitLength() &lt;= 3*b.bitLength()}
+     * @param quotient output parameter for {@code this/b}
+     * @return {@code this%b}
+     */
+    private MutableBigInteger divide3n2n(MutableBigInteger b, MutableBigInteger quotient) {
+<span class="nc" id="L1347">        int n = b.intLen / 2;   // half the length of b in ints</span>
+
+        // step 1: view this as [a1,a2,a3] where each ai is n ints or less; let a12=[a1,a2]
+<span class="nc" id="L1350">        MutableBigInteger a12 = new MutableBigInteger(this);</span>
+<span class="nc" id="L1351">        a12.safeRightShift(32*n);</span>
+
+        // step 2: view b as [b1,b2] where each bi is n ints or less
+<span class="nc" id="L1354">        MutableBigInteger b1 = new MutableBigInteger(b);</span>
+<span class="nc" id="L1355">        b1.safeRightShift(n * 32);</span>
+<span class="nc" id="L1356">        BigInteger b2 = b.getLower(n);</span>
+
+        MutableBigInteger r;
+        MutableBigInteger d;
+<span class="nc bnc" id="L1360" title="All 2 branches missed.">        if (compareShifted(b, n) &lt; 0) {</span>
+            // step 3a: if a1&lt;b1, let quotient=a12/b1 and r=a12%b1
+<span class="nc" id="L1362">            r = a12.divide2n1n(b1, quotient);</span>
+
+            // step 4: d=quotient*b2
+<span class="nc" id="L1365">            d = new MutableBigInteger(quotient.toBigInteger().multiply(b2));</span>
+        } else {
+            // step 3b: if a1&gt;=b1, let quotient=beta^n-1 and r=a12-b1*2^n+b1
+<span class="nc" id="L1368">            quotient.ones(n);</span>
+<span class="nc" id="L1369">            a12.add(b1);</span>
+<span class="nc" id="L1370">            b1.leftShift(32*n);</span>
+<span class="nc" id="L1371">            a12.subtract(b1);</span>
+<span class="nc" id="L1372">            r = a12;</span>
+
+            // step 4: d=quotient*b2=(b2 &lt;&lt; 32*n) - b2
+<span class="nc" id="L1375">            d = new MutableBigInteger(b2);</span>
+<span class="nc" id="L1376">            d.leftShift(32 * n);</span>
+<span class="nc" id="L1377">            d.subtract(new MutableBigInteger(b2));</span>
+        }
+
+        // step 5: r = r*beta^n + a3 - d (paper says a4)
+        // However, don't subtract d until after the while loop so r doesn't become negative
+<span class="nc" id="L1382">        r.leftShift(32 * n);</span>
+<span class="nc" id="L1383">        r.addLower(this, n);</span>
+
+        // step 6: add b until r&gt;=d
+<span class="nc bnc" id="L1386" title="All 2 branches missed.">        while (r.compare(d) &lt; 0) {</span>
+<span class="nc" id="L1387">            r.add(b);</span>
+<span class="nc" id="L1388">            quotient.subtract(MutableBigInteger.ONE);</span>
+        }
+<span class="nc" id="L1390">        r.subtract(d);</span>
+
+<span class="nc" id="L1392">        return r;</span>
+    }
+
+    /**
+     * Returns a {@code MutableBigInteger} containing {@code blockLength} ints from
+     * {@code this} number, starting at {@code index*blockLength}.&lt;br/&gt;
+     * Used by Burnikel-Ziegler division.
+     * @param index the block index
+     * @param numBlocks the total number of blocks in {@code this} number
+     * @param blockLength length of one block in units of 32 bits
+     * @return
+     */
+    private MutableBigInteger getBlock(int index, int numBlocks, int blockLength) {
+<span class="nc" id="L1405">        int blockStart = index * blockLength;</span>
+<span class="nc bnc" id="L1406" title="All 2 branches missed.">        if (blockStart &gt;= intLen) {</span>
+<span class="nc" id="L1407">            return new MutableBigInteger();</span>
+        }
+
+        int blockEnd;
+<span class="nc bnc" id="L1411" title="All 2 branches missed.">        if (index == numBlocks-1) {</span>
+<span class="nc" id="L1412">            blockEnd = intLen;</span>
+        } else {
+<span class="nc" id="L1414">            blockEnd = (index+1) * blockLength;</span>
+        }
+<span class="nc bnc" id="L1416" title="All 2 branches missed.">        if (blockEnd &gt; intLen) {</span>
+<span class="nc" id="L1417">            return new MutableBigInteger();</span>
+        }
+
+<span class="nc" id="L1420">        int[] newVal = Arrays.copyOfRange(value, offset+intLen-blockEnd, offset+intLen-blockStart);</span>
+<span class="nc" id="L1421">        return new MutableBigInteger(newVal);</span>
+    }
+
+    /** @see BigInteger#bitLength() */
+    long bitLength() {
+<span class="nc bnc" id="L1426" title="All 2 branches missed.">        if (intLen == 0)</span>
+<span class="nc" id="L1427">            return 0;</span>
+<span class="nc" id="L1428">        return intLen*32L - Integer.numberOfLeadingZeros(value[offset]);</span>
+    }
+
+    /**
+     * Internally used  to calculate the quotient of this div v and places the
+     * quotient in the provided MutableBigInteger object and the remainder is
+     * returned.
+     *
+     * @return the remainder of the division will be returned.
+     */
+    long divide(long v, MutableBigInteger quotient) {
+<span class="nc bnc" id="L1439" title="All 2 branches missed.">        if (v == 0)</span>
+<span class="nc" id="L1440">            throw new ArithmeticException(&quot;BigInteger divide by zero&quot;);</span>
+
+        // Dividend is zero
+<span class="nc bnc" id="L1443" title="All 2 branches missed.">        if (intLen == 0) {</span>
+<span class="nc" id="L1444">            quotient.intLen = quotient.offset = 0;</span>
+<span class="nc" id="L1445">            return 0;</span>
+        }
+<span class="nc bnc" id="L1447" title="All 2 branches missed.">        if (v &lt; 0)</span>
+<span class="nc" id="L1448">            v = -v;</span>
+
+<span class="nc" id="L1450">        int d = (int)(v &gt;&gt;&gt; 32);</span>
+<span class="nc" id="L1451">        quotient.clear();</span>
+        // Special case on word divisor
+<span class="nc bnc" id="L1453" title="All 2 branches missed.">        if (d == 0)</span>
+<span class="nc" id="L1454">            return divideOneWord((int)v, quotient) &amp; LONG_MASK;</span>
+        else {
+<span class="nc" id="L1456">            return divideLongMagnitude(v, quotient).toLong();</span>
+        }
+    }
+
+    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
+<span class="nc" id="L1461">        int n2 = 32 - shift;</span>
+<span class="nc" id="L1462">        int c=src[srcFrom];</span>
+<span class="nc bnc" id="L1463" title="All 2 branches missed.">        for (int i=0; i &lt; srcLen-1; i++) {</span>
+<span class="nc" id="L1464">            int b = c;</span>
+<span class="nc" id="L1465">            c = src[++srcFrom];</span>
+<span class="nc" id="L1466">            dst[dstFrom+i] = (b &lt;&lt; shift) | (c &gt;&gt;&gt; n2);</span>
+        }
+<span class="nc" id="L1468">        dst[dstFrom+srcLen-1] = c &lt;&lt; shift;</span>
+<span class="nc" id="L1469">    }</span>
+
+    /**
+     * Divide this MutableBigInteger by the divisor.
+     * The quotient will be placed into the provided quotient object &amp;
+     * the remainder object is returned.
+     */
+    private MutableBigInteger divideMagnitude(MutableBigInteger div,
+                                              MutableBigInteger quotient,
+                                              boolean needRemainder ) {
+        // assert div.intLen &gt; 1
+        // D1 normalize the divisor
+<span class="nc" id="L1481">        int shift = Integer.numberOfLeadingZeros(div.value[div.offset]);</span>
+        // Copy divisor value to protect divisor
+<span class="nc" id="L1483">        final int dlen = div.intLen;</span>
+        int[] divisor;
+        MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
+<span class="nc bnc" id="L1486" title="All 2 branches missed.">        if (shift &gt; 0) {</span>
+<span class="nc" id="L1487">            divisor = new int[dlen];</span>
+<span class="nc" id="L1488">            copyAndShift(div.value,div.offset,dlen,divisor,0,shift);</span>
+<span class="nc bnc" id="L1489" title="All 2 branches missed.">            if (Integer.numberOfLeadingZeros(value[offset]) &gt;= shift) {</span>
+<span class="nc" id="L1490">                int[] remarr = new int[intLen + 1];</span>
+<span class="nc" id="L1491">                rem = new MutableBigInteger(remarr);</span>
+<span class="nc" id="L1492">                rem.intLen = intLen;</span>
+<span class="nc" id="L1493">                rem.offset = 1;</span>
+<span class="nc" id="L1494">                copyAndShift(value,offset,intLen,remarr,1,shift);</span>
+<span class="nc" id="L1495">            } else {</span>
+<span class="nc" id="L1496">                int[] remarr = new int[intLen + 2];</span>
+<span class="nc" id="L1497">                rem = new MutableBigInteger(remarr);</span>
+<span class="nc" id="L1498">                rem.intLen = intLen+1;</span>
+<span class="nc" id="L1499">                rem.offset = 1;</span>
+<span class="nc" id="L1500">                int rFrom = offset;</span>
+<span class="nc" id="L1501">                int c=0;</span>
+<span class="nc" id="L1502">                int n2 = 32 - shift;</span>
+<span class="nc bnc" id="L1503" title="All 2 branches missed.">                for (int i=1; i &lt; intLen+1; i++,rFrom++) {</span>
+<span class="nc" id="L1504">                    int b = c;</span>
+<span class="nc" id="L1505">                    c = value[rFrom];</span>
+<span class="nc" id="L1506">                    remarr[i] = (b &lt;&lt; shift) | (c &gt;&gt;&gt; n2);</span>
+                }
+<span class="nc" id="L1508">                remarr[intLen+1] = c &lt;&lt; shift;</span>
+<span class="nc" id="L1509">            }</span>
+        } else {
+<span class="nc" id="L1511">            divisor = Arrays.copyOfRange(div.value, div.offset, div.offset + div.intLen);</span>
+<span class="nc" id="L1512">            rem = new MutableBigInteger(new int[intLen + 1]);</span>
+<span class="nc" id="L1513">            System.arraycopy(value, offset, rem.value, 1, intLen);</span>
+<span class="nc" id="L1514">            rem.intLen = intLen;</span>
+<span class="nc" id="L1515">            rem.offset = 1;</span>
+        }
+
+<span class="nc" id="L1518">        int nlen = rem.intLen;</span>
+
+        // Set the quotient size
+<span class="nc" id="L1521">        final int limit = nlen - dlen + 1;</span>
+<span class="nc bnc" id="L1522" title="All 2 branches missed.">        if (quotient.value.length &lt; limit) {</span>
+<span class="nc" id="L1523">            quotient.value = new int[limit];</span>
+<span class="nc" id="L1524">            quotient.offset = 0;</span>
+        }
+<span class="nc" id="L1526">        quotient.intLen = limit;</span>
+<span class="nc" id="L1527">        int[] q = quotient.value;</span>
+
+
+        // Must insert leading 0 in rem if its length did not change
+<span class="nc bnc" id="L1531" title="All 2 branches missed.">        if (rem.intLen == nlen) {</span>
+<span class="nc" id="L1532">            rem.offset = 0;</span>
+<span class="nc" id="L1533">            rem.value[0] = 0;</span>
+<span class="nc" id="L1534">            rem.intLen++;</span>
+        }
+
+<span class="nc" id="L1537">        int dh = divisor[0];</span>
+<span class="nc" id="L1538">        long dhLong = dh &amp; LONG_MASK;</span>
+<span class="nc" id="L1539">        int dl = divisor[1];</span>
+
+        // D2 Initialize j
+<span class="nc bnc" id="L1542" title="All 2 branches missed.">        for (int j=0; j &lt; limit-1; j++) {</span>
+            // D3 Calculate qhat
+            // estimate qhat
+<span class="nc" id="L1545">            int qhat = 0;</span>
+<span class="nc" id="L1546">            int qrem = 0;</span>
+<span class="nc" id="L1547">            boolean skipCorrection = false;</span>
+<span class="nc" id="L1548">            int nh = rem.value[j+rem.offset];</span>
+<span class="nc" id="L1549">            int nh2 = nh + 0x80000000;</span>
+<span class="nc" id="L1550">            int nm = rem.value[j+1+rem.offset];</span>
+
+<span class="nc bnc" id="L1552" title="All 2 branches missed.">            if (nh == dh) {</span>
+<span class="nc" id="L1553">                qhat = ~0;</span>
+<span class="nc" id="L1554">                qrem = nh + nm;</span>
+<span class="nc bnc" id="L1555" title="All 2 branches missed.">                skipCorrection = qrem + 0x80000000 &lt; nh2;</span>
+            } else {
+<span class="nc" id="L1557">                long nChunk = (((long)nh) &lt;&lt; 32) | (nm &amp; LONG_MASK);</span>
+<span class="nc bnc" id="L1558" title="All 2 branches missed.">                if (nChunk &gt;= 0) {</span>
+<span class="nc" id="L1559">                    qhat = (int) (nChunk / dhLong);</span>
+<span class="nc" id="L1560">                    qrem = (int) (nChunk - (qhat * dhLong));</span>
+                } else {
+<span class="nc" id="L1562">                    long tmp = divWord(nChunk, dh);</span>
+<span class="nc" id="L1563">                    qhat = (int) (tmp &amp; LONG_MASK);</span>
+<span class="nc" id="L1564">                    qrem = (int) (tmp &gt;&gt;&gt; 32);</span>
+                }
+            }
+
+<span class="nc bnc" id="L1568" title="All 2 branches missed.">            if (qhat == 0)</span>
+<span class="nc" id="L1569">                continue;</span>
+
+<span class="nc bnc" id="L1571" title="All 2 branches missed.">            if (!skipCorrection) { // Correct qhat</span>
+<span class="nc" id="L1572">                long nl = rem.value[j+2+rem.offset] &amp; LONG_MASK;</span>
+<span class="nc" id="L1573">                long rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc" id="L1574">                long estProduct = (dl &amp; LONG_MASK) * (qhat &amp; LONG_MASK);</span>
+
+<span class="nc bnc" id="L1576" title="All 2 branches missed.">                if (unsignedLongCompare(estProduct, rs)) {</span>
+<span class="nc" id="L1577">                    qhat--;</span>
+<span class="nc" id="L1578">                    qrem = (int)((qrem &amp; LONG_MASK) + dhLong);</span>
+<span class="nc bnc" id="L1579" title="All 2 branches missed.">                    if ((qrem &amp; LONG_MASK) &gt;=  dhLong) {</span>
+<span class="nc" id="L1580">                        estProduct -= (dl &amp; LONG_MASK);</span>
+<span class="nc" id="L1581">                        rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc bnc" id="L1582" title="All 2 branches missed.">                        if (unsignedLongCompare(estProduct, rs))</span>
+<span class="nc" id="L1583">                            qhat--;</span>
+                    }
+                }
+            }
+
+            // D4 Multiply and subtract
+<span class="nc" id="L1589">            rem.value[j+rem.offset] = 0;</span>
+<span class="nc" id="L1590">            int borrow = mulsub(rem.value, divisor, qhat, dlen, j+rem.offset);</span>
+
+            // D5 Test remainder
+<span class="nc bnc" id="L1593" title="All 2 branches missed.">            if (borrow + 0x80000000 &gt; nh2) {</span>
+                // D6 Add back
+<span class="nc" id="L1595">                divadd(divisor, rem.value, j+1+rem.offset);</span>
+<span class="nc" id="L1596">                qhat--;</span>
+            }
+
+            // Store the quotient digit
+<span class="nc" id="L1600">            q[j] = qhat;</span>
+        } // D7 loop on j
+        // D3 Calculate qhat
+        // estimate qhat
+<span class="nc" id="L1604">        int qhat = 0;</span>
+<span class="nc" id="L1605">        int qrem = 0;</span>
+<span class="nc" id="L1606">        boolean skipCorrection = false;</span>
+<span class="nc" id="L1607">        int nh = rem.value[limit - 1 + rem.offset];</span>
+<span class="nc" id="L1608">        int nh2 = nh + 0x80000000;</span>
+<span class="nc" id="L1609">        int nm = rem.value[limit + rem.offset];</span>
+
+<span class="nc bnc" id="L1611" title="All 2 branches missed.">        if (nh == dh) {</span>
+<span class="nc" id="L1612">            qhat = ~0;</span>
+<span class="nc" id="L1613">            qrem = nh + nm;</span>
+<span class="nc bnc" id="L1614" title="All 2 branches missed.">            skipCorrection = qrem + 0x80000000 &lt; nh2;</span>
+        } else {
+<span class="nc" id="L1616">            long nChunk = (((long) nh) &lt;&lt; 32) | (nm &amp; LONG_MASK);</span>
+<span class="nc bnc" id="L1617" title="All 2 branches missed.">            if (nChunk &gt;= 0) {</span>
+<span class="nc" id="L1618">                qhat = (int) (nChunk / dhLong);</span>
+<span class="nc" id="L1619">                qrem = (int) (nChunk - (qhat * dhLong));</span>
+            } else {
+<span class="nc" id="L1621">                long tmp = divWord(nChunk, dh);</span>
+<span class="nc" id="L1622">                qhat = (int) (tmp &amp; LONG_MASK);</span>
+<span class="nc" id="L1623">                qrem = (int) (tmp &gt;&gt;&gt; 32);</span>
+            }
+        }
+<span class="nc bnc" id="L1626" title="All 2 branches missed.">        if (qhat != 0) {</span>
+<span class="nc bnc" id="L1627" title="All 2 branches missed.">            if (!skipCorrection) { // Correct qhat</span>
+<span class="nc" id="L1628">                long nl = rem.value[limit + 1 + rem.offset] &amp; LONG_MASK;</span>
+<span class="nc" id="L1629">                long rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc" id="L1630">                long estProduct = (dl &amp; LONG_MASK) * (qhat &amp; LONG_MASK);</span>
+
+<span class="nc bnc" id="L1632" title="All 2 branches missed.">                if (unsignedLongCompare(estProduct, rs)) {</span>
+<span class="nc" id="L1633">                    qhat--;</span>
+<span class="nc" id="L1634">                    qrem = (int) ((qrem &amp; LONG_MASK) + dhLong);</span>
+<span class="nc bnc" id="L1635" title="All 2 branches missed.">                    if ((qrem &amp; LONG_MASK) &gt;= dhLong) {</span>
+<span class="nc" id="L1636">                        estProduct -= (dl &amp; LONG_MASK);</span>
+<span class="nc" id="L1637">                        rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc bnc" id="L1638" title="All 2 branches missed.">                        if (unsignedLongCompare(estProduct, rs))</span>
+<span class="nc" id="L1639">                            qhat--;</span>
+                    }
+                }
+            }
+
+
+            // D4 Multiply and subtract
+            int borrow;
+<span class="nc" id="L1647">            rem.value[limit - 1 + rem.offset] = 0;</span>
+<span class="nc bnc" id="L1648" title="All 2 branches missed.">            if(needRemainder)</span>
+<span class="nc" id="L1649">                borrow = mulsub(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);</span>
+            else
+<span class="nc" id="L1651">                borrow = mulsubBorrow(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);</span>
+
+            // D5 Test remainder
+<span class="nc bnc" id="L1654" title="All 2 branches missed.">            if (borrow + 0x80000000 &gt; nh2) {</span>
+                // D6 Add back
+<span class="nc bnc" id="L1656" title="All 2 branches missed.">                if(needRemainder)</span>
+<span class="nc" id="L1657">                    divadd(divisor, rem.value, limit - 1 + 1 + rem.offset);</span>
+<span class="nc" id="L1658">                qhat--;</span>
+            }
+
+            // Store the quotient digit
+<span class="nc" id="L1662">            q[(limit - 1)] = qhat;</span>
+        }
+
+
+<span class="nc bnc" id="L1666" title="All 2 branches missed.">        if (needRemainder) {</span>
+            // D8 Unnormalize
+<span class="nc bnc" id="L1668" title="All 2 branches missed.">            if (shift &gt; 0)</span>
+<span class="nc" id="L1669">                rem.rightShift(shift);</span>
+<span class="nc" id="L1670">            rem.normalize();</span>
+        }
+<span class="nc" id="L1672">        quotient.normalize();</span>
+<span class="nc bnc" id="L1673" title="All 2 branches missed.">        return needRemainder ? rem : null;</span>
+    }
+
+    /**
+     * Divide this MutableBigInteger by the divisor represented by positive long
+     * value. The quotient will be placed into the provided quotient object &amp;
+     * the remainder object is returned.
+     */
+    private MutableBigInteger divideLongMagnitude(long ldivisor, MutableBigInteger quotient) {
+        // Remainder starts as dividend with space for a leading zero
+<span class="nc" id="L1683">        MutableBigInteger rem = new MutableBigInteger(new int[intLen + 1]);</span>
+<span class="nc" id="L1684">        System.arraycopy(value, offset, rem.value, 1, intLen);</span>
+<span class="nc" id="L1685">        rem.intLen = intLen;</span>
+<span class="nc" id="L1686">        rem.offset = 1;</span>
+
+<span class="nc" id="L1688">        int nlen = rem.intLen;</span>
+
+<span class="nc" id="L1690">        int limit = nlen - 2 + 1;</span>
+<span class="nc bnc" id="L1691" title="All 2 branches missed.">        if (quotient.value.length &lt; limit) {</span>
+<span class="nc" id="L1692">            quotient.value = new int[limit];</span>
+<span class="nc" id="L1693">            quotient.offset = 0;</span>
+        }
+<span class="nc" id="L1695">        quotient.intLen = limit;</span>
+<span class="nc" id="L1696">        int[] q = quotient.value;</span>
+
+        // D1 normalize the divisor
+<span class="nc" id="L1699">        int shift = Long.numberOfLeadingZeros(ldivisor);</span>
+<span class="nc bnc" id="L1700" title="All 2 branches missed.">        if (shift &gt; 0) {</span>
+<span class="nc" id="L1701">            ldivisor&lt;&lt;=shift;</span>
+<span class="nc" id="L1702">            rem.leftShift(shift);</span>
+        }
+
+        // Must insert leading 0 in rem if its length did not change
+<span class="nc bnc" id="L1706" title="All 2 branches missed.">        if (rem.intLen == nlen) {</span>
+<span class="nc" id="L1707">            rem.offset = 0;</span>
+<span class="nc" id="L1708">            rem.value[0] = 0;</span>
+<span class="nc" id="L1709">            rem.intLen++;</span>
+        }
+
+<span class="nc" id="L1712">        int dh = (int)(ldivisor &gt;&gt;&gt; 32);</span>
+<span class="nc" id="L1713">        long dhLong = dh &amp; LONG_MASK;</span>
+<span class="nc" id="L1714">        int dl = (int)(ldivisor &amp; LONG_MASK);</span>
+
+        // D2 Initialize j
+<span class="nc bnc" id="L1717" title="All 2 branches missed.">        for (int j = 0; j &lt; limit; j++) {</span>
+            // D3 Calculate qhat
+            // estimate qhat
+<span class="nc" id="L1720">            int qhat = 0;</span>
+<span class="nc" id="L1721">            int qrem = 0;</span>
+<span class="nc" id="L1722">            boolean skipCorrection = false;</span>
+<span class="nc" id="L1723">            int nh = rem.value[j + rem.offset];</span>
+<span class="nc" id="L1724">            int nh2 = nh + 0x80000000;</span>
+<span class="nc" id="L1725">            int nm = rem.value[j + 1 + rem.offset];</span>
+
+<span class="nc bnc" id="L1727" title="All 2 branches missed.">            if (nh == dh) {</span>
+<span class="nc" id="L1728">                qhat = ~0;</span>
+<span class="nc" id="L1729">                qrem = nh + nm;</span>
+<span class="nc bnc" id="L1730" title="All 2 branches missed.">                skipCorrection = qrem + 0x80000000 &lt; nh2;</span>
+            } else {
+<span class="nc" id="L1732">                long nChunk = (((long) nh) &lt;&lt; 32) | (nm &amp; LONG_MASK);</span>
+<span class="nc bnc" id="L1733" title="All 2 branches missed.">                if (nChunk &gt;= 0) {</span>
+<span class="nc" id="L1734">                    qhat = (int) (nChunk / dhLong);</span>
+<span class="nc" id="L1735">                    qrem = (int) (nChunk - (qhat * dhLong));</span>
+                } else {
+<span class="nc" id="L1737">                    long tmp = divWord(nChunk, dh);</span>
+<span class="nc" id="L1738">                    qhat =(int)(tmp &amp; LONG_MASK);</span>
+<span class="nc" id="L1739">                    qrem = (int)(tmp&gt;&gt;&gt;32);</span>
+                }
+            }
+
+<span class="nc bnc" id="L1743" title="All 2 branches missed.">            if (qhat == 0)</span>
+<span class="nc" id="L1744">                continue;</span>
+
+<span class="nc bnc" id="L1746" title="All 2 branches missed.">            if (!skipCorrection) { // Correct qhat</span>
+<span class="nc" id="L1747">                long nl = rem.value[j + 2 + rem.offset] &amp; LONG_MASK;</span>
+<span class="nc" id="L1748">                long rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc" id="L1749">                long estProduct = (dl &amp; LONG_MASK) * (qhat &amp; LONG_MASK);</span>
+
+<span class="nc bnc" id="L1751" title="All 2 branches missed.">                if (unsignedLongCompare(estProduct, rs)) {</span>
+<span class="nc" id="L1752">                    qhat--;</span>
+<span class="nc" id="L1753">                    qrem = (int) ((qrem &amp; LONG_MASK) + dhLong);</span>
+<span class="nc bnc" id="L1754" title="All 2 branches missed.">                    if ((qrem &amp; LONG_MASK) &gt;= dhLong) {</span>
+<span class="nc" id="L1755">                        estProduct -= (dl &amp; LONG_MASK);</span>
+<span class="nc" id="L1756">                        rs = ((qrem &amp; LONG_MASK) &lt;&lt; 32) | nl;</span>
+<span class="nc bnc" id="L1757" title="All 2 branches missed.">                        if (unsignedLongCompare(estProduct, rs))</span>
+<span class="nc" id="L1758">                            qhat--;</span>
+                    }
+                }
+            }
+
+            // D4 Multiply and subtract
+<span class="nc" id="L1764">            rem.value[j + rem.offset] = 0;</span>
+<span class="nc" id="L1765">            int borrow = mulsubLong(rem.value, dh, dl, qhat,  j + rem.offset);</span>
+
+            // D5 Test remainder
+<span class="nc bnc" id="L1768" title="All 2 branches missed.">            if (borrow + 0x80000000 &gt; nh2) {</span>
+                // D6 Add back
+<span class="nc" id="L1770">                divaddLong(dh,dl, rem.value, j + 1 + rem.offset);</span>
+<span class="nc" id="L1771">                qhat--;</span>
+            }
+
+            // Store the quotient digit
+<span class="nc" id="L1775">            q[j] = qhat;</span>
+        } // D7 loop on j
+
+        // D8 Unnormalize
+<span class="nc bnc" id="L1779" title="All 2 branches missed.">        if (shift &gt; 0)</span>
+<span class="nc" id="L1780">            rem.rightShift(shift);</span>
+
+<span class="nc" id="L1782">        quotient.normalize();</span>
+<span class="nc" id="L1783">        rem.normalize();</span>
+<span class="nc" id="L1784">        return rem;</span>
+    }
+
+    /**
+     * A primitive used for division by long.
+     * Specialized version of the method divadd.
+     * dh is a high part of the divisor, dl is a low part
+     */
+    private int divaddLong(int dh, int dl, int[] result, int offset) {
+<span class="nc" id="L1793">        long carry = 0;</span>
+
+<span class="nc" id="L1795">        long sum = (dl &amp; LONG_MASK) + (result[1+offset] &amp; LONG_MASK);</span>
+<span class="nc" id="L1796">        result[1+offset] = (int)sum;</span>
+
+<span class="nc" id="L1798">        sum = (dh &amp; LONG_MASK) + (result[offset] &amp; LONG_MASK) + carry;</span>
+<span class="nc" id="L1799">        result[offset] = (int)sum;</span>
+<span class="nc" id="L1800">        carry = sum &gt;&gt;&gt; 32;</span>
+<span class="nc" id="L1801">        return (int)carry;</span>
+    }
+
+    /**
+     * This method is used for division by long.
+     * Specialized version of the method sulsub.
+     * dh is a high part of the divisor, dl is a low part
+     */
+    private int mulsubLong(int[] q, int dh, int dl, int x, int offset) {
+<span class="nc" id="L1810">        long xLong = x &amp; LONG_MASK;</span>
+<span class="nc" id="L1811">        offset += 2;</span>
+<span class="nc" id="L1812">        long product = (dl &amp; LONG_MASK) * xLong;</span>
+<span class="nc" id="L1813">        long difference = q[offset] - product;</span>
+<span class="nc" id="L1814">        q[offset--] = (int)difference;</span>
+<span class="nc" id="L1815">        long carry = (product &gt;&gt;&gt; 32)</span>
+<span class="nc bnc" id="L1816" title="All 2 branches missed.">                 + (((difference &amp; LONG_MASK) &gt;</span>
+<span class="nc" id="L1817">                     (((~(int)product) &amp; LONG_MASK))) ? 1:0);</span>
+<span class="nc" id="L1818">        product = (dh &amp; LONG_MASK) * xLong + carry;</span>
+<span class="nc" id="L1819">        difference = q[offset] - product;</span>
+<span class="nc" id="L1820">        q[offset--] = (int)difference;</span>
+<span class="nc" id="L1821">        carry = (product &gt;&gt;&gt; 32)</span>
+<span class="nc bnc" id="L1822" title="All 2 branches missed.">                 + (((difference &amp; LONG_MASK) &gt;</span>
+<span class="nc" id="L1823">                     (((~(int)product) &amp; LONG_MASK))) ? 1:0);</span>
+<span class="nc" id="L1824">        return (int)carry;</span>
+    }
+
+    /**
+     * Compare two longs as if they were unsigned.
+     * Returns true iff one is bigger than two.
+     */
+    private boolean unsignedLongCompare(long one, long two) {
+<span class="nc bnc" id="L1832" title="All 2 branches missed.">        return (one+Long.MIN_VALUE) &gt; (two+Long.MIN_VALUE);</span>
+    }
+
+    /**
+     * This method divides a long quantity by an int to estimate
+     * qhat for two multi precision numbers. It is used when
+     * the signed value of n is less than zero.
+     * Returns long value where high 32 bits contain remainder value and
+     * low 32 bits contain quotient value.
+     */
+    static long divWord(long n, int d) {
+<span class="nc" id="L1843">        long dLong = d &amp; LONG_MASK;</span>
+        long r;
+        long q;
+<span class="nc bnc" id="L1846" title="All 2 branches missed.">        if (dLong == 1) {</span>
+<span class="nc" id="L1847">            q = (int)n;</span>
+<span class="nc" id="L1848">            r = 0;</span>
+<span class="nc" id="L1849">            return (r &lt;&lt; 32) | (q &amp; LONG_MASK);</span>
+        }
+
+        // Approximate the quotient and remainder
+<span class="nc" id="L1853">        q = (n &gt;&gt;&gt; 1) / (dLong &gt;&gt;&gt; 1);</span>
+<span class="nc" id="L1854">        r = n - q*dLong;</span>
+
+        // Correct the approximation
+<span class="nc bnc" id="L1857" title="All 2 branches missed.">        while (r &lt; 0) {</span>
+<span class="nc" id="L1858">            r += dLong;</span>
+<span class="nc" id="L1859">            q--;</span>
+        }
+<span class="nc bnc" id="L1861" title="All 2 branches missed.">        while (r &gt;= dLong) {</span>
+<span class="nc" id="L1862">            r -= dLong;</span>
+<span class="nc" id="L1863">            q++;</span>
+        }
+        // n - q*dlong == r &amp;&amp; 0 &lt;= r &lt;dLong, hence we're done.
+<span class="nc" id="L1866">        return (r &lt;&lt; 32) | (q &amp; LONG_MASK);</span>
+    }
+
+    /**
+     * Calculate the integer square root {@code floor(sqrt(this))} where
+     * {@code sqrt(.)} denotes the mathematical square root. The contents of
+     * {@code this} are &lt;b&gt;not&lt;/b&gt; changed. The value of {@code this} is assumed
+     * to be non-negative.
+     *
+     * @implNote The implementation is based on the material in Henry S. Warren,
+     * Jr., &lt;i&gt;Hacker's Delight (2nd ed.)&lt;/i&gt; (Addison Wesley, 2013), 279-282.
+     *
+     * @throws ArithmeticException if the value returned by {@code bitLength()}
+     * overflows the range of {@code int}.
+     * @return the integer square root of {@code this}
+     * @since 9
+     */
+    MutableBigInteger sqrt() {
+        // Special cases.
+<span class="nc bnc" id="L1885" title="All 2 branches missed.">        if (this.isZero()) {</span>
+<span class="nc" id="L1886">            return new MutableBigInteger(0);</span>
+<span class="nc bnc" id="L1887" title="All 4 branches missed.">        } else if (this.value.length == 1</span>
+                &amp;&amp; (this.value[0] &amp; LONG_MASK) &lt; 4) { // result is unity
+<span class="nc" id="L1889">            return ONE;</span>
+        }
+
+<span class="nc bnc" id="L1892" title="All 2 branches missed.">        if (bitLength() &lt;= 63) {</span>
+            // Initial estimate is the square root of the positive long value.
+<span class="nc" id="L1894">            long v = new BigInteger(this.value, 1).longValueExact();</span>
+<span class="nc" id="L1895">            long xk = (long)Math.floor(Math.sqrt(v));</span>
+
+            // Refine the estimate.
+            do {
+<span class="nc" id="L1899">                long xk1 = (xk + v/xk)/2;</span>
+
+                // Terminate when non-decreasing.
+<span class="nc bnc" id="L1902" title="All 2 branches missed.">                if (xk1 &gt;= xk) {</span>
+<span class="nc" id="L1903">                    return new MutableBigInteger(new int[] {</span>
+                        (int)(xk &gt;&gt;&gt; 32), (int)(xk &amp; LONG_MASK)
+                    });
+                }
+
+<span class="nc" id="L1908">                xk = xk1;</span>
+<span class="nc" id="L1909">            } while (true);</span>
+        } else {
+            // Set up the initial estimate of the iteration.
+
+            // Obtain the bitLength &gt; 63.
+<span class="nc" id="L1914">            int bitLength = (int) this.bitLength();</span>
+<span class="nc bnc" id="L1915" title="All 2 branches missed.">            if (bitLength != this.bitLength()) {</span>
+<span class="nc" id="L1916">                throw new ArithmeticException(&quot;bitLength() integer overflow&quot;);</span>
+            }
+
+            // Determine an even valued right shift into positive long range.
+<span class="nc" id="L1920">            int shift = bitLength - 63;</span>
+<span class="nc bnc" id="L1921" title="All 2 branches missed.">            if (shift % 2 == 1) {</span>
+<span class="nc" id="L1922">                shift++;</span>
+            }
+
+            // Shift the value into positive long range.
+<span class="nc" id="L1926">            MutableBigInteger xk = new MutableBigInteger(this);</span>
+<span class="nc" id="L1927">            xk.rightShift(shift);</span>
+<span class="nc" id="L1928">            xk.normalize();</span>
+
+            // Use the square root of the shifted value as an approximation.
+<span class="nc" id="L1931">            double d = new BigInteger(xk.value, 1).doubleValue();</span>
+<span class="nc" id="L1932">            BigInteger bi = BigInteger.valueOf((long)Math.ceil(Math.sqrt(d)));</span>
+<span class="nc" id="L1933">            xk = new MutableBigInteger(bi.mag);</span>
+
+            // Shift the approximate square root back into the original range.
+<span class="nc" id="L1936">            xk.leftShift(shift / 2);</span>
+
+            // Refine the estimate.
+<span class="nc" id="L1939">            MutableBigInteger xk1 = new MutableBigInteger();</span>
+            do {
+                // xk1 = (xk + n/xk)/2
+<span class="nc" id="L1942">                this.divide(xk, xk1, false);</span>
+<span class="nc" id="L1943">                xk1.add(xk);</span>
+<span class="nc" id="L1944">                xk1.rightShift(1);</span>
+
+                // Terminate when non-decreasing.
+<span class="nc bnc" id="L1947" title="All 2 branches missed.">                if (xk1.compare(xk) &gt;= 0) {</span>
+<span class="nc" id="L1948">                    return xk;</span>
+                }
+
+                // xk = xk1
+<span class="nc" id="L1952">                xk.copyValue(xk1);</span>
+
+<span class="nc" id="L1954">                xk1.reset();</span>
+<span class="nc" id="L1955">            } while (true);</span>
+        }
+    }
+
+    /**
+     * Calculate GCD of this and b. This and b are changed by the computation.
+     */
+    MutableBigInteger hybridGCD(MutableBigInteger b) {
+        // Use Euclid's algorithm until the numbers are approximately the
+        // same length, then use the binary GCD algorithm to find the GCD.
+<span class="nc" id="L1965">        MutableBigInteger a = this;</span>
+<span class="nc" id="L1966">        MutableBigInteger q = new MutableBigInteger();</span>
+
+<span class="nc bnc" id="L1968" title="All 2 branches missed.">        while (b.intLen != 0) {</span>
+<span class="nc bnc" id="L1969" title="All 2 branches missed.">            if (Math.abs(a.intLen - b.intLen) &lt; 2)</span>
+<span class="nc" id="L1970">                return a.binaryGCD(b);</span>
+
+<span class="nc" id="L1972">            MutableBigInteger r = a.divide(b, q);</span>
+<span class="nc" id="L1973">            a = b;</span>
+<span class="nc" id="L1974">            b = r;</span>
+<span class="nc" id="L1975">        }</span>
+<span class="nc" id="L1976">        return a;</span>
+    }
+
+    /**
+     * Calculate GCD of this and v.
+     * Assumes that this and v are not zero.
+     */
+    private MutableBigInteger binaryGCD(MutableBigInteger v) {
+        // Algorithm B from Knuth section 4.5.2
+<span class="nc" id="L1985">        MutableBigInteger u = this;</span>
+<span class="nc" id="L1986">        MutableBigInteger r = new MutableBigInteger();</span>
+
+        // step B1
+<span class="nc" id="L1989">        int s1 = u.getLowestSetBit();</span>
+<span class="nc" id="L1990">        int s2 = v.getLowestSetBit();</span>
+<span class="nc bnc" id="L1991" title="All 2 branches missed.">        int k = (s1 &lt; s2) ? s1 : s2;</span>
+<span class="nc bnc" id="L1992" title="All 2 branches missed.">        if (k != 0) {</span>
+<span class="nc" id="L1993">            u.rightShift(k);</span>
+<span class="nc" id="L1994">            v.rightShift(k);</span>
+        }
+
+        // step B2
+<span class="nc bnc" id="L1998" title="All 2 branches missed.">        boolean uOdd = (k == s1);</span>
+<span class="nc bnc" id="L1999" title="All 2 branches missed.">        MutableBigInteger t = uOdd ? v: u;</span>
+<span class="nc bnc" id="L2000" title="All 2 branches missed.">        int tsign = uOdd ? -1 : 1;</span>
+
+        int lb;
+<span class="nc bnc" id="L2003" title="All 2 branches missed.">        while ((lb = t.getLowestSetBit()) &gt;= 0) {</span>
+            // steps B3 and B4
+<span class="nc" id="L2005">            t.rightShift(lb);</span>
+            // step B5
+<span class="nc bnc" id="L2007" title="All 2 branches missed.">            if (tsign &gt; 0)</span>
+<span class="nc" id="L2008">                u = t;</span>
+            else
+<span class="nc" id="L2010">                v = t;</span>
+
+            // Special case one word numbers
+<span class="nc bnc" id="L2013" title="All 4 branches missed.">            if (u.intLen &lt; 2 &amp;&amp; v.intLen &lt; 2) {</span>
+<span class="nc" id="L2014">                int x = u.value[u.offset];</span>
+<span class="nc" id="L2015">                int y = v.value[v.offset];</span>
+<span class="nc" id="L2016">                x  = binaryGcd(x, y);</span>
+<span class="nc" id="L2017">                r.value[0] = x;</span>
+<span class="nc" id="L2018">                r.intLen = 1;</span>
+<span class="nc" id="L2019">                r.offset = 0;</span>
+<span class="nc bnc" id="L2020" title="All 2 branches missed.">                if (k &gt; 0)</span>
+<span class="nc" id="L2021">                    r.leftShift(k);</span>
+<span class="nc" id="L2022">                return r;</span>
+            }
+
+            // step B6
+<span class="nc bnc" id="L2026" title="All 2 branches missed.">            if ((tsign = u.difference(v)) == 0)</span>
+<span class="nc" id="L2027">                break;</span>
+<span class="nc bnc" id="L2028" title="All 2 branches missed.">            t = (tsign &gt;= 0) ? u : v;</span>
+        }
+
+<span class="nc bnc" id="L2031" title="All 2 branches missed.">        if (k &gt; 0)</span>
+<span class="nc" id="L2032">            u.leftShift(k);</span>
+<span class="nc" id="L2033">        return u;</span>
+    }
+
+    /**
+     * Calculate GCD of a and b interpreted as unsigned integers.
+     */
+    static int binaryGcd(int a, int b) {
+<span class="nc bnc" id="L2040" title="All 2 branches missed.">        if (b == 0)</span>
+<span class="nc" id="L2041">            return a;</span>
+<span class="nc bnc" id="L2042" title="All 2 branches missed.">        if (a == 0)</span>
+<span class="nc" id="L2043">            return b;</span>
+
+        // Right shift a &amp; b till their last bits equal to 1.
+<span class="nc" id="L2046">        int aZeros = Integer.numberOfTrailingZeros(a);</span>
+<span class="nc" id="L2047">        int bZeros = Integer.numberOfTrailingZeros(b);</span>
+<span class="nc" id="L2048">        a &gt;&gt;&gt;= aZeros;</span>
+<span class="nc" id="L2049">        b &gt;&gt;&gt;= bZeros;</span>
+
+<span class="nc bnc" id="L2051" title="All 2 branches missed.">        int t = (aZeros &lt; bZeros ? aZeros : bZeros);</span>
+
+<span class="nc bnc" id="L2053" title="All 2 branches missed.">        while (a != b) {</span>
+<span class="nc bnc" id="L2054" title="All 2 branches missed.">            if ((a+0x80000000) &gt; (b+0x80000000)) {  // a &gt; b as unsigned</span>
+<span class="nc" id="L2055">                a -= b;</span>
+<span class="nc" id="L2056">                a &gt;&gt;&gt;= Integer.numberOfTrailingZeros(a);</span>
+            } else {
+<span class="nc" id="L2058">                b -= a;</span>
+<span class="nc" id="L2059">                b &gt;&gt;&gt;= Integer.numberOfTrailingZeros(b);</span>
+            }
+        }
+<span class="nc" id="L2062">        return a&lt;&lt;t;</span>
+    }
+
+    /**
+     * Returns the modInverse of this mod p. This and p are not affected by
+     * the operation.
+     */
+    MutableBigInteger mutableModInverse(MutableBigInteger p) {
+        // Modulus is odd, use Schroeppel's algorithm
+<span class="nc bnc" id="L2071" title="All 2 branches missed.">        if (p.isOdd())</span>
+<span class="nc" id="L2072">            return modInverse(p);</span>
+
+        // Base and modulus are even, throw exception
+<span class="nc bnc" id="L2075" title="All 2 branches missed.">        if (isEven())</span>
+<span class="nc" id="L2076">            throw new ArithmeticException(&quot;BigInteger not invertible.&quot;);</span>
+
+        // Get even part of modulus expressed as a power of 2
+<span class="nc" id="L2079">        int powersOf2 = p.getLowestSetBit();</span>
+
+        // Construct odd part of modulus
+<span class="nc" id="L2082">        MutableBigInteger oddMod = new MutableBigInteger(p);</span>
+<span class="nc" id="L2083">        oddMod.rightShift(powersOf2);</span>
+
+<span class="nc bnc" id="L2085" title="All 2 branches missed.">        if (oddMod.isOne())</span>
+<span class="nc" id="L2086">            return modInverseMP2(powersOf2);</span>
+
+        // Calculate 1/a mod oddMod
+<span class="nc" id="L2089">        MutableBigInteger oddPart = modInverse(oddMod);</span>
+
+        // Calculate 1/a mod evenMod
+<span class="nc" id="L2092">        MutableBigInteger evenPart = modInverseMP2(powersOf2);</span>
+
+        // Combine the results using Chinese Remainder Theorem
+<span class="nc" id="L2095">        MutableBigInteger y1 = modInverseBP2(oddMod, powersOf2);</span>
+<span class="nc" id="L2096">        MutableBigInteger y2 = oddMod.modInverseMP2(powersOf2);</span>
+
+<span class="nc" id="L2098">        MutableBigInteger temp1 = new MutableBigInteger();</span>
+<span class="nc" id="L2099">        MutableBigInteger temp2 = new MutableBigInteger();</span>
+<span class="nc" id="L2100">        MutableBigInteger result = new MutableBigInteger();</span>
+
+<span class="nc" id="L2102">        oddPart.leftShift(powersOf2);</span>
+<span class="nc" id="L2103">        oddPart.multiply(y1, result);</span>
+
+<span class="nc" id="L2105">        evenPart.multiply(oddMod, temp1);</span>
+<span class="nc" id="L2106">        temp1.multiply(y2, temp2);</span>
+
+<span class="nc" id="L2108">        result.add(temp2);</span>
+<span class="nc" id="L2109">        return result.divide(p, temp1);</span>
+    }
+
+    /*
+     * Calculate the multiplicative inverse of this mod 2^k.
+     */
+    MutableBigInteger modInverseMP2(int k) {
+<span class="nc bnc" id="L2116" title="All 2 branches missed.">        if (isEven())</span>
+<span class="nc" id="L2117">            throw new ArithmeticException(&quot;Non-invertible. (GCD != 1)&quot;);</span>
+
+<span class="nc bnc" id="L2119" title="All 2 branches missed.">        if (k &gt; 64)</span>
+<span class="nc" id="L2120">            return euclidModInverse(k);</span>
+
+<span class="nc" id="L2122">        int t = inverseMod32(value[offset+intLen-1]);</span>
+
+<span class="nc bnc" id="L2124" title="All 2 branches missed.">        if (k &lt; 33) {</span>
+<span class="nc bnc" id="L2125" title="All 2 branches missed.">            t = (k == 32 ? t : t &amp; ((1 &lt;&lt; k) - 1));</span>
+<span class="nc" id="L2126">            return new MutableBigInteger(t);</span>
+        }
+
+<span class="nc" id="L2129">        long pLong = (value[offset+intLen-1] &amp; LONG_MASK);</span>
+<span class="nc bnc" id="L2130" title="All 2 branches missed.">        if (intLen &gt; 1)</span>
+<span class="nc" id="L2131">            pLong |=  ((long)value[offset+intLen-2] &lt;&lt; 32);</span>
+<span class="nc" id="L2132">        long tLong = t &amp; LONG_MASK;</span>
+<span class="nc" id="L2133">        tLong = tLong * (2 - pLong * tLong);  // 1 more Newton iter step</span>
+<span class="nc bnc" id="L2134" title="All 2 branches missed.">        tLong = (k == 64 ? tLong : tLong &amp; ((1L &lt;&lt; k) - 1));</span>
+
+<span class="nc" id="L2136">        MutableBigInteger result = new MutableBigInteger(new int[2]);</span>
+<span class="nc" id="L2137">        result.value[0] = (int)(tLong &gt;&gt;&gt; 32);</span>
+<span class="nc" id="L2138">        result.value[1] = (int)tLong;</span>
+<span class="nc" id="L2139">        result.intLen = 2;</span>
+<span class="nc" id="L2140">        result.normalize();</span>
+<span class="nc" id="L2141">        return result;</span>
+    }
+
+    /**
+     * Returns the multiplicative inverse of val mod 2^32.  Assumes val is odd.
+     */
+    static int inverseMod32(int val) {
+        // Newton's iteration!
+<span class="nc" id="L2149">        int t = val;</span>
+<span class="nc" id="L2150">        t *= 2 - val*t;</span>
+<span class="nc" id="L2151">        t *= 2 - val*t;</span>
+<span class="nc" id="L2152">        t *= 2 - val*t;</span>
+<span class="nc" id="L2153">        t *= 2 - val*t;</span>
+<span class="nc" id="L2154">        return t;</span>
+    }
+
+    /**
+     * Returns the multiplicative inverse of val mod 2^64.  Assumes val is odd.
+     */
+    static long inverseMod64(long val) {
+        // Newton's iteration!
+<span class="nc" id="L2162">        long t = val;</span>
+<span class="nc" id="L2163">        t *= 2 - val*t;</span>
+<span class="nc" id="L2164">        t *= 2 - val*t;</span>
+<span class="nc" id="L2165">        t *= 2 - val*t;</span>
+<span class="nc" id="L2166">        t *= 2 - val*t;</span>
+<span class="nc" id="L2167">        t *= 2 - val*t;</span>
+<span class="nc bnc" id="L2168" title="All 4 branches missed.">        assert(t * val == 1);</span>
+<span class="nc" id="L2169">        return t;</span>
+    }
+
+    /**
+     * Calculate the multiplicative inverse of 2^k mod mod, where mod is odd.
+     */
+    static MutableBigInteger modInverseBP2(MutableBigInteger mod, int k) {
+        // Copy the mod to protect original
+<span class="nc" id="L2177">        return fixup(new MutableBigInteger(1), new MutableBigInteger(mod), k);</span>
+    }
+
+    /**
+     * Calculate the multiplicative inverse of this mod mod, where mod is odd.
+     * This and mod are not changed by the calculation.
+     *
+     * This method implements an algorithm due to Richard Schroeppel, that uses
+     * the same intermediate representation as Montgomery Reduction
+     * (&quot;Montgomery Form&quot;).  The algorithm is described in an unpublished
+     * manuscript entitled &quot;Fast Modular Reciprocals.&quot;
+     */
+    private MutableBigInteger modInverse(MutableBigInteger mod) {
+<span class="nc" id="L2190">        MutableBigInteger p = new MutableBigInteger(mod);</span>
+<span class="nc" id="L2191">        MutableBigInteger f = new MutableBigInteger(this);</span>
+<span class="nc" id="L2192">        MutableBigInteger g = new MutableBigInteger(p);</span>
+<span class="nc" id="L2193">        SignedMutableBigInteger c = new SignedMutableBigInteger(1);</span>
+<span class="nc" id="L2194">        SignedMutableBigInteger d = new SignedMutableBigInteger();</span>
+<span class="nc" id="L2195">        MutableBigInteger temp = null;</span>
+<span class="nc" id="L2196">        SignedMutableBigInteger sTemp = null;</span>
+
+<span class="nc" id="L2198">        int k = 0;</span>
+        // Right shift f k times until odd, left shift d k times
+<span class="nc bnc" id="L2200" title="All 2 branches missed.">        if (f.isEven()) {</span>
+<span class="nc" id="L2201">            int trailingZeros = f.getLowestSetBit();</span>
+<span class="nc" id="L2202">            f.rightShift(trailingZeros);</span>
+<span class="nc" id="L2203">            d.leftShift(trailingZeros);</span>
+<span class="nc" id="L2204">            k = trailingZeros;</span>
+        }
+
+        // The Almost Inverse Algorithm
+<span class="nc bnc" id="L2208" title="All 2 branches missed.">        while (!f.isOne()) {</span>
+            // If gcd(f, g) != 1, number is not invertible modulo mod
+<span class="nc bnc" id="L2210" title="All 2 branches missed.">            if (f.isZero())</span>
+<span class="nc" id="L2211">                throw new ArithmeticException(&quot;BigInteger not invertible.&quot;);</span>
+
+            // If f &lt; g exchange f, g and c, d
+<span class="nc bnc" id="L2214" title="All 2 branches missed.">            if (f.compare(g) &lt; 0) {</span>
+<span class="nc" id="L2215">                temp = f; f = g; g = temp;</span>
+<span class="nc" id="L2216">                sTemp = d; d = c; c = sTemp;</span>
+            }
+
+            // If f == g (mod 4)
+<span class="nc bnc" id="L2220" title="All 2 branches missed.">            if (((f.value[f.offset + f.intLen - 1] ^</span>
+                 g.value[g.offset + g.intLen - 1]) &amp; 3) == 0) {
+<span class="nc" id="L2222">                f.subtract(g);</span>
+<span class="nc" id="L2223">                c.signedSubtract(d);</span>
+            } else { // If f != g (mod 4)
+<span class="nc" id="L2225">                f.add(g);</span>
+<span class="nc" id="L2226">                c.signedAdd(d);</span>
+            }
+
+            // Right shift f k times until odd, left shift d k times
+<span class="nc" id="L2230">            int trailingZeros = f.getLowestSetBit();</span>
+<span class="nc" id="L2231">            f.rightShift(trailingZeros);</span>
+<span class="nc" id="L2232">            d.leftShift(trailingZeros);</span>
+<span class="nc" id="L2233">            k += trailingZeros;</span>
+<span class="nc" id="L2234">        }</span>
+
+<span class="nc bnc" id="L2236" title="All 2 branches missed.">        while (c.sign &lt; 0)</span>
+<span class="nc" id="L2237">           c.signedAdd(p);</span>
+
+<span class="nc" id="L2239">        return fixup(c, p, k);</span>
+    }
+
+    /**
+     * The Fixup Algorithm
+     * Calculates X such that X = C * 2^(-k) (mod P)
+     * Assumes C&lt;P and P is odd.
+     */
+    static MutableBigInteger fixup(MutableBigInteger c, MutableBigInteger p,
+                                                                      int k) {
+<span class="nc" id="L2249">        MutableBigInteger temp = new MutableBigInteger();</span>
+        // Set r to the multiplicative inverse of p mod 2^32
+<span class="nc" id="L2251">        int r = -inverseMod32(p.value[p.offset+p.intLen-1]);</span>
+
+<span class="nc bnc" id="L2253" title="All 2 branches missed.">        for (int i=0, numWords = k &gt;&gt; 5; i &lt; numWords; i++) {</span>
+            // V = R * c (mod 2^j)
+<span class="nc" id="L2255">            int  v = r * c.value[c.offset + c.intLen-1];</span>
+            // c = c + (v * p)
+<span class="nc" id="L2257">            p.mul(v, temp);</span>
+<span class="nc" id="L2258">            c.add(temp);</span>
+            // c = c / 2^j
+<span class="nc" id="L2260">            c.intLen--;</span>
+        }
+<span class="nc" id="L2262">        int numBits = k &amp; 0x1f;</span>
+<span class="nc bnc" id="L2263" title="All 2 branches missed.">        if (numBits != 0) {</span>
+            // V = R * c (mod 2^j)
+<span class="nc" id="L2265">            int v = r * c.value[c.offset + c.intLen-1];</span>
+<span class="nc" id="L2266">            v &amp;= ((1&lt;&lt;numBits) - 1);</span>
+            // c = c + (v * p)
+<span class="nc" id="L2268">            p.mul(v, temp);</span>
+<span class="nc" id="L2269">            c.add(temp);</span>
+            // c = c / 2^j
+<span class="nc" id="L2271">            c.rightShift(numBits);</span>
+        }
+
+        // In theory, c may be greater than p at this point (Very rare!)
+<span class="nc bnc" id="L2275" title="All 2 branches missed.">        while (c.compare(p) &gt;= 0)</span>
+<span class="nc" id="L2276">            c.subtract(p);</span>
+
+<span class="nc" id="L2278">        return c;</span>
+    }
+
+    /**
+     * Uses the extended Euclidean algorithm to compute the modInverse of base
+     * mod a modulus that is a power of 2. The modulus is 2^k.
+     */
+    MutableBigInteger euclidModInverse(int k) {
+<span class="nc" id="L2286">        MutableBigInteger b = new MutableBigInteger(1);</span>
+<span class="nc" id="L2287">        b.leftShift(k);</span>
+<span class="nc" id="L2288">        MutableBigInteger mod = new MutableBigInteger(b);</span>
+
+<span class="nc" id="L2290">        MutableBigInteger a = new MutableBigInteger(this);</span>
+<span class="nc" id="L2291">        MutableBigInteger q = new MutableBigInteger();</span>
+<span class="nc" id="L2292">        MutableBigInteger r = b.divide(a, q);</span>
+
+<span class="nc" id="L2294">        MutableBigInteger swapper = b;</span>
+        // swap b &amp; r
+<span class="nc" id="L2296">        b = r;</span>
+<span class="nc" id="L2297">        r = swapper;</span>
+
+<span class="nc" id="L2299">        MutableBigInteger t1 = new MutableBigInteger(q);</span>
+<span class="nc" id="L2300">        MutableBigInteger t0 = new MutableBigInteger(1);</span>
+<span class="nc" id="L2301">        MutableBigInteger temp = new MutableBigInteger();</span>
+
+<span class="nc bnc" id="L2303" title="All 2 branches missed.">        while (!b.isOne()) {</span>
+<span class="nc" id="L2304">            r = a.divide(b, q);</span>
+
+<span class="nc bnc" id="L2306" title="All 2 branches missed.">            if (r.intLen == 0)</span>
+<span class="nc" id="L2307">                throw new ArithmeticException(&quot;BigInteger not invertible.&quot;);</span>
+
+<span class="nc" id="L2309">            swapper = r;</span>
+<span class="nc" id="L2310">            a = swapper;</span>
+
+<span class="nc bnc" id="L2312" title="All 2 branches missed.">            if (q.intLen == 1)</span>
+<span class="nc" id="L2313">                t1.mul(q.value[q.offset], temp);</span>
+            else
+<span class="nc" id="L2315">                q.multiply(t1, temp);</span>
+<span class="nc" id="L2316">            swapper = q;</span>
+<span class="nc" id="L2317">            q = temp;</span>
+<span class="nc" id="L2318">            temp = swapper;</span>
+<span class="nc" id="L2319">            t0.add(q);</span>
+
+<span class="nc bnc" id="L2321" title="All 2 branches missed.">            if (a.isOne())</span>
+<span class="nc" id="L2322">                return t0;</span>
+
+<span class="nc" id="L2324">            r = b.divide(a, q);</span>
+
+<span class="nc bnc" id="L2326" title="All 2 branches missed.">            if (r.intLen == 0)</span>
+<span class="nc" id="L2327">                throw new ArithmeticException(&quot;BigInteger not invertible.&quot;);</span>
+
+<span class="nc" id="L2329">            swapper = b;</span>
+<span class="nc" id="L2330">            b =  r;</span>
+
+<span class="nc bnc" id="L2332" title="All 2 branches missed.">            if (q.intLen == 1)</span>
+<span class="nc" id="L2333">                t0.mul(q.value[q.offset], temp);</span>
+            else
+<span class="nc" id="L2335">                q.multiply(t0, temp);</span>
+<span class="nc" id="L2336">            swapper = q; q = temp; temp = swapper;</span>
+
+<span class="nc" id="L2338">            t1.add(q);</span>
+        }
+<span class="nc" id="L2340">        mod.subtract(t1);</span>
+<span class="nc" id="L2341">        return mod;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JComboBoxBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JComboBoxBB.java</span></div><h1>JComboBoxBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.swing.JComboBox;
+import tfw.awt.component.EnabledCommit;
+import tfw.swing.combobox.SelectionAndListCommit;
+import tfw.swing.combobox.SelectionInitiator;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+public class JComboBoxBB extends JComboBox&lt;Object&gt; implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JComboBoxBB(
+            String name,
+            ObjectIlaECD listECD,
+            ObjectECD selectedItemECD,
+            IntegerECD selectedIndexECD,
+            BooleanECD enabledECD) {
+<span class="nc" id="L29">        this(new Branch(name), listECD, selectedItemECD, selectedIndexECD, enabledECD);</span>
+<span class="nc" id="L30">    }</span>
+
+    public JComboBoxBB(
+            Branch branch,
+            ObjectIlaECD listECD,
+            ObjectECD selectedItemECD,
+            IntegerECD selectedIndexECD,
+            BooleanECD enabledECD) {
+<span class="nc" id="L38">        this(branch, listECD, selectedItemECD, selectedIndexECD, enabledECD, new Initiator[0]);</span>
+<span class="nc" id="L39">    }</span>
+
+    public JComboBoxBB(
+            Branch branch,
+            ObjectIlaECD listECD,
+            ObjectECD selectedItemECD,
+            IntegerECD selectedIndexECD,
+            BooleanECD enabledECD,
+<span class="nc" id="L47">            Initiator[] initiators) {</span>
+
+<span class="nc" id="L49">        this.branch = branch;</span>
+
+<span class="nc" id="L51">        SelectionInitiator selectionInitiator =</span>
+                new SelectionInitiator(&quot;JComboBoxBB&quot;, selectedItemECD, selectedIndexECD, this);
+
+<span class="nc" id="L54">        addActionListener(selectionInitiator);</span>
+<span class="nc" id="L55">        branch.add(selectionInitiator);</span>
+
+<span class="nc" id="L57">        List&lt;Initiator&gt; list = new ArrayList&lt;&gt;(Arrays.asList(initiators));</span>
+<span class="nc" id="L58">        list.add(selectionInitiator);</span>
+<span class="nc" id="L59">        initiators = list.toArray(new Initiator[list.size()]);</span>
+<span class="nc" id="L60">        SelectionAndListCommit selectionAndListCommit = new SelectionAndListCommit(</span>
+                &quot;JComboBoxBB&quot;,
+                listECD,
+                selectedItemECD,
+                selectedIndexECD,
+                initiators,
+                new ActionListener[] {selectionInitiator},
+                this);
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (enabledECD != null) {</span>
+<span class="nc" id="L70">            branch.add(new EnabledCommit(&quot;JComboBoxBB&quot;, enabledECD, this, null));</span>
+        }
+<span class="nc" id="L72">        branch.add(selectionAndListCommit);</span>
+<span class="nc" id="L73">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L77">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

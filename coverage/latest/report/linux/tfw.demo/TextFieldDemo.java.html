@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextFieldDemo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.demo</a> &gt; <span class="el_source">TextFieldDemo.java</span></div><h1>TextFieldDemo.java</h1><pre class="source lang-java linenums">package tfw.demo;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import tfw.component.TriggeredEventChannelCopy;
+import tfw.swing.JButtonBB;
+import tfw.swing.JPanelBB;
+import tfw.swing.JTextFieldModifiableBB;
+import tfw.tsm.AWTTransactionQueue;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Root;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+public class TextFieldDemo extends JPanelBB {
+    private static final long serialVersionUID = 1L;
+
+    public TextFieldDemo() {
+<span class="nc" id="L23">        super(Root.builder()</span>
+<span class="nc" id="L24">                .setName(&quot;TextFieldDemoRoot&quot;)</span>
+<span class="nc" id="L25">                .setTransactionQueue(new AWTTransactionQueue())</span>
+<span class="nc" id="L26">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L27">                .addEventChannels(TextFieldDemoEnum.values())</span>
+<span class="nc" id="L28">                .build());</span>
+<span class="nc" id="L29">        setLayout(new BorderLayout());</span>
+<span class="nc" id="L30">        addToBoth(createColorPanel(), BorderLayout.EAST);</span>
+<span class="nc" id="L31">    }</span>
+
+    private JPanelBB createColorPanel() {
+<span class="nc" id="L34">        JPanelBB labelPanel = new JPanelBB(&quot;LabelPanel&quot;);</span>
+<span class="nc" id="L35">        labelPanel.setLayout(new GridLayout(3, 1));</span>
+<span class="nc" id="L36">        labelPanel.add(new JLabel(&quot;Red: &quot;, JLabel.RIGHT));</span>
+<span class="nc" id="L37">        labelPanel.add(new JLabel(&quot;Green: &quot;, JLabel.RIGHT));</span>
+<span class="nc" id="L38">        labelPanel.add(new JLabel(&quot;Blue: &quot;, JLabel.RIGHT));</span>
+
+<span class="nc" id="L40">        JPanelBB textFieldPanel = new JPanelBB(&quot;TextFieldPanel&quot;);</span>
+<span class="nc" id="L41">        textFieldPanel.setLayout(new GridLayout(3, 1));</span>
+<span class="nc" id="L42">        textFieldPanel.addToBoth(createTextField(</span>
+                &quot;RedTextField&quot;,
+                TextFieldDemoEnum.RED_STRING.ecd,
+                TextFieldDemoEnum.RED_STRING_ADJ.ecd,
+                TextFieldDemoEnum.RED_INTEGER.ecd));
+<span class="nc" id="L47">        textFieldPanel.addToBoth(createTextField(</span>
+                &quot;GreenTextField&quot;,
+                TextFieldDemoEnum.GREEN_STRING.ecd,
+                TextFieldDemoEnum.GREEN_STRING_ADJ.ecd,
+                TextFieldDemoEnum.GREEN_INTEGER.ecd));
+<span class="nc" id="L52">        textFieldPanel.addToBoth(createTextField(</span>
+                &quot;BlueTextField&quot;,
+                TextFieldDemoEnum.BLUE_STRING.ecd,
+                TextFieldDemoEnum.BLUE_STRING_ADJ.ecd,
+                TextFieldDemoEnum.BLUE_INTEGER.ecd));
+
+<span class="nc" id="L58">        JPanelBB colorButtonPanel = new JPanelBB(&quot;ColorButtonPanel&quot;);</span>
+<span class="nc" id="L59">        colorButtonPanel.setLayout(new FlowLayout());</span>
+<span class="nc" id="L60">        colorButtonPanel.addToBoth(new ColorButtonNB(</span>
+                &quot;TextFieldDemo&quot;,
+                TextFieldDemoEnum.COLOR_NAME.ecd,
+                TextFieldDemoEnum.COLOR_BUTTON_ENABLE_NAME.ecd,
+                &quot;Color Chooser&quot;,
+                colorButtonPanel));
+
+<span class="nc" id="L67">        JPanelBB northPanel = new JPanelBB(&quot;NorthPanel&quot;);</span>
+<span class="nc" id="L68">        northPanel.setLayout(new BorderLayout());</span>
+<span class="nc" id="L69">        northPanel.addToBoth(labelPanel, BorderLayout.WEST);</span>
+<span class="nc" id="L70">        northPanel.addToBoth(textFieldPanel, BorderLayout.CENTER);</span>
+<span class="nc" id="L71">        northPanel.addToBoth(colorButtonPanel, BorderLayout.SOUTH);</span>
+
+<span class="nc" id="L73">        ObjectECD[] colorText = new ObjectECD[] {</span>
+            TextFieldDemoEnum.RED_STRING.ecd, TextFieldDemoEnum.BLUE_STRING.ecd, TextFieldDemoEnum.GREEN_STRING.ecd
+        };
+<span class="nc" id="L76">        ObjectECD[] colorTextAdj = new ObjectECD[] {</span>
+            TextFieldDemoEnum.RED_STRING_ADJ.ecd,
+            TextFieldDemoEnum.BLUE_STRING_ADJ.ecd,
+            TextFieldDemoEnum.GREEN_STRING_ADJ.ecd
+        };
+<span class="nc" id="L81">        JButtonBB applyButton = JButtonBB.builder()</span>
+<span class="nc" id="L82">                .setName(&quot;Apply&quot;)</span>
+<span class="nc" id="L83">                .setEnabledInput(TextFieldDemoEnum.APPLY_ENABLE.ecd)</span>
+<span class="nc" id="L84">                .setActionOutput(TextFieldDemoEnum.APPLY_TRIGGER.ecd)</span>
+<span class="nc" id="L85">                .build();</span>
+<span class="nc" id="L86">        applyButton.setText(&quot;Apply&quot;);</span>
+<span class="nc" id="L87">        applyButton.getBranch().add(new ButtonEnableHandler(&quot;Apply&quot;, colorText, colorTextAdj, applyButton));</span>
+
+<span class="nc" id="L89">        JButtonBB resetButton = JButtonBB.builder()</span>
+<span class="nc" id="L90">                .setName(&quot;Reset&quot;)</span>
+<span class="nc" id="L91">                .setEnabledInput(TextFieldDemoEnum.RESET_ENABLE.ecd)</span>
+<span class="nc" id="L92">                .setActionOutput(TextFieldDemoEnum.RESET_TRIGGER.ecd)</span>
+<span class="nc" id="L93">                .build();</span>
+<span class="nc" id="L94">        resetButton.setText(&quot;Reset&quot;);</span>
+<span class="nc" id="L95">        resetButton.getBranch().add(new ButtonEnableHandler(&quot;ResetButton&quot;, colorText, colorTextAdj, resetButton));</span>
+
+<span class="nc" id="L97">        JPanelBB buttonPanel = new JPanelBB(&quot;ButtonPanel&quot;);</span>
+<span class="nc" id="L98">        buttonPanel.setLayout(new FlowLayout());</span>
+<span class="nc" id="L99">        buttonPanel.addToBoth(applyButton);</span>
+<span class="nc" id="L100">        buttonPanel.addToBoth(resetButton);</span>
+
+<span class="nc" id="L102">        JPanelBB colorPanel = new JPanelBB(&quot;ColorPanel&quot;);</span>
+<span class="nc" id="L103">        colorPanel.setLayout(new BorderLayout());</span>
+<span class="nc" id="L104">        colorPanel.addToBoth(northPanel, BorderLayout.NORTH);</span>
+<span class="nc" id="L105">        colorPanel.addToBoth(buttonPanel, BorderLayout.SOUTH);</span>
+<span class="nc" id="L106">        colorPanel.getBranch().add(new ErrorDialog(colorPanel, TextFieldDemoEnum.ERROR_NAME.ecd));</span>
+<span class="nc" id="L107">        colorPanel</span>
+<span class="nc" id="L108">                .getBranch()</span>
+<span class="nc" id="L109">                .add(new IntegerColorConverter(</span>
+                        &quot;ColorDemo&quot;,
+                        TextFieldDemoEnum.RED_INTEGER.ecd,
+                        TextFieldDemoEnum.GREEN_INTEGER.ecd,
+                        TextFieldDemoEnum.BLUE_INTEGER.ecd,
+                        TextFieldDemoEnum.COLOR_NAME.ecd));
+
+<span class="nc" id="L116">        return colorPanel;</span>
+    }
+
+    private JTextFieldModifiableBB createTextField(String name, StringECD text, StringECD textAdj, IntegerECD integer) {
+<span class="nc" id="L120">        JTextFieldModifiableBB textField = new JTextFieldModifiableBB(</span>
+                name,
+                text,
+                textAdj,
+                TextFieldDemoEnum.COLOR_BUTTON_ENABLE_NAME.ecd,
+                TextFieldDemoEnum.APPLY_TRIGGER.ecd);
+<span class="nc" id="L126">        textField</span>
+<span class="nc" id="L127">                .getBranch()</span>
+<span class="nc" id="L128">                .add(new TriggeredEventChannelCopy(</span>
+                        &quot;Apply[&quot; + name + &quot;]&quot;, TextFieldDemoEnum.APPLY_TRIGGER.ecd, textAdj, text));
+<span class="nc" id="L130">        textField</span>
+<span class="nc" id="L131">                .getBranch()</span>
+<span class="nc" id="L132">                .add(new TriggeredEventChannelCopy(</span>
+                        &quot;Reset[&quot; + name + &quot;]&quot;, TextFieldDemoEnum.RESET_TRIGGER.ecd, text, textAdj));
+<span class="nc" id="L134">        textField.getBranch().add(new IntegerStringConverter(name, text, integer, TextFieldDemoEnum.ERROR_NAME.ecd));</span>
+
+<span class="nc" id="L136">        return textField;</span>
+    }
+
+    public static void main(String[] args) {
+<span class="nc" id="L140">        JFrame frame = new JFrame(&quot;TextFieldDemo&quot;);</span>
+<span class="nc" id="L141">        TextFieldDemo tfd = new TextFieldDemo();</span>
+<span class="nc" id="L142">        frame.getContentPane().add(tfd, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L144">        frame.pack();</span>
+<span class="nc" id="L145">        frame.setVisible(true);</span>
+<span class="nc" id="L146">        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);</span>
+<span class="nc" id="L147">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseBranchFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">BaseBranchFactory.java</span></div><h1>BaseBranchFactory.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.HashMap;
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * The base class for branch component factories. It is made public solely to
+ * make the base class type of all branch factories available. It is not
+ * intended to be sub-classed outside of its package.
+ */
+public class BaseBranchFactory {
+<span class="nc" id="L15">    private final HashMap&lt;String, Terminator&gt; terminators = new HashMap&lt;String, Terminator&gt;();</span>
+
+    /**
+     * Creates a factory. The constructor is package private to prevent
+     * sub-classing outside the package.
+     */
+<span class="nc" id="L21">    BaseBranchFactory() {}</span>
+
+    /**
+     * Returns the current set of Event Channel terminators.
+     *
+     * @return the current set of Event Channel terminators.
+     */
+    EventChannel[] getTerminators() {
+<span class="nc" id="L29">        return terminators.values().toArray(new EventChannel[terminators.size()]);</span>
+    }
+
+    /**
+     * Adds an event channel based on the specified description with a null
+     * initial state and an {@link DotEqualsRule}
+     *
+     * @param eventChannelDescription
+     *            a description of the event channel.
+     */
+    public void addEventChannel(EventChannelDescription eventChannelDescription) {
+<span class="nc" id="L40">        addEventChannel(eventChannelDescription, null);</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Adds an event channel based on the specified description and initial
+     * state. The {@link DotEqualsRule} is used as long as the event channel is
+     * not a {@link StatelessTriggerECD}. The {@link AlwaysChangeRule} is used
+     * for {@link StatelessTriggerECD}.
+     *
+     * @param eventChannelDescription
+     *            a description of the event channel.
+     * @param initialState
+     *            the initial state for the event channel.
+     */
+    public void addEventChannel(EventChannelDescription eventChannelDescription, Object initialState) {
+<span class="nc bnc" id="L55" title="All 4 branches missed.">        if (eventChannelDescription instanceof StatelessTriggerECD || eventChannelDescription instanceof RollbackECD) {</span>
+<span class="nc" id="L56">            addEventChannel(eventChannelDescription, initialState, AlwaysChangeRule.RULE, null);</span>
+        } else {
+<span class="nc" id="L58">            addEventChannel(eventChannelDescription, initialState, DotEqualsRule.RULE, null);</span>
+        }
+<span class="nc" id="L60">    }</span>
+
+    /**
+     * Adds an event channel terminator based on the specified description
+     *
+     * @param eventChannelDescription
+     *            a description of the event channel.
+     * @param initialState
+     *            the initial state for the event channel.
+     * @param rule
+     *            the rule to be used to determine what represents a state
+     *            change for the event channel.
+     * @param exportTags
+     *            The list of export tags for this event channel.
+     */
+    public void addEventChannel(
+            EventChannelDescription eventChannelDescription,
+            Object initialState,
+            StateChangeRule rule,
+            String[] exportTags) {
+<span class="nc" id="L80">        Argument.assertNotNull(eventChannelDescription, &quot;eventChannelDescription&quot;);</span>
+<span class="nc" id="L81">        Argument.assertNotNull(rule, &quot;rule&quot;);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (exportTags != null) {</span>
+<span class="nc" id="L83">            Argument.assertElementNotNull(exportTags, &quot;exportTags&quot;);</span>
+        }
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (isTerminated(eventChannelDescription)) {</span>
+<span class="nc" id="L87">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L88">                    &quot;The event channel '&quot; + eventChannelDescription.getEventChannelName() + &quot;' is already exists&quot;);</span>
+        }
+
+        // if the event channel is memory-less and non-null initial state...
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        if (!eventChannelDescription.isFireOnConnect() &amp;&amp; initialState != null) {</span>
+<span class="nc" id="L93">            throw new IllegalArgumentException(&quot;Non-null 'initialState' is not permitted given&quot;</span>
+                    + &quot; eventChannelDescription.isFireOnConnect() == false&quot;);
+        }
+
+<span class="nc bnc" id="L97" title="All 4 branches missed.">        if (eventChannelDescription instanceof StatelessTriggerECD || eventChannelDescription instanceof RollbackECD) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (!(rule instanceof AlwaysChangeRule)) {</span>
+<span class="nc" id="L99">                throw new IllegalArgumentException(&quot;(eventChannelDescription instanceof &quot;</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                        + (eventChannelDescription instanceof StatelessTriggerECD</span>
+<span class="nc" id="L101">                                ? &quot;StatelessTriggerECD&quot;</span>
+<span class="nc" id="L102">                                : &quot;RollbackECD&quot;)</span>
+                        + &quot;) &amp;&amp; !(rule instanceof AlwaysChangeRule) not allowed&quot;);
+            }
+        }
+<span class="nc" id="L106">        terminators.put(</span>
+<span class="nc" id="L107">                eventChannelDescription.getEventChannelName(),</span>
+                new Terminator(eventChannelDescription, initialState, rule));
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (exportTags != null) {</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            for (int i = 0; i &lt; exportTags.length; i++) {</span>
+<span class="nc" id="L112">                this.addExportTag(eventChannelDescription, exportTags[i]);</span>
+            }
+        }
+<span class="nc" id="L115">    }</span>
+
+    boolean isTerminated(EventChannelDescription ecd) {
+<span class="nc" id="L118">        return terminators.containsKey(ecd.getEventChannelName());</span>
+    }
+
+    /**
+     * Clears all previously set terminators.
+     */
+    public void clear() {
+<span class="nc" id="L125">        terminators.clear();</span>
+<span class="nc" id="L126">    }</span>
+
+    /**
+     * Adds the specified export tag to the specified event channel. The event
+     * channel must be added to the branch before this method can be called.
+     *
+     * @param ecd
+     *            The description of the event channel to be tagged.
+     * @param tag
+     *            The tag to be added to the event channel
+     */
+    public void addExportTag(EventChannelDescription ecd, String tag) {
+<span class="nc" id="L138">        Argument.assertNotNull(ecd, &quot;ecd&quot;);</span>
+<span class="nc" id="L139">        Argument.assertNotNull(tag, &quot;tag&quot;);</span>
+<span class="nc" id="L140">        Argument.assertNotEmpty(tag, &quot;tag&quot;);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (!isTerminated(ecd)) {</span>
+<span class="nc" id="L142">            throw new IllegalArgumentException(&quot;The event channel '&quot;</span>
+<span class="nc" id="L143">                    + ecd.getEventChannelName()</span>
+                    + &quot;' has not been added to this factory and &quot;
+                    + &quot;therefore can not be tagged.&quot;);
+        }
+
+<span class="nc" id="L148">        Terminator t = this.terminators.get(ecd.getEventChannelName());</span>
+<span class="nc" id="L149">        t.addExportStateTag(tag);</span>
+<span class="nc" id="L150">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

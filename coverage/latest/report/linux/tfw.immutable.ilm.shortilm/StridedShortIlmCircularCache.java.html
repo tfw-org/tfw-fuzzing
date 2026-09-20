@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StridedShortIlmCircularCache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.shortilm</a> &gt; <span class="el_source">StridedShortIlmCircularCache.java</span></div><h1>StridedShortIlmCircularCache.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.shortilm;
+
+import java.io.IOException;
+import java.util.Arrays;
+import tfw.check.Argument;
+
+public class StridedShortIlmCircularCache {
+    private StridedShortIlmCircularCache() {}
+
+    public static StridedShortIlm create(final StridedShortIlm stridedIlm, final int numRows, short[] buffer)
+            throws IOException {
+<span class="nc" id="L12">        Argument.assertNotNull(stridedIlm, &quot;stridedIlm&quot;);</span>
+<span class="nc" id="L13">        Argument.assertGreaterThan(numRows, 0, &quot;numRows&quot;);</span>
+<span class="nc" id="L14">        Argument.assertNotNull(buffer, &quot;buffer&quot;);</span>
+
+<span class="nc" id="L16">        return new ShortIlmImpl(stridedIlm, numRows, buffer);</span>
+    }
+
+    private static class ShortIlmImpl extends AbstractStridedShortIlm {
+        private final StridedShortIlm stridedIlm;
+        private final int cacheLength;
+        private short[] buffer;
+<span class="nc" id="L23">        private long cacheStart = 0;</span>
+<span class="nc" id="L24">        private long cacheEnd = 0;</span>
+<span class="nc" id="L25">        private final int cStride = 1;</span>
+        private final int rStride;
+        private final int maxRows;
+
+<span class="nc" id="L29">        private ShortIlmImpl(StridedShortIlm stridedIlm, int numRows, short[] buffer) throws IOException {</span>
+<span class="nc" id="L30">            this.stridedIlm = stridedIlm;</span>
+<span class="nc" id="L31">            this.maxRows = numRows;</span>
+<span class="nc" id="L32">            this.buffer = buffer;</span>
+
+<span class="nc" id="L34">            cacheLength = (int) stridedIlm.width() * maxRows;</span>
+<span class="nc" id="L35">            rStride = (int) stridedIlm.width();</span>
+<span class="nc" id="L36">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L40">            return stridedIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L45">            return stridedIlm.height();</span>
+        }
+
+        @Override
+        protected synchronized void getImpl(
+                short[] array,
+                int offset,
+                int rowStride,
+                int colStride,
+                long rowStart,
+                long colStart,
+                int rowCount,
+                int colCount)
+                throws IOException {
+<span class="nc bnc" id="L59" title="All 8 branches missed.">            if ((cacheStart == 0 &amp;&amp; cacheEnd == 0) || rowStart &gt; cacheEnd || (rowStart + rowCount) &lt; cacheStart) {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                if (buffer.length == 0) {</span>
+<span class="nc" id="L61">                    buffer = Arrays.copyOf(buffer, cacheLength);</span>
+                }
+
+<span class="nc" id="L64">                int rowStartOffset = (int) (rowStart % maxRows);</span>
+                int rowsToGet =
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                        stridedIlm.height() &gt; rowStart + maxRows ? maxRows : (int) (stridedIlm.height() - rowStart);</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                if (stridedIlm.height() &lt;= maxRows) {</span>
+<span class="nc" id="L69">                    stridedIlm.get(buffer, 0, rStride, cStride, 0, colStart, (int) stridedIlm.height(), colCount);</span>
+<span class="nc" id="L70">                    cacheStart = 0;</span>
+<span class="nc" id="L71">                    cacheEnd = stridedIlm.height();</span>
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                    for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                        for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L75">                            array[offset + i * rowStride + j * colStride] =</span>
+                                    buffer[(i + rowStartOffset) % maxRows * rStride + j * cStride];
+                        }
+                    }
+
+<span class="nc" id="L80">                    return;</span>
+                }
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                if (rowStart % maxRows == 0) {</span>
+<span class="nc" id="L84">                    stridedIlm.get(</span>
+                            buffer,
+                            rowStartOffset * rStride,
+                            rStride,
+                            cStride,
+                            rowStart,
+                            colStart,
+                            rowsToGet,
+                            colCount);
+                } else {
+<span class="nc" id="L94">                    int first = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L95">                    int firstLength = maxRows - first;</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (firstLength &gt; rowCount) {</span>
+<span class="nc" id="L98">                        firstLength = rowCount;</span>
+                    }
+
+<span class="nc" id="L101">                    stridedIlm.get(</span>
+                            buffer, first * rStride, rStride, cStride, rowStart, colStart, firstLength, colCount);
+
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                    if (firstLength + first &gt; rowCount) {</span>
+<span class="nc" id="L105">                        first = rowCount - firstLength;</span>
+                    }
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                    if (first &gt; 0) {</span>
+<span class="nc" id="L108">                        stridedIlm.get(buffer, 0, rStride, cStride, rowStart + firstLength, colStart, first, colCount);</span>
+                    }
+                }
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                    for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L114">                        array[offset + i * rowStride + j * colStride] =</span>
+                                buffer[(i + rowStartOffset) % maxRows * rStride + j * cStride];
+                    }
+                }
+
+<span class="nc" id="L119">                cacheStart = rowStart;</span>
+<span class="nc" id="L120">                cacheEnd = rowStart + maxRows;</span>
+
+<span class="nc" id="L122">                return;</span>
+            }
+
+<span class="nc bnc" id="L125" title="All 4 branches missed.">            if (cacheStart &lt;= rowStart &amp;&amp; rowStart + rowCount &lt;= cacheEnd) {</span>
+<span class="nc" id="L126">                int rowStartOffset = (int) (rowStart % maxRows);</span>
+
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                    for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L130">                        array[offset + i * rowStride + j * colStride] =</span>
+                                buffer[(i + rowStartOffset) % maxRows * rStride + j * cStride];
+                    }
+                }
+<span class="nc" id="L134">                return;</span>
+            }
+
+<span class="nc bnc" id="L137" title="All 4 branches missed.">            if (cacheStart &lt;= rowStart &amp;&amp; rowStart &lt;= cacheEnd) {</span>
+<span class="nc" id="L138">                int newRowCount = (int) (rowStart + rowCount - cacheEnd);</span>
+<span class="nc" id="L139">                int rowStartOffset = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L140">                int newRowStartOffset = (int) (cacheEnd % maxRows);</span>
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                newRowCount = cacheEnd + newRowCount &lt; stridedIlm.height()</span>
+<span class="nc" id="L143">                        ? newRowCount</span>
+<span class="nc" id="L144">                        : (int) (stridedIlm.height() - cacheEnd);</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                if (newRowStartOffset + newRowCount &lt;= maxRows) {</span>
+<span class="nc" id="L147">                    stridedIlm.get(</span>
+                            buffer,
+                            newRowStartOffset * rStride,
+                            rStride,
+                            cStride,
+                            cacheEnd,
+                            colStart,
+                            newRowCount,
+                            colCount);
+                } else {
+<span class="nc" id="L157">                    int countA = maxRows - newRowStartOffset;</span>
+<span class="nc" id="L158">                    int countB = newRowCount - countA;</span>
+
+<span class="nc" id="L160">                    stridedIlm.get(</span>
+                            buffer,
+                            newRowStartOffset * rStride,
+                            rStride,
+                            cStride,
+                            cacheEnd,
+                            colStart,
+                            countA,
+                            colCount);
+<span class="nc" id="L169">                    stridedIlm.get(buffer, 0, rStride, cStride, cacheEnd + countA, colStart, countB, colCount);</span>
+                }
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                    for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L174">                        array[offset + i * rowStride + j * colStride] =</span>
+                                buffer[(i + rowStartOffset) % maxRows * rStride + j * cStride];
+                    }
+                }
+
+<span class="nc" id="L179">                cacheEnd += newRowCount;</span>
+<span class="nc" id="L180">                cacheStart += newRowCount;</span>
+
+<span class="nc" id="L182">                return;</span>
+            }
+
+<span class="nc bnc" id="L185" title="All 4 branches missed.">            if (cacheStart &lt;= rowStart + rowCount &amp;&amp; rowStart + rowCount &lt;= cacheEnd) {</span>
+<span class="nc" id="L186">                int newRowCount = (int) (cacheStart - rowStart);</span>
+<span class="nc" id="L187">                int rowStartOffset = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L188">                int newRowEndOffset = (int) (cacheStart % maxRows);</span>
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                if (rowStartOffset + newRowCount &lt;= maxRows) {</span>
+<span class="nc" id="L191">                    stridedIlm.get(</span>
+                            buffer,
+                            rowStartOffset * rStride,
+                            rStride,
+                            cStride,
+                            cacheStart - newRowCount,
+                            colStart,
+                            newRowCount,
+                            colCount);
+                } else {
+<span class="nc" id="L201">                    int end = newRowEndOffset - newRowCount + maxRows;</span>
+<span class="nc" id="L202">                    int countA = maxRows - end;</span>
+<span class="nc" id="L203">                    int countB = newRowCount - countA;</span>
+
+<span class="nc" id="L205">                    stridedIlm.get(buffer, end * rStride, rStride, cStride, rowStart, colStart, countA, colCount);</span>
+
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                    if (countB &gt; 0) {</span>
+<span class="nc" id="L208">                        stridedIlm.get(buffer, 0, rStride, cStride, rowStart + countA, colStart, countB, colCount);</span>
+                    } else {
+<span class="nc" id="L210">                        System.out.println(&quot;maxRows = &quot; + maxRows);</span>
+<span class="nc" id="L211">                        System.out.println(&quot;countA = &quot; + countA);</span>
+<span class="nc" id="L212">                        System.out.println(&quot;countB = &quot; + countB);</span>
+<span class="nc" id="L213">                        System.out.println(&quot;newRowCount = &quot; + newRowCount);</span>
+<span class="nc" id="L214">                        System.out.println(&quot;newRowEndOffset = &quot; + newRowEndOffset);</span>
+<span class="nc" id="L215">                        System.out.println(&quot;rowStartOffset = &quot; + rowStartOffset);</span>
+                    }
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                        for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L220">                            array[offset + i * rowStride + j * colStride] =</span>
+                                    buffer[(i + rowStartOffset) % maxRows * rStride + j * cStride];
+                        }
+                    }
+
+<span class="nc" id="L225">                    cacheEnd -= newRowCount;</span>
+<span class="nc" id="L226">                    cacheStart -= newRowCount;</span>
+                }
+            }
+<span class="nc" id="L229">        }</span>
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

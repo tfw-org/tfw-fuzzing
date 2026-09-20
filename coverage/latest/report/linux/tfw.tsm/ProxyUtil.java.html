@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ProxyUtil.java</span></div><h1>ProxyUtil.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+public final class ProxyUtil {
+    private ProxyUtil() {}
+
+    public static void writeGraph(final Proxy proxy, final StringBuilder stringBuilder, final String indent) {
+<span class="nc" id="L7">        final String newIndent = indent + &quot;    &quot;;</span>
+
+<span class="nc bnc" id="L9" title="All 2 branches missed.">        if (proxy instanceof RootProxy) {</span>
+<span class="nc" id="L10">            final RootProxy rootProxy = (RootProxy) proxy;</span>
+
+<span class="nc" id="L12">            stringBuilder.append(&quot;ROOT: &quot;);</span>
+<span class="nc" id="L13">            stringBuilder.append(rootProxy.getName());</span>
+<span class="nc" id="L14">            stringBuilder.append('\n');</span>
+
+<span class="nc bnc" id="L16" title="All 2 branches missed.">            for (EventChannelProxy ecp : rootProxy.getEventChannelProxies()) {</span>
+<span class="nc" id="L17">                writeGraph(ecp, stringBuilder, newIndent);</span>
+            }
+<span class="nc bnc" id="L19" title="All 2 branches missed.">            for (Proxy child : rootProxy.getChildProxies()) {</span>
+<span class="nc" id="L20">                writeGraph(child, stringBuilder, newIndent);</span>
+            }
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        } else if (proxy instanceof BranchProxy) {</span>
+<span class="nc" id="L23">            final BranchProxy branchProxy = (BranchProxy) proxy;</span>
+
+<span class="nc" id="L25">            stringBuilder.append(indent);</span>
+<span class="nc" id="L26">            stringBuilder.append(&quot;BRANCH: &quot;);</span>
+<span class="nc" id="L27">            stringBuilder.append(branchProxy.getName());</span>
+<span class="nc" id="L28">            stringBuilder.append('\n');</span>
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            for (EventChannelProxy ecp : branchProxy.getEventChannelProxies()) {</span>
+<span class="nc" id="L31">                writeGraph(ecp, stringBuilder, newIndent);</span>
+            }
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            for (Proxy child : branchProxy.getChildProxies()) {</span>
+<span class="nc" id="L34">                writeGraph(child, stringBuilder, newIndent);</span>
+            }
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        } else if (proxy instanceof InitiatorProxy) {</span>
+<span class="nc" id="L37">            final InitiatorProxy initiatorProxy = (InitiatorProxy) proxy;</span>
+
+<span class="nc" id="L39">            stringBuilder.append(indent);</span>
+<span class="nc" id="L40">            stringBuilder.append(&quot;INITIATOR: &quot;);</span>
+<span class="nc" id="L41">            stringBuilder.append(initiatorProxy.getName());</span>
+<span class="nc" id="L42">            stringBuilder.append('\n');</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        } else if (proxy instanceof CommitProxy) {</span>
+<span class="nc" id="L44">            final CommitProxy commitProxy = (CommitProxy) proxy;</span>
+
+<span class="nc" id="L46">            stringBuilder.append(indent);</span>
+<span class="nc" id="L47">            stringBuilder.append(&quot;COMMIT: &quot;);</span>
+<span class="nc" id="L48">            stringBuilder.append(commitProxy.getName());</span>
+<span class="nc" id="L49">            stringBuilder.append('\n');</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        } else if (proxy instanceof TriggeredCommitProxy) {</span>
+<span class="nc" id="L51">            final TriggeredCommitProxy triggeredCommitProxy = (TriggeredCommitProxy) proxy;</span>
+
+<span class="nc" id="L53">            stringBuilder.append(indent);</span>
+<span class="nc" id="L54">            stringBuilder.append(&quot;TRIGGERED_COMMIT: &quot;);</span>
+<span class="nc" id="L55">            stringBuilder.append(triggeredCommitProxy.getName());</span>
+<span class="nc" id="L56">            stringBuilder.append('\n');</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        } else if (proxy instanceof EventChannelProxy) {</span>
+<span class="nc" id="L58">            final EventChannelProxy eventChannelProxy = (EventChannelProxy) proxy;</span>
+
+<span class="nc" id="L60">            stringBuilder.append(indent);</span>
+<span class="nc" id="L61">            stringBuilder.append(&quot;EVENT_CHANNEL: &quot;);</span>
+<span class="nc" id="L62">            stringBuilder.append(eventChannelProxy.getName());</span>
+<span class="nc" id="L63">            stringBuilder.append('\n');</span>
+<span class="nc" id="L64">        } else {</span>
+<span class="nc" id="L65">            stringBuilder.append(indent);</span>
+<span class="nc" id="L66">            stringBuilder.append(&quot;UNKNOWN: &quot;);</span>
+<span class="nc" id="L67">            stringBuilder.append(proxy);</span>
+<span class="nc" id="L68">            stringBuilder.append('\n');</span>
+        }
+<span class="nc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

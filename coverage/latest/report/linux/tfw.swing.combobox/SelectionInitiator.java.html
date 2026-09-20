@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectionInitiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.combobox</a> &gt; <span class="el_source">SelectionInitiator.java</span></div><h1>SelectionInitiator.java</h1><pre class="source lang-java linenums">package tfw.swing.combobox;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import javax.swing.JComboBox;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public class SelectionInitiator extends Initiator implements ActionListener {
+    private final ObjectECD selectedItemECD;
+
+    private final IntegerECD selectedIndexECD;
+
+    private final JComboBox&lt;Object&gt; comboBox;
+
+    public SelectionInitiator(
+            String name, ObjectECD selectedItemECD, IntegerECD selectedIndexECD, JComboBox&lt;Object&gt; comboBox) {
+<span class="nc" id="L20">        super(&quot;SelectionInitiator[&quot; + name + &quot;]&quot;, checkECDs(selectedItemECD, selectedIndexECD));</span>
+
+<span class="nc" id="L22">        this.selectedItemECD = selectedItemECD;</span>
+<span class="nc" id="L23">        this.selectedIndexECD = selectedIndexECD;</span>
+<span class="nc" id="L24">        this.comboBox = comboBox;</span>
+<span class="nc" id="L25">    }</span>
+
+    private static ObjectECD[] checkECDs(ObjectECD selectedItemECD, IntegerECD selectedIndexECD) {
+<span class="nc" id="L28">        ArrayList&lt;ObjectECD&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (selectedItemECD != null) {</span>
+<span class="nc" id="L30">            list.add(selectedItemECD);</span>
+        }
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (selectedIndexECD != null) {</span>
+<span class="nc" id="L33">            list.add(selectedIndexECD);</span>
+        }
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (list.isEmpty()) {</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;(selectedItemECD == null)&amp;&amp;(selectedIndexECD == null) not allowed&quot;);</span>
+        }
+<span class="nc" id="L38">        return list.toArray(new ObjectECD[list.size()]);</span>
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+<span class="nc bnc" id="L43" title="All 4 branches missed.">        if (selectedItemECD != null &amp;&amp; comboBox.getSelectedItem() != null) {</span>
+<span class="nc" id="L44">            set(selectedItemECD, comboBox.getSelectedItem());</span>
+        }
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (selectedIndexECD != null) {</span>
+<span class="nc" id="L47">            set(selectedIndexECD, comboBox.getSelectedIndex());</span>
+        }
+<span class="nc" id="L49">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

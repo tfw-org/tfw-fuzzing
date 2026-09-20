@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LongIlaFactoryConcatenateTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilaf.longilaf</a> &gt; <span class="el_source">LongIlaFactoryConcatenateTest.java</span></div><h1>LongIlaFactoryConcatenateTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilaf.longilaf;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L8">final class LongIlaFactoryConcatenateTest {</span>
+    @Test
+    void argumentTest() {
+<span class="nc" id="L11">        final LongIlaFactory longIlaFactory = LongIlaFactoryFill.create(0L, 10);</span>
+
+<span class="nc" id="L13">        assertThatThrownBy(() -&gt; LongIlaFactoryConcatenate.create(null, longIlaFactory))</span>
+<span class="nc" id="L14">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L15">                .hasMessage(&quot;leftFactory == null not allowed!&quot;);</span>
+<span class="nc" id="L16">        assertThatThrownBy(() -&gt; LongIlaFactoryConcatenate.create(longIlaFactory, null))</span>
+<span class="nc" id="L17">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L18">                .hasMessage(&quot;rightFactory == null not allowed!&quot;);</span>
+<span class="nc" id="L19">    }</span>
+
+    @Test
+    void createTest() {
+<span class="nc" id="L23">        final LongIlaFactory f = LongIlaFactoryFill.create(0L, 10);</span>
+
+<span class="nc" id="L25">        assertThat(LongIlaFactoryConcatenate.create(f, f).create()).isNotNull();</span>
+<span class="nc" id="L26">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

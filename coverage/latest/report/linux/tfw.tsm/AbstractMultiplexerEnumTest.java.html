@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMultiplexerEnumTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">AbstractMultiplexerEnumTest.java</span></div><h1>AbstractMultiplexerEnumTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+<span class="nc" id="L11">class AbstractMultiplexerEnumTest {</span>
+    @Test
+    void testValues() {
+<span class="nc" id="L14">        List&lt;MultiplexerEnum&lt;?, ?&gt;&gt; channels = TestMultiplexerEnum.values();</span>
+
+<span class="nc" id="L16">        assertThat(channels).hasSize(2);</span>
+<span class="nc" id="L17">        assertThat(channels.get(0)).isEqualTo(TestMultiplexerEnum.E1);</span>
+<span class="nc" id="L18">        assertThat(channels.get(1)).isEqualTo(TestMultiplexerEnum.E2);</span>
+<span class="nc" id="L19">    }</span>
+
+    static class TestMultiplexerEnum&lt;T extends EventChannelDescription, U extends EventChannelDescription&gt;
+            extends AbstractMultiplexerEnum&lt;T, U&gt; {
+<span class="nc" id="L23">        public static final TestMultiplexerEnum&lt;ObjectECD, ObjectIlaECD&gt; E1 = new TestMultiplexerEnum&lt;&gt;(</span>
+                new ObjectECD(&quot;O1&quot;),
+                new ObjectIlaECD(&quot;M1&quot;),
+                new ObjectIlaMultiplexerStrategy(),
+                DotEqualsRule.RULE,
+                null,
+                null);
+<span class="nc" id="L30">        public static final TestMultiplexerEnum&lt;ObjectECD, ObjectIlaECD&gt; E2 = new TestMultiplexerEnum&lt;&gt;(</span>
+                new ObjectECD(&quot;O2&quot;),
+                new ObjectIlaECD(&quot;M2&quot;),
+                new ObjectIlaMultiplexerStrategy(),
+                DotEqualsRule.RULE,
+                null,
+                null);
+
+        public TestMultiplexerEnum(
+                T ecd, U mecd, MultiplexerStrategy strategy, StateChangeRule rule, Object state, String[] tags) {
+<span class="nc" id="L40">            super(ecd, mecd, strategy, rule, state, tags);</span>
+<span class="nc" id="L41">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;MultiplexerEnum&lt;?, ?&gt;&gt; values() {
+<span class="nc" id="L45">            return valuesFromClass(TestMultiplexerEnum.class);</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Test
+    void testValuesFromClassWhenNoInstances() {
+        // Call valuesFromClass on a class that has no instances registered
+<span class="nc" id="L53">        List&lt;?&gt; result = AbstractMultiplexerEnum.valuesFromClass(UnregisteredMultiplexerEnum.class);</span>
+
+<span class="nc" id="L55">        assertThat(result).isEmpty();</span>
+<span class="nc" id="L56">    }</span>
+
+    static class UnregisteredMultiplexerEnum&lt;T extends EventChannelDescription, U extends EventChannelDescription&gt;
+            extends AbstractMultiplexerEnum&lt;T, U&gt; {
+        public UnregisteredMultiplexerEnum(T ecd, U mecd) {
+<span class="nc" id="L61">            super(ecd, mecd, new ObjectIlaMultiplexerStrategy(), DotEqualsRule.RULE, null, null);</span>
+<span class="nc" id="L62">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;MultiplexerEnum&lt;?, ?&gt;&gt; values() {
+<span class="nc" id="L66">            return valuesFromClass(UnregisteredMultiplexerEnum.class);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

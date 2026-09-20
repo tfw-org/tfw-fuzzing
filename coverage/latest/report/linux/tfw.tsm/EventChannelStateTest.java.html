@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventChannelStateTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">EventChannelStateTest.java</span></div><h1>EventChannelStateTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L9">final class EventChannelStateTest {</span>
+    @Test
+    void eventChannelStateTest() throws Exception {
+<span class="nc" id="L12">        StringECD stringECD = new StringECD(&quot;myChannel&quot;);</span>
+<span class="nc" id="L13">        String value = &quot;Hello World&quot;;</span>
+
+<span class="nc" id="L15">        assertThatThrownBy(() -&gt; new EventChannelState(null, value))</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L17">                .hasMessage(&quot;ecd == null not allowed!&quot;);</span>
+
+<span class="nc" id="L19">        EventChannelState state = new EventChannelState(stringECD, value);</span>
+<span class="nc" id="L20">        assertThat(stringECD.getEventChannelName()).isEqualTo(state.getEventChannelName());</span>
+<span class="nc" id="L21">        assertThat(value).isEqualTo(state.getState());</span>
+<span class="nc" id="L22">    }</span>
+
+    @Test
+    void equalsTest() throws Exception {
+<span class="nc" id="L26">        StringECD stringECD = new StringECD(&quot;myChannel&quot;);</span>
+<span class="nc" id="L27">        String value = &quot;Hello World&quot;;</span>
+
+<span class="nc" id="L29">        EventChannelState state1 = new EventChannelState(stringECD, value);</span>
+<span class="nc" id="L30">        EventChannelState state2 = new EventChannelState(stringECD, value);</span>
+<span class="nc" id="L31">        assertThat(state1).isEqualTo(state2);</span>
+<span class="nc" id="L32">        assertThat(state1.hashCode()).hasSameHashCodeAs(state2.hashCode());</span>
+<span class="nc" id="L33">        assertThat(state1).isNotNull().isNotEqualTo(new Object());</span>
+
+<span class="nc" id="L35">        state2 = new EventChannelState(new StringECD(&quot;different&quot;), value);</span>
+<span class="nc" id="L36">        assertThat(state1).isNotEqualTo(state2);</span>
+
+<span class="nc" id="L38">        state2 = new EventChannelState(stringECD, &quot;different&quot;);</span>
+<span class="nc" id="L39">        assertThat(state1).isNotEqualTo(state2);</span>
+<span class="nc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

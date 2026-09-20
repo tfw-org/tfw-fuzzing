@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JTextFieldBBTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JTextFieldBBTest.java</span></div><h1>JTextFieldBBTest.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Map;
+import org.assertj.swing.core.BasicRobot;
+import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
+import org.assertj.swing.edt.GuiActionRunner;
+import org.assertj.swing.fixture.FrameFixture;
+import org.assertj.swing.fixture.JTextComponentFixture;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import tfw.tsm.BasicTransactionQueue;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchProxy;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Initiator;
+import tfw.tsm.Root;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+
+@DisabledIf(value = &quot;java.awt.GraphicsEnvironment#isHeadless&quot;, disabledReason = &quot;headless environment&quot;)
+<span class="nc" id="L28">final class JTextFieldBBTest {</span>
+<span class="nc" id="L29">    public static final StatelessTriggerECD TEXTFIELD_ACTION_ECD = new StatelessTriggerECD(&quot;TextfieldAction&quot;);</span>
+<span class="nc" id="L30">    public static final BooleanECD TEXTFIELD_ENABLED_ECD = new BooleanECD(&quot;TextFieldEnabled&quot;);</span>
+    public static final String TEXTFIELD_TEXT_DEFAULT = &quot;&quot;;
+<span class="nc" id="L32">    public static final StringECD TEXTFIELD_TEXT_ECD = new StringECD(&quot;TextFieldText&quot;);</span>
+    public static final String TEXTFIELD_NAME = &quot;TestTextField&quot;;
+    public static final String FRAME_NAME = &quot;Frame&quot;;
+    public static final String INITIATOR_NAME = &quot;Initiator[&quot; + TEXTFIELD_NAME + &quot;]&quot;;
+    public static final String TEST_WIDGET_TEXT = &quot;WidgetText&quot;;
+    public static final String TEST_INITIATOR_TEXT = &quot;InitiatorText&quot;;
+
+    private Branch branch;
+    private JTextFieldBBTestApplication frame;
+    private FrameFixture window;
+
+    @BeforeAll
+    static void setUpOnce() {
+<span class="nc" id="L45">        FailOnThreadViolationRepaintManager.install();</span>
+<span class="nc" id="L46">    }</span>
+
+    @BeforeEach
+    void setUp() {
+<span class="nc" id="L50">        branch = new Branch(FRAME_NAME);</span>
+<span class="nc" id="L51">        frame = GuiActionRunner.execute(() -&gt; new JTextFieldBBTestApplication(branch));</span>
+<span class="nc" id="L52">        window = new FrameFixture(BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock(), frame);</span>
+<span class="nc" id="L53">        window.show();</span>
+<span class="nc" id="L54">    }</span>
+
+    @Test
+    void jTextFieldBBTest() throws Exception {
+<span class="nc" id="L58">        final BasicTransactionQueue basicTransactionQueue = new BasicTransactionQueue();</span>
+<span class="nc" id="L59">        final JTextComponentFixture textField = window.textBox(TEXTFIELD_NAME);</span>
+<span class="nc" id="L60">        final Root root = Root.builder()</span>
+<span class="nc" id="L61">                .setName(this.getClass().getSimpleName())</span>
+<span class="nc" id="L62">                .setTransactionQueue(new BasicTransactionQueue())</span>
+<span class="nc" id="L63">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L64">                .setLogging(true)</span>
+<span class="nc" id="L65">                .addObjectECD(TEXTFIELD_ENABLED_ECD, textField.isEnabled())</span>
+<span class="nc" id="L66">                .addObjectECD(TEXTFIELD_TEXT_ECD, textField.text())</span>
+<span class="nc" id="L67">                .setTransactionQueue(basicTransactionQueue)</span>
+<span class="nc" id="L68">                .build();</span>
+<span class="nc" id="L69">        final Initiator initiator = Initiator.builder()</span>
+<span class="nc" id="L70">                .setName(INITIATOR_NAME)</span>
+<span class="nc" id="L71">                .addEventChannelDescription(TEXTFIELD_ENABLED_ECD)</span>
+<span class="nc" id="L72">                .addEventChannelDescription(TEXTFIELD_TEXT_ECD)</span>
+<span class="nc" id="L73">                .build();</span>
+<span class="nc" id="L74">        final TestCommit testCommit = TestCommit.builder()</span>
+<span class="nc" id="L75">                .setName(TEXTFIELD_NAME)</span>
+<span class="nc" id="L76">                .addTriggeringEcd(TEXTFIELD_ENABLED_ECD)</span>
+<span class="nc" id="L77">                .addTriggeringEcd(TEXTFIELD_TEXT_ECD)</span>
+<span class="nc" id="L78">                .build();</span>
+
+<span class="nc" id="L80">        root.add(branch);</span>
+<span class="nc" id="L81">        root.add(initiator);</span>
+<span class="nc" id="L82">        root.add(testCommit);</span>
+
+<span class="nc" id="L84">        compareWidgetTfwState(textField, testCommit, 1, basicTransactionQueue);</span>
+
+<span class="nc" id="L86">        textField.setText(TEST_WIDGET_TEXT);</span>
+
+<span class="nc" id="L88">        compareWidgetTfwState(textField, testCommit, 2, basicTransactionQueue);</span>
+
+<span class="nc" id="L90">        initiator.set(TEXTFIELD_TEXT_ECD, TEST_INITIATOR_TEXT);</span>
+
+<span class="nc" id="L92">        compareWidgetTfwState(textField, testCommit, 5, basicTransactionQueue);</span>
+
+<span class="nc" id="L94">        initiator.set(TEXTFIELD_ENABLED_ECD, Boolean.FALSE);</span>
+
+<span class="nc" id="L96">        compareWidgetTfwState(textField, testCommit, 6, basicTransactionQueue);</span>
+<span class="nc" id="L97">    }</span>
+
+    @Test
+    void actionListenerTest() {
+<span class="nc" id="L101">        final JTextFieldBB jTextFieldBB = GuiActionRunner.execute(</span>
+<span class="nc" id="L102">                () -&gt; JTextFieldBB.builder().setName(TEXTFIELD_NAME).build());</span>
+
+<span class="nc" id="L104">        assertThat(new BranchProxy(jTextFieldBB.getBranch()).getChildProxies()).isEmpty();</span>
+
+<span class="nc" id="L106">        final TestActionListenerBranchBox testActionListenerBranchBox = new TestActionListenerBranchBox();</span>
+
+<span class="nc" id="L108">        GuiActionRunner.execute(() -&gt; jTextFieldBB.addActionListenerToBoth(testActionListenerBranchBox));</span>
+<span class="nc" id="L109">        GuiActionRunner.execute(() -&gt; jTextFieldBB.removeActionListenerFromBoth(testActionListenerBranchBox));</span>
+
+<span class="nc" id="L111">        final TestActionListenerTreeComponent testActionListenerTreeComponent =</span>
+                new TestActionListenerTreeComponent(TEXTFIELD_ACTION_ECD);
+
+<span class="nc" id="L114">        GuiActionRunner.execute(() -&gt; jTextFieldBB.addActionListenerToBoth(testActionListenerTreeComponent));</span>
+<span class="nc" id="L115">        GuiActionRunner.execute(() -&gt; jTextFieldBB.removeActionListenerFromBoth(testActionListenerTreeComponent));</span>
+
+<span class="nc" id="L117">        final TestActionListener testActionListener = new TestActionListener();</span>
+
+<span class="nc" id="L119">        assertThatThrownBy(</span>
+<span class="nc" id="L120">                        () -&gt; GuiActionRunner.execute(() -&gt; jTextFieldBB.addActionListenerToBoth(testActionListener)))</span>
+<span class="nc" id="L121">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L122">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+
+<span class="nc" id="L124">        assertThatThrownBy(() -&gt;</span>
+<span class="nc" id="L125">                        GuiActionRunner.execute(() -&gt; jTextFieldBB.removeActionListenerFromBoth(testActionListener)))</span>
+<span class="nc" id="L126">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L127">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+<span class="nc" id="L128">    }</span>
+
+    @Test
+    void documentListenerTest() {
+<span class="nc" id="L132">        final JTextFieldBB jTextFieldBB = GuiActionRunner.execute(</span>
+<span class="nc" id="L133">                () -&gt; JTextFieldBB.builder().setName(TEXTFIELD_NAME).build());</span>
+
+<span class="nc" id="L135">        assertThat(new BranchProxy(jTextFieldBB.getBranch()).getChildProxies()).isEmpty();</span>
+
+<span class="nc" id="L137">        final TestDocumentListenerBranchBox testDocumentListenerBranchBox = new TestDocumentListenerBranchBox();</span>
+
+<span class="nc" id="L139">        GuiActionRunner.execute(() -&gt; jTextFieldBB.addDocumentListenerToBoth(testDocumentListenerBranchBox));</span>
+<span class="nc" id="L140">        GuiActionRunner.execute(() -&gt; jTextFieldBB.removeDocumentListenerFromBoth(testDocumentListenerBranchBox));</span>
+
+<span class="nc" id="L142">        final TestDocumentListenerTreeComponent testDocumentListenerTreeComponent =</span>
+                new TestDocumentListenerTreeComponent(TEXTFIELD_ACTION_ECD);
+
+<span class="nc" id="L145">        GuiActionRunner.execute(() -&gt; jTextFieldBB.addDocumentListenerToBoth(testDocumentListenerTreeComponent));</span>
+<span class="nc" id="L146">        GuiActionRunner.execute(() -&gt; jTextFieldBB.removeDocumentListenerFromBoth(testDocumentListenerTreeComponent));</span>
+
+<span class="nc" id="L148">        final TestDocumentListener testDocumentListener = new TestDocumentListener();</span>
+
+<span class="nc" id="L150">        assertThatThrownBy(() -&gt;</span>
+<span class="nc" id="L151">                        GuiActionRunner.execute(() -&gt; jTextFieldBB.addDocumentListenerToBoth(testDocumentListener)))</span>
+<span class="nc" id="L152">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L153">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+
+<span class="nc" id="L155">        assertThatThrownBy(() -&gt; GuiActionRunner.execute(</span>
+<span class="nc" id="L156">                        () -&gt; jTextFieldBB.removeDocumentListenerFromBoth(testDocumentListener)))</span>
+<span class="nc" id="L157">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L158">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+<span class="nc" id="L159">    }</span>
+
+    private static void compareWidgetTfwState(
+            final JTextComponentFixture jTextComponentFixture,
+            final TestCommit testCommit,
+            final int expectedTestCommitCount,
+            final BasicTransactionQueue basicTransactionQueue)
+            throws Exception {
+<span class="nc" id="L167">        SwingTestUtil.waitForTfwAndSwing(basicTransactionQueue);</span>
+
+<span class="nc" id="L169">        final boolean widgetEnabled = jTextComponentFixture.isEnabled();</span>
+<span class="nc" id="L170">        final String widgetText = jTextComponentFixture.text();</span>
+<span class="nc" id="L171">        final Map&lt;ObjectECD, Object&gt; tfwState = testCommit.getState();</span>
+<span class="nc" id="L172">        final boolean tfwEnabled = (Boolean) tfwState.get(TEXTFIELD_ENABLED_ECD);</span>
+<span class="nc" id="L173">        final String tfwText = (String) tfwState.get(TEXTFIELD_TEXT_ECD);</span>
+
+<span class="nc" id="L175">        assertThat(expectedTestCommitCount).isEqualTo(testCommit.getCount());</span>
+
+<span class="nc" id="L177">        assertThat(widgetText).isEqualTo(tfwText);</span>
+<span class="nc" id="L178">        assertThat(widgetEnabled).isEqualTo(tfwEnabled);</span>
+<span class="nc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

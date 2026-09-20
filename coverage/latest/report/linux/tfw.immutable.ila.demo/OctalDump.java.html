@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OctalDump.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.demo</a> &gt; <span class="el_source">OctalDump.java</span></div><h1>OctalDump.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.demo;
+
+import java.io.File;
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaFromFile;
+import tfw.immutable.ila.byteila.ByteIlaIterator;
+import tfw.immutable.ila.byteila.ByteIlaSegment;
+import tfw.immutable.ila.byteila.ByteIlaSwap;
+import tfw.immutable.ila.doubleila.DoubleIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromLongIla;
+import tfw.immutable.ila.doubleila.DoubleIlaIterator;
+import tfw.immutable.ila.doubleila.DoubleIlaSegment;
+import tfw.immutable.ila.floatila.FloatIla;
+import tfw.immutable.ila.floatila.FloatIlaFromIntIla;
+import tfw.immutable.ila.floatila.FloatIlaIterator;
+import tfw.immutable.ila.floatila.FloatIlaSegment;
+import tfw.immutable.ila.intila.IntIla;
+import tfw.immutable.ila.intila.IntIlaFromByteIla;
+import tfw.immutable.ila.intila.IntIlaIterator;
+import tfw.immutable.ila.intila.IntIlaSegment;
+import tfw.immutable.ila.longila.LongIla;
+import tfw.immutable.ila.longila.LongIlaFromByteIla;
+import tfw.immutable.ila.longila.LongIlaIterator;
+import tfw.immutable.ila.longila.LongIlaSegment;
+import tfw.immutable.ila.objectila.AbstractObjectIla;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.immutable.ila.objectila.ObjectIlaIterator;
+import tfw.immutable.ila.shortila.ShortIla;
+import tfw.immutable.ila.shortila.ShortIlaFromByteIla;
+import tfw.immutable.ila.shortila.ShortIlaIterator;
+import tfw.immutable.ila.shortila.ShortIlaSegment;
+
+<span class="nc" id="L35">public class OctalDump {</span>
+    public static final int BUFFER_SIZE = 1000;
+
+    public static void main(String[] args) throws IOException {
+<span class="nc bnc" id="L39" title="All 4 branches missed.">        if (args.length != 3 || args[1].length() != 2) {</span>
+<span class="nc" id="L40">            System.err.println(&quot;Usage: OctalDump &lt;-t type&gt; &lt;file&gt;&quot;);</span>
+<span class="nc" id="L41">            System.err.println(&quot;       type = &lt;d,f,o,x&gt;&lt;1,2,4,8&gt;&quot;);</span>
+<span class="nc" id="L42">            System.exit(-1);</span>
+        }
+
+<span class="nc" id="L45">        ByteIla bytes = ByteIlaFromFile.create(new File(args[2]));</span>
+<span class="nc" id="L46">        ObjectIla&lt;String&gt; strings = null;</span>
+<span class="nc" id="L47">        char type = args[1].charAt(0);</span>
+<span class="nc" id="L48">        char size = args[1].charAt(1);</span>
+
+<span class="nc bnc" id="L50" title="All 3 branches missed.">        switch (type) {</span>
+            case 'd':
+            case 'o':
+            case 'x':
+<span class="nc bnc" id="L54" title="All 5 branches missed.">                switch (size) {</span>
+                    case '1': {
+<span class="nc" id="L56">                        strings = StringObjectIlaFromByteIla.create(bytes, type, BUFFER_SIZE);</span>
+<span class="nc" id="L57">                        break;</span>
+                    }
+                    case '2': {
+<span class="nc" id="L60">                        ByteIla byteIla = ByteIlaSwap.create(bytes, 2, BUFFER_SIZE);</span>
+<span class="nc" id="L61">                        ShortIla shortIla = ShortIlaFromByteIla.create(byteIla, BUFFER_SIZE);</span>
+<span class="nc" id="L62">                        strings = StringObjectIlaFromShortIla.create(shortIla, type, BUFFER_SIZE);</span>
+<span class="nc" id="L63">                        break;</span>
+                    }
+                    case '4': {
+<span class="nc" id="L66">                        ByteIla byteIla = ByteIlaSwap.create(bytes, 4, BUFFER_SIZE);</span>
+<span class="nc" id="L67">                        IntIla intIla = IntIlaFromByteIla.create(byteIla, BUFFER_SIZE);</span>
+<span class="nc" id="L68">                        strings = StringObjectIlaFromIntIla.create(intIla, type, BUFFER_SIZE);</span>
+<span class="nc" id="L69">                        break;</span>
+                    }
+                    case '8': {
+<span class="nc" id="L72">                        ByteIla byteIla = ByteIlaSwap.create(bytes, 8, BUFFER_SIZE);</span>
+<span class="nc" id="L73">                        LongIla longIla = LongIlaFromByteIla.create(byteIla, BUFFER_SIZE);</span>
+<span class="nc" id="L74">                        strings = StringObjectIlaFromLongIla.create(longIla, type, BUFFER_SIZE);</span>
+<span class="nc" id="L75">                        break;</span>
+                    }
+                    default:
+<span class="nc" id="L78">                        throw new IllegalArgumentException(&quot;size=&quot; + size + &quot; for 'd', 'o', or 'x' not allowed!&quot;);</span>
+                }
+                break;
+            case 'f':
+<span class="nc bnc" id="L82" title="All 3 branches missed.">                switch (size) {</span>
+                    case '4': {
+<span class="nc" id="L84">                        ByteIla byteIla = ByteIlaSwap.create(bytes, 4, BUFFER_SIZE);</span>
+<span class="nc" id="L85">                        IntIla intIla = IntIlaFromByteIla.create(byteIla, BUFFER_SIZE);</span>
+<span class="nc" id="L86">                        FloatIla floatIla = FloatIlaFromIntIla.create(intIla, BUFFER_SIZE);</span>
+<span class="nc" id="L87">                        strings = StringObjectIlaFromFloatIla.create(floatIla, BUFFER_SIZE);</span>
+<span class="nc" id="L88">                        break;</span>
+                    }
+                    case '8': {
+<span class="nc" id="L91">                        ByteIla byteIla = ByteIlaSwap.create(bytes, 8, BUFFER_SIZE);</span>
+<span class="nc" id="L92">                        LongIla longIla = LongIlaFromByteIla.create(byteIla, BUFFER_SIZE);</span>
+<span class="nc" id="L93">                        DoubleIla doubleIla = DoubleIlaFromLongIla.create(longIla, BUFFER_SIZE);</span>
+<span class="nc" id="L94">                        strings = StringObjectIlaFromDoubleIla.create(doubleIla, BUFFER_SIZE);</span>
+<span class="nc" id="L95">                        break;</span>
+                    }
+                    default:
+<span class="nc" id="L98">                        throw new IllegalArgumentException(&quot;size=&quot; + size + &quot; for 'f' not allowed!&quot;);</span>
+                }
+                break;
+            default:
+<span class="nc" id="L102">                throw new IllegalArgumentException(&quot;type=&quot; + type + &quot; not allowed!&quot;);</span>
+        }
+
+<span class="nc" id="L105">        for (ObjectIlaIterator&lt;String&gt; oii = new ObjectIlaIterator&lt;&gt;(strings, new String[BUFFER_SIZE]);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                oii.hasNext(); ) {</span>
+<span class="nc" id="L107">            System.out.println(oii.next());</span>
+        }
+
+<span class="nc" id="L110">        System.out.println(&quot;strings = \n&quot; + strings);</span>
+<span class="nc" id="L111">    }</span>
+
+    private static class StringObjectIlaFromByteIla {
+        private StringObjectIlaFromByteIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final ByteIla byteIla, final char type, final int bufferSize) {
+<span class="nc" id="L117">            Argument.assertNotNull(byteIla, &quot;byteIla&quot;);</span>
+<span class="nc" id="L118">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L120">            return new ObjectIlaImpl(byteIla, type, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final ByteIla byteIla;
+            private final char type;
+            private final int bufferSize;
+
+<span class="nc" id="L128">            private ObjectIlaImpl(final ByteIla byteIla, final char type, final int bufferSize) {</span>
+<span class="nc" id="L129">                this.byteIla = byteIla;</span>
+<span class="nc" id="L130">                this.type = type;</span>
+<span class="nc" id="L131">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L132">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                return byteIla.length() / 16 + (byteIla.length() % 16 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L141">                ByteIlaIterator bii = new ByteIlaIterator(</span>
+<span class="nc" id="L142">                        ByteIlaSegment.create(byteIla, start, byteIla.length() - start), new byte[bufferSize]);</span>
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L145">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L147">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L148" title="All 4 branches missed.">                    for (int j = 0; j &lt; 16 &amp;&amp; bii.hasNext(); j++) {</span>
+<span class="nc" id="L149">                        sb.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L150" title="All 4 branches missed.">                        switch (type) {</span>
+                            case 'd':
+<span class="nc" id="L152">                                sb.append(Byte.toString(bii.next()));</span>
+<span class="nc" id="L153">                                break;</span>
+                            case 'o':
+<span class="nc" id="L155">                                sb.append(Integer.toOctalString(bii.next() &amp; 0xFF));</span>
+<span class="nc" id="L156">                                break;</span>
+                            case 'x':
+<span class="nc" id="L158">                                sb.append(Integer.toHexString(bii.next() &amp; 0xFF));</span>
+<span class="nc" id="L159">                                break;</span>
+                            default:
+<span class="nc" id="L161">                                throw new IllegalArgumentException(&quot;size=1 for '&quot; + type + &quot;' not allowed!&quot;);</span>
+                        }
+                    }
+<span class="nc" id="L164">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L166">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L168">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L172">                byteIla.close();</span>
+<span class="nc" id="L173">            }</span>
+        }
+    }
+
+    private static class StringObjectIlaFromShortIla {
+        private StringObjectIlaFromShortIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final ShortIla shortIla, final char type, final int bufferSize) {
+<span class="nc" id="L181">            Argument.assertNotNull(shortIla, &quot;shortIla&quot;);</span>
+<span class="nc" id="L182">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L184">            return new ObjectIlaImpl(shortIla, type, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final ShortIla shortIla;
+            private final char type;
+            private final int bufferSize;
+
+<span class="nc" id="L192">            private ObjectIlaImpl(final ShortIla shortIla, final char type, final int bufferSize) {</span>
+<span class="nc" id="L193">                this.shortIla = shortIla;</span>
+<span class="nc" id="L194">                this.type = type;</span>
+<span class="nc" id="L195">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L196">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                return shortIla.length() / 8 + (shortIla.length() % 8 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L205">                ShortIlaIterator sii = new ShortIlaIterator(</span>
+<span class="nc" id="L206">                        ShortIlaSegment.create(shortIla, start * 2, shortIla.length() - start * 2),</span>
+                        new short[bufferSize]);
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L210">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L212">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L213" title="All 4 branches missed.">                    for (int j = 0; j &lt; 8 &amp;&amp; sii.hasNext(); j++) {</span>
+<span class="nc" id="L214">                        sb.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">                        switch (type) {</span>
+                            case 'd':
+<span class="nc" id="L217">                                sb.append(Short.toString(sii.next()));</span>
+<span class="nc" id="L218">                                break;</span>
+                            case 'o':
+<span class="nc" id="L220">                                sb.append(Integer.toOctalString(sii.next() &amp; 0xFFFF));</span>
+<span class="nc" id="L221">                                break;</span>
+                            case 'x':
+<span class="nc" id="L223">                                sb.append(Integer.toHexString(sii.next() &amp; 0xFFFF));</span>
+<span class="nc" id="L224">                                break;</span>
+                            default:
+<span class="nc" id="L226">                                throw new IllegalArgumentException(&quot;size=2 for '&quot; + type + &quot;' not allowed!&quot;);</span>
+                        }
+                    }
+<span class="nc" id="L229">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L231">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L233">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L237">                shortIla.close();</span>
+<span class="nc" id="L238">            }</span>
+        }
+    }
+
+    private static class StringObjectIlaFromIntIla {
+        private StringObjectIlaFromIntIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final IntIla intIla, final char type, final int bufferSize) {
+<span class="nc" id="L246">            Argument.assertNotNull(intIla, &quot;intIla&quot;);</span>
+<span class="nc" id="L247">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L249">            return new ObjectIlaImpl(intIla, type, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final IntIla intIla;
+            private final char type;
+            private final int bufferSize;
+
+<span class="nc" id="L257">            private ObjectIlaImpl(final IntIla intIla, final char type, final int bufferSize) {</span>
+<span class="nc" id="L258">                this.intIla = intIla;</span>
+<span class="nc" id="L259">                this.type = type;</span>
+<span class="nc" id="L260">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L261">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                return intIla.length() / 4 + (intIla.length() % 4 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L270">                IntIlaIterator iii = new IntIlaIterator(</span>
+<span class="nc" id="L271">                        IntIlaSegment.create(intIla, start * 4, intIla.length() - start * 4), new int[bufferSize]);</span>
+
+<span class="nc bnc" id="L273" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L274">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L276">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L277" title="All 4 branches missed.">                    for (int j = 0; j &lt; 4 &amp;&amp; iii.hasNext(); j++) {</span>
+<span class="nc" id="L278">                        sb.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L279" title="All 4 branches missed.">                        switch (type) {</span>
+                            case 'd':
+<span class="nc" id="L281">                                sb.append(Integer.toString(iii.next()));</span>
+<span class="nc" id="L282">                                break;</span>
+                            case 'o':
+<span class="nc" id="L284">                                sb.append(Integer.toOctalString(iii.next()));</span>
+<span class="nc" id="L285">                                break;</span>
+                            case 'x':
+<span class="nc" id="L287">                                sb.append(Integer.toHexString(iii.next()));</span>
+                                break;
+                        }
+                    }
+<span class="nc" id="L291">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L293">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L295">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L299">                intIla.close();</span>
+<span class="nc" id="L300">            }</span>
+        }
+    }
+
+    private static class StringObjectIlaFromLongIla {
+        private StringObjectIlaFromLongIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final LongIla longIla, final char type, final int bufferSize) {
+<span class="nc" id="L308">            Argument.assertNotNull(longIla, &quot;longIla&quot;);</span>
+<span class="nc" id="L309">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L311">            return new ObjectIlaImpl(longIla, type, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final LongIla longIla;
+            private final char type;
+            private final int bufferSize;
+
+<span class="nc" id="L319">            private ObjectIlaImpl(final LongIla longIla, final char type, final int bufferSize) {</span>
+<span class="nc" id="L320">                this.longIla = longIla;</span>
+<span class="nc" id="L321">                this.type = type;</span>
+<span class="nc" id="L322">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L323">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L327" title="All 2 branches missed.">                return longIla.length() / 2 + (longIla.length() % 2 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L332">                LongIlaIterator lii = new LongIlaIterator(</span>
+<span class="nc" id="L333">                        LongIlaSegment.create(longIla, start * 8, longIla.length() - start * 8), new long[bufferSize]);</span>
+
+<span class="nc bnc" id="L335" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L336">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L338">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L339" title="All 4 branches missed.">                    for (int j = 0; j &lt; 2 &amp;&amp; lii.hasNext(); j++) {</span>
+<span class="nc" id="L340">                        sb.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L341" title="All 4 branches missed.">                        switch (type) {</span>
+                            case 'd':
+<span class="nc" id="L343">                                sb.append(Long.toString(lii.next()));</span>
+<span class="nc" id="L344">                                break;</span>
+                            case 'o':
+<span class="nc" id="L346">                                sb.append(Long.toOctalString(lii.next()));</span>
+<span class="nc" id="L347">                                break;</span>
+                            case 'x':
+<span class="nc" id="L349">                                sb.append(Long.toHexString(lii.next()));</span>
+                                break;
+                        }
+                    }
+<span class="nc" id="L353">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L355">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L357">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L361">                longIla.close();</span>
+<span class="nc" id="L362">            }</span>
+        }
+    }
+
+    private static class StringObjectIlaFromFloatIla {
+        private StringObjectIlaFromFloatIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final FloatIla floatIla, final int bufferSize) {
+<span class="nc" id="L370">            Argument.assertNotNull(floatIla, &quot;floatIla&quot;);</span>
+<span class="nc" id="L371">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L373">            return new ObjectIlaImpl(floatIla, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final FloatIla floatIla;
+            private final int bufferSize;
+
+<span class="nc" id="L380">            private ObjectIlaImpl(final FloatIla floatIla, final int bufferSize) {</span>
+<span class="nc" id="L381">                this.floatIla = floatIla;</span>
+<span class="nc" id="L382">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L383">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L387" title="All 2 branches missed.">                return floatIla.length() / 4 + (floatIla.length() % 4 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L392">                FloatIlaIterator fii = new FloatIlaIterator(</span>
+<span class="nc" id="L393">                        FloatIlaSegment.create(floatIla, start * 4, floatIla.length() - start * 4),</span>
+                        new float[bufferSize]);
+
+<span class="nc bnc" id="L396" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L397">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L399">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L400" title="All 4 branches missed.">                    for (int j = 0; j &lt; 4 &amp;&amp; fii.hasNext(); j++) {</span>
+<span class="nc" id="L401">                        sb.append(&quot; &quot;);</span>
+<span class="nc" id="L402">                        sb.append(Float.toString(fii.next()));</span>
+                    }
+<span class="nc" id="L404">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L406">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L408">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L412">                floatIla.close();</span>
+<span class="nc" id="L413">            }</span>
+        }
+    }
+
+    private static class StringObjectIlaFromDoubleIla {
+        private StringObjectIlaFromDoubleIla() {}
+
+        public static ObjectIla&lt;String&gt; create(final DoubleIla doubleIla, final int bufferSize) {
+<span class="nc" id="L421">            Argument.assertNotNull(doubleIla, &quot;doubleIla&quot;);</span>
+<span class="nc" id="L422">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L424">            return new ObjectIlaImpl(doubleIla, bufferSize);</span>
+        }
+
+        private static class ObjectIlaImpl extends AbstractObjectIla&lt;String&gt; {
+            private final DoubleIla doubleIla;
+            private final int bufferSize;
+
+<span class="nc" id="L431">            private ObjectIlaImpl(final DoubleIla doubleIla, final int bufferSize) {</span>
+<span class="nc" id="L432">                this.doubleIla = doubleIla;</span>
+<span class="nc" id="L433">                this.bufferSize = bufferSize;</span>
+<span class="nc" id="L434">            }</span>
+
+            @Override
+            protected long lengthImpl() throws IOException {
+<span class="nc bnc" id="L438" title="All 2 branches missed.">                return doubleIla.length() / 2 + (doubleIla.length() % 2 == 0 ? 0 : 1);</span>
+            }
+
+            @Override
+            protected void getImpl(String[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L443">                DoubleIlaIterator dii = new DoubleIlaIterator(</span>
+<span class="nc" id="L444">                        DoubleIlaSegment.create(doubleIla, start * 4, doubleIla.length() - start * 4),</span>
+                        new double[bufferSize]);
+
+<span class="nc bnc" id="L447" title="All 2 branches missed.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L448">                    StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L450">                    sb.append(Long.toOctalString(start + i * 16L));</span>
+<span class="nc bnc" id="L451" title="All 4 branches missed.">                    for (int j = 0; j &lt; 2 &amp;&amp; dii.hasNext(); j++) {</span>
+<span class="nc" id="L452">                        sb.append(&quot; &quot;);</span>
+<span class="nc" id="L453">                        sb.append(Double.toString(dii.next()));</span>
+                    }
+<span class="nc" id="L455">                    sb.append(&quot;\n&quot;);</span>
+
+<span class="nc" id="L457">                    array[offset + i] = sb.toString();</span>
+                }
+<span class="nc" id="L459">            }</span>
+
+            @Override
+            protected void closeImpl() throws IOException {
+<span class="nc" id="L463">                doubleIla.close();</span>
+<span class="nc" id="L464">            }</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

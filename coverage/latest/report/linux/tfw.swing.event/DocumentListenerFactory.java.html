@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentListenerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.event</a> &gt; <span class="el_source">DocumentListenerFactory.java</span></div><h1>DocumentListenerFactory.java</h1><pre class="source lang-java linenums">package tfw.swing.event;
+
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import tfw.tsm.Initiator;
+import tfw.tsm.StateQueueFactory;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.StringECD;
+
+public class DocumentListenerFactory {
+    private DocumentListenerFactory() {}
+
+    public static DocumentListener create(
+            final String name, final StringECD textECD, final StateQueueFactory stateQueueFactory) {
+<span class="nc" id="L17">        return new DocumentInitiator(name, textECD, stateQueueFactory);</span>
+    }
+
+    private static class DocumentInitiator extends Initiator implements DocumentListener {
+        private final StringECD textECD;
+
+        public DocumentInitiator(
+                final String name, final StringECD textECD, final StateQueueFactory stateQueueFactory) {
+<span class="nc" id="L25">            super(name, new EventChannelDescription[] {textECD}, stateQueueFactory);</span>
+
+<span class="nc" id="L27">            this.textECD = textECD;</span>
+<span class="nc" id="L28">        }</span>
+
+        @Override
+        public void changedUpdate(DocumentEvent documentEvent) {
+<span class="nc" id="L32">            sendText(documentEvent);</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        public void insertUpdate(DocumentEvent documentEvent) {
+<span class="nc" id="L37">            sendText(documentEvent);</span>
+<span class="nc" id="L38">        }</span>
+
+        @Override
+        public void removeUpdate(DocumentEvent documentEvent) {
+<span class="nc" id="L42">            sendText(documentEvent);</span>
+<span class="nc" id="L43">        }</span>
+
+        private void sendText(DocumentEvent documentEvent) {
+            try {
+<span class="nc" id="L47">                final Document document = documentEvent.getDocument();</span>
+
+<span class="nc" id="L49">                set(textECD, document.getText(0, document.getLength()));</span>
+<span class="nc" id="L50">            } catch (BadLocationException ble) {</span>
+                // Do nothing.
+<span class="nc" id="L52">            }</span>
+<span class="nc" id="L53">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

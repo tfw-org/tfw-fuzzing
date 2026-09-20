@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio</a> &gt; <span class="el_source">AuTest.java</span></div><h1>AuTest.java</h1><pre class="source lang-java linenums">package tfw.audio;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.audio.au.Au;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaFromArray;
+import tfw.immutable.ila.byteila.ByteIlaUtil;
+
+<span class="nc" id="L11">final class AuTest {</span>
+    @Test
+    void auTest() throws Exception {
+<span class="nc" id="L14">        final byte[] auBytes1 = new byte[] {</span>
+            46, 115, 110, 100, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 2, 0, 0, 31, 64, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
+            -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+            12, 13, 14, 15
+        };
+<span class="nc" id="L19">        final ByteIla auByteIla = ByteIlaFromArray.create(auBytes1);</span>
+<span class="nc" id="L20">        final Au au1 = new Au(auByteIla);</span>
+<span class="nc" id="L21">        final Au au2 = new Au(au1.encoding, au1.sampleRate, au1.numberOfChannels, au1.annotation, au1.audioData);</span>
+<span class="nc" id="L22">        final byte[] auBytes2 = ByteIlaUtil.toArray(au2.auByteData);</span>
+
+<span class="nc" id="L24">        assertThat(auBytes1).isEqualTo(auBytes2);</span>
+<span class="nc" id="L25">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

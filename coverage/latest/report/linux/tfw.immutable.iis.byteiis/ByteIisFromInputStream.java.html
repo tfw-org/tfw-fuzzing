@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIisFromInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iis.byteiis</a> &gt; <span class="el_source">ByteIisFromInputStream.java</span></div><h1>ByteIisFromInputStream.java</h1><pre class="source lang-java linenums">package tfw.immutable.iis.byteiis;
+
+import java.io.IOException;
+import java.io.InputStream;
+import tfw.check.Argument;
+
+public final class ByteIisFromInputStream {
+    private ByteIisFromInputStream() {}
+
+    public static ByteIis create(final InputStream inputStream) {
+<span class="nc" id="L11">        return new ByteIisImpl(inputStream);</span>
+    }
+
+    private static class ByteIisImpl extends AbstractByteIis {
+        private final InputStream inputStream;
+
+<span class="nc" id="L17">        public ByteIisImpl(final InputStream inputStream) {</span>
+<span class="nc" id="L18">            Argument.assertNotNull(inputStream, &quot;inputStream&quot;);</span>
+
+<span class="nc" id="L20">            this.inputStream = inputStream;</span>
+<span class="nc" id="L21">        }</span>
+
+        @Override
+        public void closeImpl() throws IOException {
+<span class="nc" id="L25">            inputStream.close();</span>
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        protected int readImpl(byte[] array, int offset, int length) throws IOException {
+<span class="nc" id="L30">            return inputStream.read(array, offset, length);</span>
+        }
+
+        @Override
+        protected long skipImpl(long n) throws IOException {
+<span class="nc" id="L35">            return inputStream.skip(n);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

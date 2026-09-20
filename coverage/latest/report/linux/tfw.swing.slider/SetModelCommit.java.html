@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SetModelCommit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.slider</a> &gt; <span class="el_source">SetModelCommit.java</span></div><h1>SetModelCommit.java</h1><pre class="source lang-java linenums">package tfw.swing.slider;
+
+import java.awt.EventQueue;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeListener;
+import tfw.tsm.Commit;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public class SetModelCommit extends Commit {
+    private final IntegerECD valueECD;
+    private final IntegerECD extentECD;
+    private final IntegerECD minimumECD;
+    private final IntegerECD maximumECD;
+    private final Initiator[] initiators;
+    private final JSlider slider;
+
+    public SetModelCommit(
+            String name,
+            IntegerECD valueECD,
+            IntegerECD extentECD,
+            IntegerECD minimumECD,
+            IntegerECD maximumECD,
+            Initiator[] initiators,
+            JSlider slider) {
+<span class="nc" id="L28">        super(</span>
+                &quot;SetModelCommit[&quot; + name + &quot;]&quot;,
+                new ObjectECD[] {valueECD, extentECD, minimumECD, maximumECD},
+                null,
+                initiators);
+
+<span class="nc" id="L34">        this.valueECD = valueECD;</span>
+<span class="nc" id="L35">        this.extentECD = extentECD;</span>
+<span class="nc" id="L36">        this.minimumECD = minimumECD;</span>
+<span class="nc" id="L37">        this.maximumECD = maximumECD;</span>
+<span class="nc" id="L38">        this.initiators = initiators.clone();</span>
+<span class="nc" id="L39">        this.slider = slider;</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    protected void commit() {
+<span class="nc" id="L44">        final int value = ((Integer) get(valueECD)).intValue();</span>
+<span class="nc" id="L45">        final int extent = ((Integer) get(extentECD)).intValue();</span>
+<span class="nc" id="L46">        final int minimum = ((Integer) get(minimumECD)).intValue();</span>
+<span class="nc" id="L47">        final int maximum = ((Integer) get(maximumECD)).intValue();</span>
+
+<span class="nc" id="L49">        EventQueue.invokeLater(new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                for (int i = 0; i &lt; initiators.length; i++) {</span>
+<span class="nc" id="L53">                    slider.removeChangeListener((ChangeListener) initiators[i]);</span>
+                }
+
+<span class="nc" id="L56">                slider.setModel(new DefaultBoundedRangeModel(value, extent, minimum, maximum));</span>
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                for (int i = 0; i &lt; initiators.length; i++) {</span>
+<span class="nc" id="L59">                    slider.addChangeListener((ChangeListener) initiators[i]);</span>
+                }
+<span class="nc" id="L61">            }</span>
+        });
+<span class="nc" id="L63">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

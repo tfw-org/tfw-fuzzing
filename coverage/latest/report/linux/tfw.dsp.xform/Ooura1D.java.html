@@ -1,0 +1,3155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Ooura1D.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.dsp.xform</a> &gt; <span class="el_source">Ooura1D.java</span></div><h1>Ooura1D.java</h1><pre class="source lang-java linenums">/*
+Fast Fourier/Cosine/Sine Transform
+    dimension   :one
+    data length :power of 2
+    decimation  :frequency
+    radix       :split-radix
+    data        :inplace
+    table       :use
+functions
+    cdft: Complex Discrete Fourier Transform
+    rdft: Real Discrete Fourier Transform
+    ddct: Discrete Cosine Transform
+    ddst: Discrete Sine Transform
+    dfct: Cosine Transform of RDFT (Real Symmetric DFT)
+    dfst: Sine Transform of RDFT (Real Anti-symmetric DFT)
+function prototypes
+    void cdft(int, int, double *, int *, double *);
+    void rdft(int, int, double *, int *, double *);
+    void ddct(int, int, double *, int *, double *);
+    void ddst(int, int, double *, int *, double *);
+    void dfct(int, double *, double *, int *, double *);
+    void dfst(int, double *, double *, int *, double *);
+macro definitions
+    USE_CDFT_PTHREADS : default=not defined
+        CDFT_THREADS_BEGIN_N  : must be &gt;= 512, default=8192
+        CDFT_4THREADS_BEGIN_N : must be &gt;= 512, default=65536
+    USE_CDFT_WINTHREADS : default=not defined
+        CDFT_THREADS_BEGIN_N  : must be &gt;= 512, default=32768
+        CDFT_4THREADS_BEGIN_N : must be &gt;= 512, default=524288
+
+
+-------- Complex DFT (Discrete Fourier Transform) --------
+    [definition]
+        &lt;case1&gt;
+            X[k] = sum_j=0^n-1 x[j]*exp(2*pi*i*j*k/n), 0&lt;=k&lt;n
+        &lt;case2&gt;
+            X[k] = sum_j=0^n-1 x[j]*exp(-2*pi*i*j*k/n), 0&lt;=k&lt;n
+        (notes: sum_j=0^n-1 is a summation from j=0 to n-1)
+    [usage]
+        &lt;case1&gt;
+            ip[0] = 0; // first time only
+            cdft(2*n, 1, a, ip, w);
+        &lt;case2&gt;
+            ip[0] = 0; // first time only
+            cdft(2*n, -1, a, ip, w);
+    [parameters]
+        2*n            :data length (int)
+                        n &gt;= 1, n = power of 2
+        a[0...2*n-1]   :input/output data (double *)
+                        input data
+                            a[2*j] = Re(x[j]),
+                            a[2*j+1] = Im(x[j]), 0&lt;=j&lt;n
+                        output data
+                            a[2*k] = Re(X[k]),
+                            a[2*k+1] = Im(X[k]), 0&lt;=k&lt;n
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n/2-1]   :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            cdft(2*n, -1, a, ip, w);
+        is
+            cdft(2*n, 1, a, ip, w);
+            for (j = 0; j &lt;= 2 * n - 1; j++) {
+                a[j] *= 1.0 / n;
+            }
+        .
+
+
+-------- Real DFT / Inverse of Real DFT --------
+    [definition]
+        &lt;case1&gt; RDFT
+            R[k] = sum_j=0^n-1 a[j]*cos(2*pi*j*k/n), 0&lt;=k&lt;=n/2
+            I[k] = sum_j=0^n-1 a[j]*sin(2*pi*j*k/n), 0&lt;k&lt;n/2
+        &lt;case2&gt; IRDFT (excluding scale)
+            a[k] = (R[0] + R[n/2]*cos(pi*k))/2 +
+                   sum_j=1^n/2-1 R[j]*cos(2*pi*j*k/n) +
+                   sum_j=1^n/2-1 I[j]*sin(2*pi*j*k/n), 0&lt;=k&lt;n
+    [usage]
+        &lt;case1&gt;
+            ip[0] = 0; // first time only
+            rdft(n, 1, a, ip, w);
+        &lt;case2&gt;
+            ip[0] = 0; // first time only
+            rdft(n, -1, a, ip, w);
+    [parameters]
+        n              :data length (int)
+                        n &gt;= 2, n = power of 2
+        a[0...n-1]     :input/output data (double *)
+                        &lt;case1&gt;
+                            output data
+                                a[2*k] = R[k], 0&lt;=k&lt;n/2
+                                a[2*k+1] = I[k], 0&lt;k&lt;n/2
+                                a[1] = R[n/2]
+                        &lt;case2&gt;
+                            input data
+                                a[2*j] = R[j], 0&lt;=j&lt;n/2
+                                a[2*j+1] = I[j], 0&lt;j&lt;n/2
+                                a[1] = R[n/2]
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n/2)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n/2+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n/2-1]   :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            rdft(n, 1, a, ip, w);
+        is
+            rdft(n, -1, a, ip, w);
+            for (j = 0; j &lt;= n - 1; j++) {
+                a[j] *= 2.0 / n;
+            }
+        .
+
+
+-------- DCT (Discrete Cosine Transform) / Inverse of DCT --------
+    [definition]
+        &lt;case1&gt; IDCT (excluding scale)
+            C[k] = sum_j=0^n-1 a[j]*cos(pi*j*(k+1/2)/n), 0&lt;=k&lt;n
+        &lt;case2&gt; DCT
+            C[k] = sum_j=0^n-1 a[j]*cos(pi*(j+1/2)*k/n), 0&lt;=k&lt;n
+    [usage]
+        &lt;case1&gt;
+            ip[0] = 0; // first time only
+            ddct(n, 1, a, ip, w);
+        &lt;case2&gt;
+            ip[0] = 0; // first time only
+            ddct(n, -1, a, ip, w);
+    [parameters]
+        n              :data length (int)
+                        n &gt;= 2, n = power of 2
+        a[0...n-1]     :input/output data (double *)
+                        output data
+                            a[k] = C[k], 0&lt;=k&lt;n
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n/2)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n/2+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n*5/4-1] :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            ddct(n, -1, a, ip, w);
+        is
+            a[0] *= 0.5;
+            ddct(n, 1, a, ip, w);
+            for (j = 0; j &lt;= n - 1; j++) {
+                a[j] *= 2.0 / n;
+            }
+        .
+
+
+-------- DST (Discrete Sine Transform) / Inverse of DST --------
+    [definition]
+        &lt;case1&gt; IDST (excluding scale)
+            S[k] = sum_j=1^n A[j]*sin(pi*j*(k+1/2)/n), 0&lt;=k&lt;n
+        &lt;case2&gt; DST
+            S[k] = sum_j=0^n-1 a[j]*sin(pi*(j+1/2)*k/n), 0&lt;k&lt;=n
+    [usage]
+        &lt;case1&gt;
+            ip[0] = 0; // first time only
+            ddst(n, 1, a, ip, w);
+        &lt;case2&gt;
+            ip[0] = 0; // first time only
+            ddst(n, -1, a, ip, w);
+    [parameters]
+        n              :data length (int)
+                        n &gt;= 2, n = power of 2
+        a[0...n-1]     :input/output data (double *)
+                        &lt;case1&gt;
+                            input data
+                                a[j] = A[j], 0&lt;j&lt;n
+                                a[0] = A[n]
+                            output data
+                                a[k] = S[k], 0&lt;=k&lt;n
+                        &lt;case2&gt;
+                            output data
+                                a[k] = S[k], 0&lt;k&lt;n
+                                a[0] = S[n]
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n/2)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n/2+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n*5/4-1] :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            ddst(n, -1, a, ip, w);
+        is
+            a[0] *= 0.5;
+            ddst(n, 1, a, ip, w);
+            for (j = 0; j &lt;= n - 1; j++) {
+                a[j] *= 2.0 / n;
+            }
+        .
+
+
+-------- Cosine Transform of RDFT (Real Symmetric DFT) --------
+    [definition]
+        C[k] = sum_j=0^n a[j]*cos(pi*j*k/n), 0&lt;=k&lt;=n
+    [usage]
+        ip[0] = 0; // first time only
+        dfct(n, a, t, ip, w);
+    [parameters]
+        n              :data length - 1 (int)
+                        n &gt;= 2, n = power of 2
+        a[0...n]       :input/output data (double *)
+                        output data
+                            a[k] = C[k], 0&lt;=k&lt;=n
+        t[0...n/2]     :work area (double *)
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n/4)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n/4+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n*5/8-1] :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            a[0] *= 0.5;
+            a[n] *= 0.5;
+            dfct(n, a, t, ip, w);
+        is
+            a[0] *= 0.5;
+            a[n] *= 0.5;
+            dfct(n, a, t, ip, w);
+            for (j = 0; j &lt;= n; j++) {
+                a[j] *= 2.0 / n;
+            }
+        .
+
+
+-------- Sine Transform of RDFT (Real Anti-symmetric DFT) --------
+    [definition]
+        S[k] = sum_j=1^n-1 a[j]*sin(pi*j*k/n), 0&lt;k&lt;n
+    [usage]
+        ip[0] = 0; // first time only
+        dfst(n, a, t, ip, w);
+    [parameters]
+        n              :data length + 1 (int)
+                        n &gt;= 2, n = power of 2
+        a[0...n-1]     :input/output data (double *)
+                        output data
+                            a[k] = S[k], 0&lt;k&lt;n
+                        (a[0] is used for work area)
+        t[0...n/2-1]   :work area (double *)
+        ip[0...*]      :work area for bit reversal (int *)
+                        length of ip &gt;= 2+sqrt(n/4)
+                        strictly,
+                        length of ip &gt;=
+                            2+(1&lt;&lt;(int)(log(n/4+0.5)/log(2))/2).
+                        ip[0],ip[1] are pointers of the cos/sin table.
+        w[0...n*5/8-1] :cos/sin table (double *)
+                        w[],ip[] are initialized if ip[0] == 0.
+    [remark]
+        Inverse of
+            dfst(n, a, t, ip, w);
+        is
+            dfst(n, a, t, ip, w);
+            for (j = 1; j &lt;= n - 1; j++) {
+                a[j] *= 2.0 / n;
+            }
+        .
+
+
+Appendix :
+    The cos/sin table is recalculated when the larger table required.
+    w[] and ip[] are compatible with all routines.
+*/
+/*
+This class is a translation of the 1-Dimensional Fast Fourier/Cosine/Sine
+Transforms C file (fftsg.c) dated 2001/10/30 and located at
+http://momonga.t.u-tokyo.ac.jp/~ooura/fft.html
+*/
+package tfw.dsp.xform;
+
+public final class Ooura1D {
+    private Ooura1D() {}
+
+    public static void cdft(int n, int isgn, double[] a, int[] ip, double[] w) {
+        int nw;
+
+<span class="nc" id="L296">        nw = ip[0];</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 2)) {</span>
+<span class="nc" id="L298">            nw = n &gt;&gt; 2;</span>
+<span class="nc" id="L299">            makewt(nw, ip, w);</span>
+        }
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        if (isgn &gt;= 0) {</span>
+<span class="nc" id="L302">            cftfsub(n, a, ip, nw, w);</span>
+        } else {
+<span class="nc" id="L304">            cftbsub(n, a, ip, nw, w);</span>
+        }
+<span class="nc" id="L306">    }</span>
+
+    public static void rdft(int n, int isgn, double[] a, int[] ip, double[] w) {
+        int nw, nc;
+        double xi;
+
+<span class="nc" id="L312">        nw = ip[0];</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 2)) {</span>
+<span class="nc" id="L314">            nw = n &gt;&gt; 2;</span>
+<span class="nc" id="L315">            makewt(nw, ip, w);</span>
+        }
+<span class="nc" id="L317">        nc = ip[1];</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (n &gt; (nc &lt;&lt; 2)) {</span>
+<span class="nc" id="L319">            nc = n &gt;&gt; 2;</span>
+<span class="nc" id="L320">            makect(nc, ip, w, nw);</span>
+        }
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        if (isgn &gt;= 0) {</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L324">                cftfsub(n, a, ip, nw, w);</span>
+<span class="nc" id="L325">                rftfsub(n, a, nc, w, nw);</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L327">                cftfsub(n, a, ip, nw, w);</span>
+            }
+<span class="nc" id="L329">            xi = a[0] - a[1];</span>
+<span class="nc" id="L330">            a[0] += a[1];</span>
+<span class="nc" id="L331">            a[1] = xi;</span>
+        } else {
+<span class="nc" id="L333">            a[1] = 0.5 * (a[0] - a[1]);</span>
+<span class="nc" id="L334">            a[0] -= a[1];</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L336">                rftbsub(n, a, nc, w, nw);</span>
+<span class="nc" id="L337">                cftbsub(n, a, ip, nw, w);</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L339">                cftbsub(n, a, ip, nw, w);</span>
+            }
+        }
+<span class="nc" id="L342">    }</span>
+
+    public static void ddct(int n, int isgn, double[] a, int[] ip, double[] w) {
+        int j, nw, nc;
+        double xr;
+
+<span class="nc" id="L348">        nw = ip[0];</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 2)) {</span>
+<span class="nc" id="L350">            nw = n &gt;&gt; 2;</span>
+<span class="nc" id="L351">            makewt(nw, ip, w);</span>
+        }
+<span class="nc" id="L353">        nc = ip[1];</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">        if (n &gt; nc) {</span>
+<span class="nc" id="L355">            nc = n;</span>
+<span class="nc" id="L356">            makect(nc, ip, w, nw);</span>
+        }
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        if (isgn &lt; 0) {</span>
+<span class="nc" id="L359">            xr = a[n - 1];</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">            for (j = n - 2; j &gt;= 2; j -= 2) {</span>
+<span class="nc" id="L361">                a[j + 1] = a[j] - a[j - 1];</span>
+<span class="nc" id="L362">                a[j] += a[j - 1];</span>
+            }
+<span class="nc" id="L364">            a[1] = a[0] - xr;</span>
+<span class="nc" id="L365">            a[0] += xr;</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L367">                rftbsub(n, a, nc, w, nw);</span>
+<span class="nc" id="L368">                cftbsub(n, a, ip, nw, w);</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L370">                cftbsub(n, a, ip, nw, w);</span>
+            }
+        }
+<span class="nc" id="L373">        dctsub(n, a, nc, w, nw);</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        if (isgn &gt;= 0) {</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L376">                cftfsub(n, a, ip, nw, w);</span>
+<span class="nc" id="L377">                rftfsub(n, a, nc, w, nw);</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L379">                cftfsub(n, a, ip, nw, w);</span>
+            }
+<span class="nc" id="L381">            xr = a[0] - a[1];</span>
+<span class="nc" id="L382">            a[0] += a[1];</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">            for (j = 2; j &lt; n; j += 2) {</span>
+<span class="nc" id="L384">                a[j - 1] = a[j] - a[j + 1];</span>
+<span class="nc" id="L385">                a[j] += a[j + 1];</span>
+            }
+<span class="nc" id="L387">            a[n - 1] = xr;</span>
+        }
+<span class="nc" id="L389">    }</span>
+
+    public static void ddst(int n, int isgn, double[] a, int[] ip, double[] w) {
+        int j, nw, nc;
+        double xr;
+
+<span class="nc" id="L395">        nw = ip[0];</span>
+<span class="nc bnc" id="L396" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 2)) {</span>
+<span class="nc" id="L397">            nw = n &gt;&gt; 2;</span>
+<span class="nc" id="L398">            makewt(nw, ip, w);</span>
+        }
+<span class="nc" id="L400">        nc = ip[1];</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">        if (n &gt; nc) {</span>
+<span class="nc" id="L402">            nc = n;</span>
+<span class="nc" id="L403">            makect(nc, ip, w, nw);</span>
+        }
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        if (isgn &lt; 0) {</span>
+<span class="nc" id="L406">            xr = a[n - 1];</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            for (j = n - 2; j &gt;= 2; j -= 2) {</span>
+<span class="nc" id="L408">                a[j + 1] = -a[j] - a[j - 1];</span>
+<span class="nc" id="L409">                a[j] -= a[j - 1];</span>
+            }
+<span class="nc" id="L411">            a[1] = a[0] + xr;</span>
+<span class="nc" id="L412">            a[0] -= xr;</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L414">                rftbsub(n, a, nc, w, nw);</span>
+<span class="nc" id="L415">                cftbsub(n, a, ip, nw, w);</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L417">                cftbsub(n, a, ip, nw, w);</span>
+            }
+        }
+<span class="nc" id="L420">        dstsub(n, a, nc, w, nw);</span>
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (isgn &gt;= 0) {</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">            if (n &gt; 4) {</span>
+<span class="nc" id="L423">                cftfsub(n, a, ip, nw, w);</span>
+<span class="nc" id="L424">                rftfsub(n, a, nc, w, nw);</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">            } else if (n == 4) {</span>
+<span class="nc" id="L426">                cftfsub(n, a, ip, nw, w);</span>
+            }
+<span class="nc" id="L428">            xr = a[0] - a[1];</span>
+<span class="nc" id="L429">            a[0] += a[1];</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">            for (j = 2; j &lt; n; j += 2) {</span>
+<span class="nc" id="L431">                a[j - 1] = -a[j] - a[j + 1];</span>
+<span class="nc" id="L432">                a[j] -= a[j + 1];</span>
+            }
+<span class="nc" id="L434">            a[n - 1] = -xr;</span>
+        }
+<span class="nc" id="L436">    }</span>
+
+    public static void dfct(int n, double[] a, double[] t, int[] ip, double[] w) {
+        int j, k, l, m, mh, nw, nc;
+        double xr, xi, yr, yi;
+
+<span class="nc" id="L442">        nw = ip[0];</span>
+<span class="nc bnc" id="L443" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 3)) {</span>
+<span class="nc" id="L444">            nw = n &gt;&gt; 3;</span>
+<span class="nc" id="L445">            makewt(nw, ip, w);</span>
+        }
+<span class="nc" id="L447">        nc = ip[1];</span>
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (n &gt; (nc &lt;&lt; 1)) {</span>
+<span class="nc" id="L449">            nc = n &gt;&gt; 1;</span>
+<span class="nc" id="L450">            makect(nc, ip, w, nw);</span>
+        }
+<span class="nc" id="L452">        m = n &gt;&gt; 1;</span>
+<span class="nc" id="L453">        yi = a[m];</span>
+<span class="nc" id="L454">        xi = a[0] + a[n];</span>
+<span class="nc" id="L455">        a[0] -= a[n];</span>
+<span class="nc" id="L456">        t[0] = xi - yi;</span>
+<span class="nc" id="L457">        t[m] = xi + yi;</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">        if (n &gt; 2) {</span>
+<span class="nc" id="L459">            mh = m &gt;&gt; 1;</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">            for (j = 1; j &lt; mh; j++) {</span>
+<span class="nc" id="L461">                k = m - j;</span>
+<span class="nc" id="L462">                xr = a[j] - a[n - j];</span>
+<span class="nc" id="L463">                xi = a[j] + a[n - j];</span>
+<span class="nc" id="L464">                yr = a[k] - a[n - k];</span>
+<span class="nc" id="L465">                yi = a[k] + a[n - k];</span>
+<span class="nc" id="L466">                a[j] = xr;</span>
+<span class="nc" id="L467">                a[k] = yr;</span>
+<span class="nc" id="L468">                t[j] = xi - yi;</span>
+<span class="nc" id="L469">                t[k] = xi + yi;</span>
+            }
+<span class="nc" id="L471">            t[mh] = a[mh] + a[n - mh];</span>
+<span class="nc" id="L472">            a[mh] -= a[n - mh];</span>
+<span class="nc" id="L473">            dctsub(m, a, nc, w, nw);</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">            if (m &gt; 4) {</span>
+<span class="nc" id="L475">                cftfsub(m, a, ip, nw, w);</span>
+<span class="nc" id="L476">                rftfsub(m, a, nc, w, nw);</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            } else if (m == 4) {</span>
+<span class="nc" id="L478">                cftfsub(m, a, ip, nw, w);</span>
+            }
+<span class="nc" id="L480">            a[n - 1] = a[0] - a[1];</span>
+<span class="nc" id="L481">            a[1] = a[0] + a[1];</span>
+<span class="nc bnc" id="L482" title="All 2 branches missed.">            for (j = m - 2; j &gt;= 2; j -= 2) {</span>
+<span class="nc" id="L483">                a[2 * j + 1] = a[j] + a[j + 1];</span>
+<span class="nc" id="L484">                a[2 * j - 1] = a[j] - a[j + 1];</span>
+            }
+<span class="nc" id="L486">            l = 2;</span>
+<span class="nc" id="L487">            m = mh;</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">            while (m &gt;= 2) {</span>
+<span class="nc" id="L489">                dctsub(m, t, nc, w, nw);</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">                if (m &gt; 4) {</span>
+<span class="nc" id="L491">                    cftfsub(m, t, ip, nw, w);</span>
+<span class="nc" id="L492">                    rftfsub(m, t, nc, w, nw);</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">                } else if (m == 4) {</span>
+<span class="nc" id="L494">                    cftfsub(m, t, ip, nw, w);</span>
+                }
+<span class="nc" id="L496">                a[n - l] = t[0] - t[1];</span>
+<span class="nc" id="L497">                a[l] = t[0] + t[1];</span>
+<span class="nc" id="L498">                k = 0;</span>
+<span class="nc bnc" id="L499" title="All 2 branches missed.">                for (j = 2; j &lt; m; j += 2) {</span>
+<span class="nc" id="L500">                    k += l &lt;&lt; 2;</span>
+<span class="nc" id="L501">                    a[k - l] = t[j] - t[j + 1];</span>
+<span class="nc" id="L502">                    a[k + l] = t[j] + t[j + 1];</span>
+                }
+<span class="nc" id="L504">                l &lt;&lt;= 1;</span>
+<span class="nc" id="L505">                mh = m &gt;&gt; 1;</span>
+<span class="nc bnc" id="L506" title="All 2 branches missed.">                for (j = 0; j &lt; mh; j++) {</span>
+<span class="nc" id="L507">                    k = m - j;</span>
+<span class="nc" id="L508">                    t[j] = t[m + k] - t[m + j];</span>
+<span class="nc" id="L509">                    t[k] = t[m + k] + t[m + j];</span>
+                }
+<span class="nc" id="L511">                t[mh] = t[m + mh];</span>
+<span class="nc" id="L512">                m = mh;</span>
+            }
+<span class="nc" id="L514">            a[l] = t[0];</span>
+<span class="nc" id="L515">            a[n] = t[2] - t[1];</span>
+<span class="nc" id="L516">            a[0] = t[2] + t[1];</span>
+        } else {
+<span class="nc" id="L518">            a[1] = a[0];</span>
+<span class="nc" id="L519">            a[2] = t[0];</span>
+<span class="nc" id="L520">            a[0] = t[1];</span>
+        }
+<span class="nc" id="L522">    }</span>
+
+    public static void dfst(int n, double[] a, double[] t, int[] ip, double[] w) {
+        int j, k, l, m, mh, nw, nc;
+        double xr, xi, yr, yi;
+
+<span class="nc" id="L528">        nw = ip[0];</span>
+<span class="nc bnc" id="L529" title="All 2 branches missed.">        if (n &gt; (nw &lt;&lt; 3)) {</span>
+<span class="nc" id="L530">            nw = n &gt;&gt; 3;</span>
+<span class="nc" id="L531">            makewt(nw, ip, w);</span>
+        }
+<span class="nc" id="L533">        nc = ip[1];</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">        if (n &gt; (nc &lt;&lt; 1)) {</span>
+<span class="nc" id="L535">            nc = n &gt;&gt; 1;</span>
+<span class="nc" id="L536">            makect(nc, ip, w, nw);</span>
+        }
+<span class="nc bnc" id="L538" title="All 2 branches missed.">        if (n &gt; 2) {</span>
+<span class="nc" id="L539">            m = n &gt;&gt; 1;</span>
+<span class="nc" id="L540">            mh = m &gt;&gt; 1;</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">            for (j = 1; j &lt; mh; j++) {</span>
+<span class="nc" id="L542">                k = m - j;</span>
+<span class="nc" id="L543">                xr = a[j] + a[n - j];</span>
+<span class="nc" id="L544">                xi = a[j] - a[n - j];</span>
+<span class="nc" id="L545">                yr = a[k] + a[n - k];</span>
+<span class="nc" id="L546">                yi = a[k] - a[n - k];</span>
+<span class="nc" id="L547">                a[j] = xr;</span>
+<span class="nc" id="L548">                a[k] = yr;</span>
+<span class="nc" id="L549">                t[j] = xi + yi;</span>
+<span class="nc" id="L550">                t[k] = xi - yi;</span>
+            }
+<span class="nc" id="L552">            t[0] = a[mh] - a[n - mh];</span>
+<span class="nc" id="L553">            a[mh] += a[n - mh];</span>
+<span class="nc" id="L554">            a[0] = a[m];</span>
+<span class="nc" id="L555">            dstsub(m, a, nc, w, nw);</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            if (m &gt; 4) {</span>
+<span class="nc" id="L557">                cftfsub(m, a, ip, nw, w);</span>
+<span class="nc" id="L558">                rftfsub(m, a, nc, w, nw);</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">            } else if (m == 4) {</span>
+<span class="nc" id="L560">                cftfsub(m, a, ip, nw, w);</span>
+            }
+<span class="nc" id="L562">            a[n - 1] = a[1] - a[0];</span>
+<span class="nc" id="L563">            a[1] = a[0] + a[1];</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">            for (j = m - 2; j &gt;= 2; j -= 2) {</span>
+<span class="nc" id="L565">                a[2 * j + 1] = a[j] - a[j + 1];</span>
+<span class="nc" id="L566">                a[2 * j - 1] = -a[j] - a[j + 1];</span>
+            }
+<span class="nc" id="L568">            l = 2;</span>
+<span class="nc" id="L569">            m = mh;</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">            while (m &gt;= 2) {</span>
+<span class="nc" id="L571">                dstsub(m, t, nc, w, nw);</span>
+<span class="nc bnc" id="L572" title="All 2 branches missed.">                if (m &gt; 4) {</span>
+<span class="nc" id="L573">                    cftfsub(m, t, ip, nw, w);</span>
+<span class="nc" id="L574">                    rftfsub(m, t, nc, w, nw);</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">                } else if (m == 4) {</span>
+<span class="nc" id="L576">                    cftfsub(m, t, ip, nw, w);</span>
+                }
+<span class="nc" id="L578">                a[n - l] = t[1] - t[0];</span>
+<span class="nc" id="L579">                a[l] = t[0] + t[1];</span>
+<span class="nc" id="L580">                k = 0;</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">                for (j = 2; j &lt; m; j += 2) {</span>
+<span class="nc" id="L582">                    k += l &lt;&lt; 2;</span>
+<span class="nc" id="L583">                    a[k - l] = -t[j] - t[j + 1];</span>
+<span class="nc" id="L584">                    a[k + l] = t[j] - t[j + 1];</span>
+                }
+<span class="nc" id="L586">                l &lt;&lt;= 1;</span>
+<span class="nc" id="L587">                mh = m &gt;&gt; 1;</span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">                for (j = 1; j &lt; mh; j++) {</span>
+<span class="nc" id="L589">                    k = m - j;</span>
+<span class="nc" id="L590">                    t[j] = t[m + k] + t[m + j];</span>
+<span class="nc" id="L591">                    t[k] = t[m + k] - t[m + j];</span>
+                }
+<span class="nc" id="L593">                t[0] = t[m + mh];</span>
+<span class="nc" id="L594">                m = mh;</span>
+            }
+<span class="nc" id="L596">            a[l] = t[0];</span>
+        }
+<span class="nc" id="L598">        a[0] = 0;</span>
+<span class="nc" id="L599">    }</span>
+
+    private static void makewt(int nw, int[] ip, double[] w) {
+        int j, nwh, nw0, nw1;
+        double delta, wn4r, wk1r, wk1i, wk3r, wk3i;
+
+<span class="nc" id="L605">        ip[0] = nw;</span>
+<span class="nc" id="L606">        ip[1] = 1;</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (nw &gt; 2) {</span>
+<span class="nc" id="L608">            nwh = nw &gt;&gt; 1;</span>
+<span class="nc" id="L609">            delta = Math.atan(1.0) / nwh;</span>
+<span class="nc" id="L610">            wn4r = Math.cos(delta * nwh);</span>
+<span class="nc" id="L611">            w[0] = 1;</span>
+<span class="nc" id="L612">            w[1] = wn4r;</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">            if (nwh == 4) {</span>
+<span class="nc" id="L614">                w[2] = Math.cos(delta * 2);</span>
+<span class="nc" id="L615">                w[3] = Math.sin(delta * 2);</span>
+<span class="nc bnc" id="L616" title="All 2 branches missed.">            } else if (nwh &gt; 4) {</span>
+<span class="nc" id="L617">                makeipt(nw, ip);</span>
+<span class="nc" id="L618">                w[2] = 0.5 / Math.cos(delta * 2);</span>
+<span class="nc" id="L619">                w[3] = 0.5 / Math.cos(delta * 6);</span>
+<span class="nc bnc" id="L620" title="All 2 branches missed.">                for (j = 4; j &lt; nwh; j += 4) {</span>
+<span class="nc" id="L621">                    w[j] = Math.cos(delta * j);</span>
+<span class="nc" id="L622">                    w[j + 1] = Math.sin(delta * j);</span>
+<span class="nc" id="L623">                    w[j + 2] = Math.cos(3 * delta * j);</span>
+<span class="nc" id="L624">                    w[j + 3] = -Math.sin(3 * delta * j);</span>
+                }
+            }
+
+<span class="nc" id="L628">            nw0 = 0;</span>
+<span class="nc bnc" id="L629" title="All 2 branches missed.">            while (nwh &gt; 2) {</span>
+<span class="nc" id="L630">                nw1 = nw0 + nwh;</span>
+<span class="nc" id="L631">                nwh &gt;&gt;= 1;</span>
+<span class="nc" id="L632">                w[nw1] = 1;</span>
+<span class="nc" id="L633">                w[nw1 + 1] = wn4r;</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">                if (nwh == 4) {</span>
+<span class="nc" id="L635">                    wk1r = w[nw0 + 4];</span>
+<span class="nc" id="L636">                    wk1i = w[nw0 + 5];</span>
+<span class="nc" id="L637">                    w[nw1 + 2] = wk1r;</span>
+<span class="nc" id="L638">                    w[nw1 + 3] = wk1i;</span>
+<span class="nc bnc" id="L639" title="All 2 branches missed.">                } else if (nwh &gt; 4) {</span>
+<span class="nc" id="L640">                    wk1r = w[nw0 + 4];</span>
+<span class="nc" id="L641">                    wk3r = w[nw0 + 6];</span>
+<span class="nc" id="L642">                    w[nw1 + 2] = 0.5 / wk1r;</span>
+<span class="nc" id="L643">                    w[nw1 + 3] = 0.5 / wk3r;</span>
+<span class="nc bnc" id="L644" title="All 2 branches missed.">                    for (j = 4; j &lt; nwh; j += 4) {</span>
+<span class="nc" id="L645">                        wk1r = w[nw0 + 2 * j];</span>
+<span class="nc" id="L646">                        wk1i = w[nw0 + 2 * j + 1];</span>
+<span class="nc" id="L647">                        wk3r = w[nw0 + 2 * j + 2];</span>
+<span class="nc" id="L648">                        wk3i = w[nw0 + 2 * j + 3];</span>
+<span class="nc" id="L649">                        w[nw1 + j] = wk1r;</span>
+<span class="nc" id="L650">                        w[nw1 + j + 1] = wk1i;</span>
+<span class="nc" id="L651">                        w[nw1 + j + 2] = wk3r;</span>
+<span class="nc" id="L652">                        w[nw1 + j + 3] = wk3i;</span>
+                    }
+                }
+<span class="nc" id="L655">                nw0 = nw1;</span>
+            }
+        }
+<span class="nc" id="L658">    }</span>
+
+    private static void makeipt(int nw, int[] ip) {
+        int j, l, m, m2, p, q;
+
+<span class="nc" id="L663">        ip[2] = 0;</span>
+<span class="nc" id="L664">        ip[3] = 16;</span>
+<span class="nc" id="L665">        m = 2;</span>
+<span class="nc bnc" id="L666" title="All 2 branches missed.">        for (l = nw; l &gt; 32; l &gt;&gt;= 2) {</span>
+<span class="nc" id="L667">            m2 = m &lt;&lt; 1;</span>
+<span class="nc" id="L668">            q = m2 &lt;&lt; 3;</span>
+<span class="nc bnc" id="L669" title="All 2 branches missed.">            for (j = m; j &lt; m2; j++) {</span>
+<span class="nc" id="L670">                p = ip[j] &lt;&lt; 2;</span>
+<span class="nc" id="L671">                ip[m + j] = p;</span>
+<span class="nc" id="L672">                ip[m2 + j] = p + q;</span>
+            }
+<span class="nc" id="L674">            m = m2;</span>
+        }
+<span class="nc" id="L676">    }</span>
+
+    private static void makect(int nc, int[] ip, double[] c, int cOffset) {
+        int j, nch;
+        double delta;
+
+<span class="nc" id="L682">        ip[1] = nc;</span>
+<span class="nc bnc" id="L683" title="All 2 branches missed.">        if (nc &gt; 1) {</span>
+<span class="nc" id="L684">            nch = nc &gt;&gt; 1;</span>
+<span class="nc" id="L685">            delta = Math.atan(1.0) / nch;</span>
+<span class="nc" id="L686">            c[cOffset + 0] = Math.cos(delta * nch);</span>
+<span class="nc" id="L687">            c[cOffset + nch] = 0.5 * c[cOffset + 0];</span>
+<span class="nc bnc" id="L688" title="All 2 branches missed.">            for (j = 1; j &lt; nch; j++) {</span>
+<span class="nc" id="L689">                c[cOffset + j] = 0.5 * Math.cos(delta * j);</span>
+<span class="nc" id="L690">                c[cOffset + nc - j] = 0.5 * Math.sin(delta * j);</span>
+            }
+        }
+<span class="nc" id="L693">    }</span>
+
+    private static void cftfsub(int n, double[] a, int[] ip, int nw, double[] w) {
+<span class="nc bnc" id="L696" title="All 2 branches missed.">        if (n &gt; 8) {</span>
+<span class="nc bnc" id="L697" title="All 2 branches missed.">            if (n &gt; 32) {</span>
+<span class="nc" id="L698">                cftf1st(n, a, w, nw - (n &gt;&gt; 2));</span>
+
+<span class="nc bnc" id="L700" title="All 2 branches missed.">                if (n &gt; 512) {</span>
+<span class="nc" id="L701">                    cftrec4(n, a, nw, w);</span>
+<span class="nc bnc" id="L702" title="All 2 branches missed.">                } else if (n &gt; 128) {</span>
+<span class="nc" id="L703">                    cftleaf(n, 1, a, 0, nw, w);</span>
+                } else {
+<span class="nc" id="L705">                    cftfx41(n, a, nw, w);</span>
+                }
+<span class="nc" id="L707">                bitrv2(n, ip, a);</span>
+<span class="nc bnc" id="L708" title="All 2 branches missed.">            } else if (n == 32) {</span>
+<span class="nc" id="L709">                cftf161(a, 0, w, nw - 8);</span>
+<span class="nc" id="L710">                bitrv216(a);</span>
+            } else {
+<span class="nc" id="L712">                cftf081(a, 0, w, 0);</span>
+<span class="nc" id="L713">                bitrv208(a);</span>
+            }
+<span class="nc bnc" id="L715" title="All 2 branches missed.">        } else if (n == 8) {</span>
+<span class="nc" id="L716">            cftf040(a);</span>
+<span class="nc bnc" id="L717" title="All 2 branches missed.">        } else if (n == 4) {</span>
+<span class="nc" id="L718">            cftx020(a);</span>
+        }
+<span class="nc" id="L720">    }</span>
+
+    private static void cftbsub(int n, double[] a, int[] ip, int nw, double[] w) {
+<span class="nc bnc" id="L723" title="All 2 branches missed.">        if (n &gt; 8) {</span>
+<span class="nc bnc" id="L724" title="All 2 branches missed.">            if (n &gt; 32) {</span>
+<span class="nc" id="L725">                cftb1st(n, a, w, nw - (n &gt;&gt; 2));</span>
+<span class="nc bnc" id="L726" title="All 2 branches missed.">                if (n &gt; 512) {</span>
+<span class="nc" id="L727">                    cftrec4(n, a, nw, w);</span>
+<span class="nc bnc" id="L728" title="All 2 branches missed.">                } else if (n &gt; 128) {</span>
+<span class="nc" id="L729">                    cftleaf(n, 1, a, 0, nw, w);</span>
+                } else {
+<span class="nc" id="L731">                    cftfx41(n, a, nw, w);</span>
+                }
+<span class="nc" id="L733">                bitrv2conj(n, ip, a);</span>
+<span class="nc bnc" id="L734" title="All 2 branches missed.">            } else if (n == 32) {</span>
+<span class="nc" id="L735">                cftf161(a, 0, w, nw - 8);</span>
+<span class="nc" id="L736">                bitrv216neg(a);</span>
+            } else {
+<span class="nc" id="L738">                cftf081(a, 0, w, 0);</span>
+<span class="nc" id="L739">                bitrv208neg(a);</span>
+            }
+<span class="nc bnc" id="L741" title="All 2 branches missed.">        } else if (n == 8) {</span>
+<span class="nc" id="L742">            cftb040(a);</span>
+<span class="nc bnc" id="L743" title="All 2 branches missed.">        } else if (n == 4) {</span>
+<span class="nc" id="L744">            cftx020(a);</span>
+        }
+<span class="nc" id="L746">    }</span>
+
+    private static void bitrv2(int n, int[] ip, double[] a) {
+        int j, j1, k, k1, l, m, nh, nm;
+        double xr, xi, yr, yi;
+
+<span class="nc" id="L752">        m = 1;</span>
+<span class="nc bnc" id="L753" title="All 2 branches missed.">        for (l = n &gt;&gt; 2; l &gt; 8; l &gt;&gt;= 2) {</span>
+<span class="nc" id="L754">            m &lt;&lt;= 1;</span>
+        }
+<span class="nc" id="L756">        nh = n &gt;&gt; 1;</span>
+<span class="nc" id="L757">        nm = 4 * m;</span>
+<span class="nc bnc" id="L758" title="All 2 branches missed.">        if (l == 8) {</span>
+<span class="nc bnc" id="L759" title="All 2 branches missed.">            for (k = 0; k &lt; m; k++) {</span>
+<span class="nc bnc" id="L760" title="All 2 branches missed.">                for (j = 0; j &lt; k; j++) {</span>
+<span class="nc" id="L761">                    j1 = 4 * j + 2 * ip[m + k];</span>
+<span class="nc" id="L762">                    k1 = 4 * k + 2 * ip[m + j];</span>
+<span class="nc" id="L763">                    xr = a[j1];</span>
+<span class="nc" id="L764">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L765">                    yr = a[k1];</span>
+<span class="nc" id="L766">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L767">                    a[j1] = yr;</span>
+<span class="nc" id="L768">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L769">                    a[k1] = xr;</span>
+<span class="nc" id="L770">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L771">                    j1 += nm;</span>
+<span class="nc" id="L772">                    k1 += 2 * nm;</span>
+<span class="nc" id="L773">                    xr = a[j1];</span>
+<span class="nc" id="L774">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L775">                    yr = a[k1];</span>
+<span class="nc" id="L776">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L777">                    a[j1] = yr;</span>
+<span class="nc" id="L778">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L779">                    a[k1] = xr;</span>
+<span class="nc" id="L780">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L781">                    j1 += nm;</span>
+<span class="nc" id="L782">                    k1 -= nm;</span>
+<span class="nc" id="L783">                    xr = a[j1];</span>
+<span class="nc" id="L784">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L785">                    yr = a[k1];</span>
+<span class="nc" id="L786">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L787">                    a[j1] = yr;</span>
+<span class="nc" id="L788">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L789">                    a[k1] = xr;</span>
+<span class="nc" id="L790">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L791">                    j1 += nm;</span>
+<span class="nc" id="L792">                    k1 += 2 * nm;</span>
+<span class="nc" id="L793">                    xr = a[j1];</span>
+<span class="nc" id="L794">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L795">                    yr = a[k1];</span>
+<span class="nc" id="L796">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L797">                    a[j1] = yr;</span>
+<span class="nc" id="L798">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L799">                    a[k1] = xr;</span>
+<span class="nc" id="L800">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L801">                    j1 += nh;</span>
+<span class="nc" id="L802">                    k1 += 2;</span>
+<span class="nc" id="L803">                    xr = a[j1];</span>
+<span class="nc" id="L804">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L805">                    yr = a[k1];</span>
+<span class="nc" id="L806">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L807">                    a[j1] = yr;</span>
+<span class="nc" id="L808">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L809">                    a[k1] = xr;</span>
+<span class="nc" id="L810">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L811">                    j1 -= nm;</span>
+<span class="nc" id="L812">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L813">                    xr = a[j1];</span>
+<span class="nc" id="L814">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L815">                    yr = a[k1];</span>
+<span class="nc" id="L816">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L817">                    a[j1] = yr;</span>
+<span class="nc" id="L818">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L819">                    a[k1] = xr;</span>
+<span class="nc" id="L820">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L821">                    j1 -= nm;</span>
+<span class="nc" id="L822">                    k1 += nm;</span>
+<span class="nc" id="L823">                    xr = a[j1];</span>
+<span class="nc" id="L824">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L825">                    yr = a[k1];</span>
+<span class="nc" id="L826">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L827">                    a[j1] = yr;</span>
+<span class="nc" id="L828">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L829">                    a[k1] = xr;</span>
+<span class="nc" id="L830">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L831">                    j1 -= nm;</span>
+<span class="nc" id="L832">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L833">                    xr = a[j1];</span>
+<span class="nc" id="L834">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L835">                    yr = a[k1];</span>
+<span class="nc" id="L836">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L837">                    a[j1] = yr;</span>
+<span class="nc" id="L838">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L839">                    a[k1] = xr;</span>
+<span class="nc" id="L840">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L841">                    j1 += 2;</span>
+<span class="nc" id="L842">                    k1 += nh;</span>
+<span class="nc" id="L843">                    xr = a[j1];</span>
+<span class="nc" id="L844">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L845">                    yr = a[k1];</span>
+<span class="nc" id="L846">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L847">                    a[j1] = yr;</span>
+<span class="nc" id="L848">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L849">                    a[k1] = xr;</span>
+<span class="nc" id="L850">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L851">                    j1 += nm;</span>
+<span class="nc" id="L852">                    k1 += 2 * nm;</span>
+<span class="nc" id="L853">                    xr = a[j1];</span>
+<span class="nc" id="L854">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L855">                    yr = a[k1];</span>
+<span class="nc" id="L856">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L857">                    a[j1] = yr;</span>
+<span class="nc" id="L858">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L859">                    a[k1] = xr;</span>
+<span class="nc" id="L860">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L861">                    j1 += nm;</span>
+<span class="nc" id="L862">                    k1 -= nm;</span>
+<span class="nc" id="L863">                    xr = a[j1];</span>
+<span class="nc" id="L864">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L865">                    yr = a[k1];</span>
+<span class="nc" id="L866">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L867">                    a[j1] = yr;</span>
+<span class="nc" id="L868">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L869">                    a[k1] = xr;</span>
+<span class="nc" id="L870">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L871">                    j1 += nm;</span>
+<span class="nc" id="L872">                    k1 += 2 * nm;</span>
+<span class="nc" id="L873">                    xr = a[j1];</span>
+<span class="nc" id="L874">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L875">                    yr = a[k1];</span>
+<span class="nc" id="L876">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L877">                    a[j1] = yr;</span>
+<span class="nc" id="L878">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L879">                    a[k1] = xr;</span>
+<span class="nc" id="L880">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L881">                    j1 -= nh;</span>
+<span class="nc" id="L882">                    k1 -= 2;</span>
+<span class="nc" id="L883">                    xr = a[j1];</span>
+<span class="nc" id="L884">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L885">                    yr = a[k1];</span>
+<span class="nc" id="L886">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L887">                    a[j1] = yr;</span>
+<span class="nc" id="L888">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L889">                    a[k1] = xr;</span>
+<span class="nc" id="L890">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L891">                    j1 -= nm;</span>
+<span class="nc" id="L892">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L893">                    xr = a[j1];</span>
+<span class="nc" id="L894">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L895">                    yr = a[k1];</span>
+<span class="nc" id="L896">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L897">                    a[j1] = yr;</span>
+<span class="nc" id="L898">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L899">                    a[k1] = xr;</span>
+<span class="nc" id="L900">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L901">                    j1 -= nm;</span>
+<span class="nc" id="L902">                    k1 += nm;</span>
+<span class="nc" id="L903">                    xr = a[j1];</span>
+<span class="nc" id="L904">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L905">                    yr = a[k1];</span>
+<span class="nc" id="L906">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L907">                    a[j1] = yr;</span>
+<span class="nc" id="L908">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L909">                    a[k1] = xr;</span>
+<span class="nc" id="L910">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L911">                    j1 -= nm;</span>
+<span class="nc" id="L912">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L913">                    xr = a[j1];</span>
+<span class="nc" id="L914">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L915">                    yr = a[k1];</span>
+<span class="nc" id="L916">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L917">                    a[j1] = yr;</span>
+<span class="nc" id="L918">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L919">                    a[k1] = xr;</span>
+<span class="nc" id="L920">                    a[k1 + 1] = xi;</span>
+                }
+<span class="nc" id="L922">                k1 = 4 * k + 2 * ip[m + k];</span>
+<span class="nc" id="L923">                j1 = k1 + 2;</span>
+<span class="nc" id="L924">                k1 += nh;</span>
+<span class="nc" id="L925">                xr = a[j1];</span>
+<span class="nc" id="L926">                xi = a[j1 + 1];</span>
+<span class="nc" id="L927">                yr = a[k1];</span>
+<span class="nc" id="L928">                yi = a[k1 + 1];</span>
+<span class="nc" id="L929">                a[j1] = yr;</span>
+<span class="nc" id="L930">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L931">                a[k1] = xr;</span>
+<span class="nc" id="L932">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L933">                j1 += nm;</span>
+<span class="nc" id="L934">                k1 += 2 * nm;</span>
+<span class="nc" id="L935">                xr = a[j1];</span>
+<span class="nc" id="L936">                xi = a[j1 + 1];</span>
+<span class="nc" id="L937">                yr = a[k1];</span>
+<span class="nc" id="L938">                yi = a[k1 + 1];</span>
+<span class="nc" id="L939">                a[j1] = yr;</span>
+<span class="nc" id="L940">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L941">                a[k1] = xr;</span>
+<span class="nc" id="L942">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L943">                j1 += nm;</span>
+<span class="nc" id="L944">                k1 -= nm;</span>
+<span class="nc" id="L945">                xr = a[j1];</span>
+<span class="nc" id="L946">                xi = a[j1 + 1];</span>
+<span class="nc" id="L947">                yr = a[k1];</span>
+<span class="nc" id="L948">                yi = a[k1 + 1];</span>
+<span class="nc" id="L949">                a[j1] = yr;</span>
+<span class="nc" id="L950">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L951">                a[k1] = xr;</span>
+<span class="nc" id="L952">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L953">                j1 -= 2;</span>
+<span class="nc" id="L954">                k1 -= nh;</span>
+<span class="nc" id="L955">                xr = a[j1];</span>
+<span class="nc" id="L956">                xi = a[j1 + 1];</span>
+<span class="nc" id="L957">                yr = a[k1];</span>
+<span class="nc" id="L958">                yi = a[k1 + 1];</span>
+<span class="nc" id="L959">                a[j1] = yr;</span>
+<span class="nc" id="L960">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L961">                a[k1] = xr;</span>
+<span class="nc" id="L962">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L963">                j1 += nh + 2;</span>
+<span class="nc" id="L964">                k1 += nh + 2;</span>
+<span class="nc" id="L965">                xr = a[j1];</span>
+<span class="nc" id="L966">                xi = a[j1 + 1];</span>
+<span class="nc" id="L967">                yr = a[k1];</span>
+<span class="nc" id="L968">                yi = a[k1 + 1];</span>
+<span class="nc" id="L969">                a[j1] = yr;</span>
+<span class="nc" id="L970">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L971">                a[k1] = xr;</span>
+<span class="nc" id="L972">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L973">                j1 -= nh - nm;</span>
+<span class="nc" id="L974">                k1 += 2 * nm - 2;</span>
+<span class="nc" id="L975">                xr = a[j1];</span>
+<span class="nc" id="L976">                xi = a[j1 + 1];</span>
+<span class="nc" id="L977">                yr = a[k1];</span>
+<span class="nc" id="L978">                yi = a[k1 + 1];</span>
+<span class="nc" id="L979">                a[j1] = yr;</span>
+<span class="nc" id="L980">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L981">                a[k1] = xr;</span>
+<span class="nc" id="L982">                a[k1 + 1] = xi;</span>
+            }
+        } else {
+<span class="nc bnc" id="L985" title="All 2 branches missed.">            for (k = 0; k &lt; m; k++) {</span>
+<span class="nc bnc" id="L986" title="All 2 branches missed.">                for (j = 0; j &lt; k; j++) {</span>
+<span class="nc" id="L987">                    j1 = 4 * j + ip[m + k];</span>
+<span class="nc" id="L988">                    k1 = 4 * k + ip[m + j];</span>
+<span class="nc" id="L989">                    xr = a[j1];</span>
+<span class="nc" id="L990">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L991">                    yr = a[k1];</span>
+<span class="nc" id="L992">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L993">                    a[j1] = yr;</span>
+<span class="nc" id="L994">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L995">                    a[k1] = xr;</span>
+<span class="nc" id="L996">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L997">                    j1 += nm;</span>
+<span class="nc" id="L998">                    k1 += nm;</span>
+<span class="nc" id="L999">                    xr = a[j1];</span>
+<span class="nc" id="L1000">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1001">                    yr = a[k1];</span>
+<span class="nc" id="L1002">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1003">                    a[j1] = yr;</span>
+<span class="nc" id="L1004">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1005">                    a[k1] = xr;</span>
+<span class="nc" id="L1006">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1007">                    j1 += nh;</span>
+<span class="nc" id="L1008">                    k1 += 2;</span>
+<span class="nc" id="L1009">                    xr = a[j1];</span>
+<span class="nc" id="L1010">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1011">                    yr = a[k1];</span>
+<span class="nc" id="L1012">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1013">                    a[j1] = yr;</span>
+<span class="nc" id="L1014">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1015">                    a[k1] = xr;</span>
+<span class="nc" id="L1016">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1017">                    j1 -= nm;</span>
+<span class="nc" id="L1018">                    k1 -= nm;</span>
+<span class="nc" id="L1019">                    xr = a[j1];</span>
+<span class="nc" id="L1020">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1021">                    yr = a[k1];</span>
+<span class="nc" id="L1022">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1023">                    a[j1] = yr;</span>
+<span class="nc" id="L1024">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1025">                    a[k1] = xr;</span>
+<span class="nc" id="L1026">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1027">                    j1 += 2;</span>
+<span class="nc" id="L1028">                    k1 += nh;</span>
+<span class="nc" id="L1029">                    xr = a[j1];</span>
+<span class="nc" id="L1030">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1031">                    yr = a[k1];</span>
+<span class="nc" id="L1032">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1033">                    a[j1] = yr;</span>
+<span class="nc" id="L1034">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1035">                    a[k1] = xr;</span>
+<span class="nc" id="L1036">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1037">                    j1 += nm;</span>
+<span class="nc" id="L1038">                    k1 += nm;</span>
+<span class="nc" id="L1039">                    xr = a[j1];</span>
+<span class="nc" id="L1040">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1041">                    yr = a[k1];</span>
+<span class="nc" id="L1042">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1043">                    a[j1] = yr;</span>
+<span class="nc" id="L1044">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1045">                    a[k1] = xr;</span>
+<span class="nc" id="L1046">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1047">                    j1 -= nh;</span>
+<span class="nc" id="L1048">                    k1 -= 2;</span>
+<span class="nc" id="L1049">                    xr = a[j1];</span>
+<span class="nc" id="L1050">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1051">                    yr = a[k1];</span>
+<span class="nc" id="L1052">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1053">                    a[j1] = yr;</span>
+<span class="nc" id="L1054">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1055">                    a[k1] = xr;</span>
+<span class="nc" id="L1056">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1057">                    j1 -= nm;</span>
+<span class="nc" id="L1058">                    k1 -= nm;</span>
+<span class="nc" id="L1059">                    xr = a[j1];</span>
+<span class="nc" id="L1060">                    xi = a[j1 + 1];</span>
+<span class="nc" id="L1061">                    yr = a[k1];</span>
+<span class="nc" id="L1062">                    yi = a[k1 + 1];</span>
+<span class="nc" id="L1063">                    a[j1] = yr;</span>
+<span class="nc" id="L1064">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1065">                    a[k1] = xr;</span>
+<span class="nc" id="L1066">                    a[k1 + 1] = xi;</span>
+                }
+<span class="nc" id="L1068">                k1 = 4 * k + ip[m + k];</span>
+<span class="nc" id="L1069">                j1 = k1 + 2;</span>
+<span class="nc" id="L1070">                k1 += nh;</span>
+<span class="nc" id="L1071">                xr = a[j1];</span>
+<span class="nc" id="L1072">                xi = a[j1 + 1];</span>
+<span class="nc" id="L1073">                yr = a[k1];</span>
+<span class="nc" id="L1074">                yi = a[k1 + 1];</span>
+<span class="nc" id="L1075">                a[j1] = yr;</span>
+<span class="nc" id="L1076">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1077">                a[k1] = xr;</span>
+<span class="nc" id="L1078">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1079">                j1 += nm;</span>
+<span class="nc" id="L1080">                k1 += nm;</span>
+<span class="nc" id="L1081">                xr = a[j1];</span>
+<span class="nc" id="L1082">                xi = a[j1 + 1];</span>
+<span class="nc" id="L1083">                yr = a[k1];</span>
+<span class="nc" id="L1084">                yi = a[k1 + 1];</span>
+<span class="nc" id="L1085">                a[j1] = yr;</span>
+<span class="nc" id="L1086">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1087">                a[k1] = xr;</span>
+<span class="nc" id="L1088">                a[k1 + 1] = xi;</span>
+            }
+        }
+<span class="nc" id="L1091">    }</span>
+
+    private static void bitrv2conj(int n, int[] ip, double[] a) {
+        int j, j1, k, k1, l, m, nh, nm;
+        double xr, xi, yr, yi;
+
+<span class="nc" id="L1097">        m = 1;</span>
+<span class="nc bnc" id="L1098" title="All 2 branches missed.">        for (l = n &gt;&gt; 2; l &gt; 8; l &gt;&gt;= 2) {</span>
+<span class="nc" id="L1099">            m &lt;&lt;= 1;</span>
+        }
+<span class="nc" id="L1101">        nh = n &gt;&gt; 1;</span>
+<span class="nc" id="L1102">        nm = 4 * m;</span>
+<span class="nc bnc" id="L1103" title="All 2 branches missed.">        if (l == 8) {</span>
+<span class="nc bnc" id="L1104" title="All 2 branches missed.">            for (k = 0; k &lt; m; k++) {</span>
+<span class="nc bnc" id="L1105" title="All 2 branches missed.">                for (j = 0; j &lt; k; j++) {</span>
+<span class="nc" id="L1106">                    j1 = 4 * j + 2 * ip[m + k];</span>
+<span class="nc" id="L1107">                    k1 = 4 * k + 2 * ip[m + j];</span>
+<span class="nc" id="L1108">                    xr = a[j1];</span>
+<span class="nc" id="L1109">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1110">                    yr = a[k1];</span>
+<span class="nc" id="L1111">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1112">                    a[j1] = yr;</span>
+<span class="nc" id="L1113">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1114">                    a[k1] = xr;</span>
+<span class="nc" id="L1115">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1116">                    j1 += nm;</span>
+<span class="nc" id="L1117">                    k1 += 2 * nm;</span>
+<span class="nc" id="L1118">                    xr = a[j1];</span>
+<span class="nc" id="L1119">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1120">                    yr = a[k1];</span>
+<span class="nc" id="L1121">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1122">                    a[j1] = yr;</span>
+<span class="nc" id="L1123">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1124">                    a[k1] = xr;</span>
+<span class="nc" id="L1125">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1126">                    j1 += nm;</span>
+<span class="nc" id="L1127">                    k1 -= nm;</span>
+<span class="nc" id="L1128">                    xr = a[j1];</span>
+<span class="nc" id="L1129">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1130">                    yr = a[k1];</span>
+<span class="nc" id="L1131">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1132">                    a[j1] = yr;</span>
+<span class="nc" id="L1133">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1134">                    a[k1] = xr;</span>
+<span class="nc" id="L1135">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1136">                    j1 += nm;</span>
+<span class="nc" id="L1137">                    k1 += 2 * nm;</span>
+<span class="nc" id="L1138">                    xr = a[j1];</span>
+<span class="nc" id="L1139">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1140">                    yr = a[k1];</span>
+<span class="nc" id="L1141">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1142">                    a[j1] = yr;</span>
+<span class="nc" id="L1143">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1144">                    a[k1] = xr;</span>
+<span class="nc" id="L1145">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1146">                    j1 += nh;</span>
+<span class="nc" id="L1147">                    k1 += 2;</span>
+<span class="nc" id="L1148">                    xr = a[j1];</span>
+<span class="nc" id="L1149">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1150">                    yr = a[k1];</span>
+<span class="nc" id="L1151">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1152">                    a[j1] = yr;</span>
+<span class="nc" id="L1153">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1154">                    a[k1] = xr;</span>
+<span class="nc" id="L1155">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1156">                    j1 -= nm;</span>
+<span class="nc" id="L1157">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L1158">                    xr = a[j1];</span>
+<span class="nc" id="L1159">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1160">                    yr = a[k1];</span>
+<span class="nc" id="L1161">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1162">                    a[j1] = yr;</span>
+<span class="nc" id="L1163">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1164">                    a[k1] = xr;</span>
+<span class="nc" id="L1165">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1166">                    j1 -= nm;</span>
+<span class="nc" id="L1167">                    k1 += nm;</span>
+<span class="nc" id="L1168">                    xr = a[j1];</span>
+<span class="nc" id="L1169">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1170">                    yr = a[k1];</span>
+<span class="nc" id="L1171">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1172">                    a[j1] = yr;</span>
+<span class="nc" id="L1173">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1174">                    a[k1] = xr;</span>
+<span class="nc" id="L1175">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1176">                    j1 -= nm;</span>
+<span class="nc" id="L1177">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L1178">                    xr = a[j1];</span>
+<span class="nc" id="L1179">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1180">                    yr = a[k1];</span>
+<span class="nc" id="L1181">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1182">                    a[j1] = yr;</span>
+<span class="nc" id="L1183">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1184">                    a[k1] = xr;</span>
+<span class="nc" id="L1185">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1186">                    j1 += 2;</span>
+<span class="nc" id="L1187">                    k1 += nh;</span>
+<span class="nc" id="L1188">                    xr = a[j1];</span>
+<span class="nc" id="L1189">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1190">                    yr = a[k1];</span>
+<span class="nc" id="L1191">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1192">                    a[j1] = yr;</span>
+<span class="nc" id="L1193">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1194">                    a[k1] = xr;</span>
+<span class="nc" id="L1195">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1196">                    j1 += nm;</span>
+<span class="nc" id="L1197">                    k1 += 2 * nm;</span>
+<span class="nc" id="L1198">                    xr = a[j1];</span>
+<span class="nc" id="L1199">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1200">                    yr = a[k1];</span>
+<span class="nc" id="L1201">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1202">                    a[j1] = yr;</span>
+<span class="nc" id="L1203">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1204">                    a[k1] = xr;</span>
+<span class="nc" id="L1205">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1206">                    j1 += nm;</span>
+<span class="nc" id="L1207">                    k1 -= nm;</span>
+<span class="nc" id="L1208">                    xr = a[j1];</span>
+<span class="nc" id="L1209">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1210">                    yr = a[k1];</span>
+<span class="nc" id="L1211">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1212">                    a[j1] = yr;</span>
+<span class="nc" id="L1213">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1214">                    a[k1] = xr;</span>
+<span class="nc" id="L1215">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1216">                    j1 += nm;</span>
+<span class="nc" id="L1217">                    k1 += 2 * nm;</span>
+<span class="nc" id="L1218">                    xr = a[j1];</span>
+<span class="nc" id="L1219">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1220">                    yr = a[k1];</span>
+<span class="nc" id="L1221">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1222">                    a[j1] = yr;</span>
+<span class="nc" id="L1223">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1224">                    a[k1] = xr;</span>
+<span class="nc" id="L1225">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1226">                    j1 -= nh;</span>
+<span class="nc" id="L1227">                    k1 -= 2;</span>
+<span class="nc" id="L1228">                    xr = a[j1];</span>
+<span class="nc" id="L1229">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1230">                    yr = a[k1];</span>
+<span class="nc" id="L1231">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1232">                    a[j1] = yr;</span>
+<span class="nc" id="L1233">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1234">                    a[k1] = xr;</span>
+<span class="nc" id="L1235">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1236">                    j1 -= nm;</span>
+<span class="nc" id="L1237">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L1238">                    xr = a[j1];</span>
+<span class="nc" id="L1239">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1240">                    yr = a[k1];</span>
+<span class="nc" id="L1241">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1242">                    a[j1] = yr;</span>
+<span class="nc" id="L1243">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1244">                    a[k1] = xr;</span>
+<span class="nc" id="L1245">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1246">                    j1 -= nm;</span>
+<span class="nc" id="L1247">                    k1 += nm;</span>
+<span class="nc" id="L1248">                    xr = a[j1];</span>
+<span class="nc" id="L1249">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1250">                    yr = a[k1];</span>
+<span class="nc" id="L1251">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1252">                    a[j1] = yr;</span>
+<span class="nc" id="L1253">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1254">                    a[k1] = xr;</span>
+<span class="nc" id="L1255">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1256">                    j1 -= nm;</span>
+<span class="nc" id="L1257">                    k1 -= 2 * nm;</span>
+<span class="nc" id="L1258">                    xr = a[j1];</span>
+<span class="nc" id="L1259">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1260">                    yr = a[k1];</span>
+<span class="nc" id="L1261">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1262">                    a[j1] = yr;</span>
+<span class="nc" id="L1263">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1264">                    a[k1] = xr;</span>
+<span class="nc" id="L1265">                    a[k1 + 1] = xi;</span>
+                }
+<span class="nc" id="L1267">                k1 = 4 * k + 2 * ip[m + k];</span>
+<span class="nc" id="L1268">                j1 = k1 + 2;</span>
+<span class="nc" id="L1269">                k1 += nh;</span>
+<span class="nc" id="L1270">                a[j1 - 1] = -a[j1 - 1];</span>
+<span class="nc" id="L1271">                xr = a[j1];</span>
+<span class="nc" id="L1272">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1273">                yr = a[k1];</span>
+<span class="nc" id="L1274">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1275">                a[j1] = yr;</span>
+<span class="nc" id="L1276">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1277">                a[k1] = xr;</span>
+<span class="nc" id="L1278">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1279">                a[k1 + 3] = -a[k1 + 3];</span>
+<span class="nc" id="L1280">                j1 += nm;</span>
+<span class="nc" id="L1281">                k1 += 2 * nm;</span>
+<span class="nc" id="L1282">                xr = a[j1];</span>
+<span class="nc" id="L1283">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1284">                yr = a[k1];</span>
+<span class="nc" id="L1285">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1286">                a[j1] = yr;</span>
+<span class="nc" id="L1287">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1288">                a[k1] = xr;</span>
+<span class="nc" id="L1289">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1290">                j1 += nm;</span>
+<span class="nc" id="L1291">                k1 -= nm;</span>
+<span class="nc" id="L1292">                xr = a[j1];</span>
+<span class="nc" id="L1293">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1294">                yr = a[k1];</span>
+<span class="nc" id="L1295">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1296">                a[j1] = yr;</span>
+<span class="nc" id="L1297">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1298">                a[k1] = xr;</span>
+<span class="nc" id="L1299">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1300">                j1 -= 2;</span>
+<span class="nc" id="L1301">                k1 -= nh;</span>
+<span class="nc" id="L1302">                xr = a[j1];</span>
+<span class="nc" id="L1303">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1304">                yr = a[k1];</span>
+<span class="nc" id="L1305">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1306">                a[j1] = yr;</span>
+<span class="nc" id="L1307">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1308">                a[k1] = xr;</span>
+<span class="nc" id="L1309">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1310">                j1 += nh + 2;</span>
+<span class="nc" id="L1311">                k1 += nh + 2;</span>
+<span class="nc" id="L1312">                xr = a[j1];</span>
+<span class="nc" id="L1313">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1314">                yr = a[k1];</span>
+<span class="nc" id="L1315">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1316">                a[j1] = yr;</span>
+<span class="nc" id="L1317">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1318">                a[k1] = xr;</span>
+<span class="nc" id="L1319">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1320">                j1 -= nh - nm;</span>
+<span class="nc" id="L1321">                k1 += 2 * nm - 2;</span>
+<span class="nc" id="L1322">                a[j1 - 1] = -a[j1 - 1];</span>
+<span class="nc" id="L1323">                xr = a[j1];</span>
+<span class="nc" id="L1324">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1325">                yr = a[k1];</span>
+<span class="nc" id="L1326">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1327">                a[j1] = yr;</span>
+<span class="nc" id="L1328">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1329">                a[k1] = xr;</span>
+<span class="nc" id="L1330">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1331">                a[k1 + 3] = -a[k1 + 3];</span>
+            }
+        } else {
+<span class="nc bnc" id="L1334" title="All 2 branches missed.">            for (k = 0; k &lt; m; k++) {</span>
+<span class="nc bnc" id="L1335" title="All 2 branches missed.">                for (j = 0; j &lt; k; j++) {</span>
+<span class="nc" id="L1336">                    j1 = 4 * j + ip[m + k];</span>
+<span class="nc" id="L1337">                    k1 = 4 * k + ip[m + j];</span>
+<span class="nc" id="L1338">                    xr = a[j1];</span>
+<span class="nc" id="L1339">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1340">                    yr = a[k1];</span>
+<span class="nc" id="L1341">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1342">                    a[j1] = yr;</span>
+<span class="nc" id="L1343">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1344">                    a[k1] = xr;</span>
+<span class="nc" id="L1345">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1346">                    j1 += nm;</span>
+<span class="nc" id="L1347">                    k1 += nm;</span>
+<span class="nc" id="L1348">                    xr = a[j1];</span>
+<span class="nc" id="L1349">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1350">                    yr = a[k1];</span>
+<span class="nc" id="L1351">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1352">                    a[j1] = yr;</span>
+<span class="nc" id="L1353">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1354">                    a[k1] = xr;</span>
+<span class="nc" id="L1355">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1356">                    j1 += nh;</span>
+<span class="nc" id="L1357">                    k1 += 2;</span>
+<span class="nc" id="L1358">                    xr = a[j1];</span>
+<span class="nc" id="L1359">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1360">                    yr = a[k1];</span>
+<span class="nc" id="L1361">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1362">                    a[j1] = yr;</span>
+<span class="nc" id="L1363">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1364">                    a[k1] = xr;</span>
+<span class="nc" id="L1365">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1366">                    j1 -= nm;</span>
+<span class="nc" id="L1367">                    k1 -= nm;</span>
+<span class="nc" id="L1368">                    xr = a[j1];</span>
+<span class="nc" id="L1369">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1370">                    yr = a[k1];</span>
+<span class="nc" id="L1371">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1372">                    a[j1] = yr;</span>
+<span class="nc" id="L1373">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1374">                    a[k1] = xr;</span>
+<span class="nc" id="L1375">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1376">                    j1 += 2;</span>
+<span class="nc" id="L1377">                    k1 += nh;</span>
+<span class="nc" id="L1378">                    xr = a[j1];</span>
+<span class="nc" id="L1379">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1380">                    yr = a[k1];</span>
+<span class="nc" id="L1381">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1382">                    a[j1] = yr;</span>
+<span class="nc" id="L1383">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1384">                    a[k1] = xr;</span>
+<span class="nc" id="L1385">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1386">                    j1 += nm;</span>
+<span class="nc" id="L1387">                    k1 += nm;</span>
+<span class="nc" id="L1388">                    xr = a[j1];</span>
+<span class="nc" id="L1389">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1390">                    yr = a[k1];</span>
+<span class="nc" id="L1391">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1392">                    a[j1] = yr;</span>
+<span class="nc" id="L1393">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1394">                    a[k1] = xr;</span>
+<span class="nc" id="L1395">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1396">                    j1 -= nh;</span>
+<span class="nc" id="L1397">                    k1 -= 2;</span>
+<span class="nc" id="L1398">                    xr = a[j1];</span>
+<span class="nc" id="L1399">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1400">                    yr = a[k1];</span>
+<span class="nc" id="L1401">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1402">                    a[j1] = yr;</span>
+<span class="nc" id="L1403">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1404">                    a[k1] = xr;</span>
+<span class="nc" id="L1405">                    a[k1 + 1] = xi;</span>
+<span class="nc" id="L1406">                    j1 -= nm;</span>
+<span class="nc" id="L1407">                    k1 -= nm;</span>
+<span class="nc" id="L1408">                    xr = a[j1];</span>
+<span class="nc" id="L1409">                    xi = -a[j1 + 1];</span>
+<span class="nc" id="L1410">                    yr = a[k1];</span>
+<span class="nc" id="L1411">                    yi = -a[k1 + 1];</span>
+<span class="nc" id="L1412">                    a[j1] = yr;</span>
+<span class="nc" id="L1413">                    a[j1 + 1] = yi;</span>
+<span class="nc" id="L1414">                    a[k1] = xr;</span>
+<span class="nc" id="L1415">                    a[k1 + 1] = xi;</span>
+                }
+<span class="nc" id="L1417">                k1 = 4 * k + ip[m + k];</span>
+<span class="nc" id="L1418">                j1 = k1 + 2;</span>
+<span class="nc" id="L1419">                k1 += nh;</span>
+<span class="nc" id="L1420">                a[j1 - 1] = -a[j1 - 1];</span>
+<span class="nc" id="L1421">                xr = a[j1];</span>
+<span class="nc" id="L1422">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1423">                yr = a[k1];</span>
+<span class="nc" id="L1424">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1425">                a[j1] = yr;</span>
+<span class="nc" id="L1426">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1427">                a[k1] = xr;</span>
+<span class="nc" id="L1428">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1429">                a[k1 + 3] = -a[k1 + 3];</span>
+<span class="nc" id="L1430">                j1 += nm;</span>
+<span class="nc" id="L1431">                k1 += nm;</span>
+<span class="nc" id="L1432">                a[j1 - 1] = -a[j1 - 1];</span>
+<span class="nc" id="L1433">                xr = a[j1];</span>
+<span class="nc" id="L1434">                xi = -a[j1 + 1];</span>
+<span class="nc" id="L1435">                yr = a[k1];</span>
+<span class="nc" id="L1436">                yi = -a[k1 + 1];</span>
+<span class="nc" id="L1437">                a[j1] = yr;</span>
+<span class="nc" id="L1438">                a[j1 + 1] = yi;</span>
+<span class="nc" id="L1439">                a[k1] = xr;</span>
+<span class="nc" id="L1440">                a[k1 + 1] = xi;</span>
+<span class="nc" id="L1441">                a[k1 + 3] = -a[k1 + 3];</span>
+            }
+        }
+<span class="nc" id="L1444">    }</span>
+
+    private static void bitrv216(double[] a) {
+        double x1r,
+                x1i,
+                x2r,
+                x2i,
+                x3r,
+                x3i,
+                x4r,
+                x4i,
+                x5r,
+                x5i,
+                x7r,
+                x7i,
+                x8r,
+                x8i,
+                x10r,
+                x10i,
+                x11r,
+                x11i,
+                x12r,
+                x12i,
+                x13r,
+                x13i,
+                x14r,
+                x14i;
+
+<span class="nc" id="L1472">        x1r = a[2];</span>
+<span class="nc" id="L1473">        x1i = a[3];</span>
+<span class="nc" id="L1474">        x2r = a[4];</span>
+<span class="nc" id="L1475">        x2i = a[5];</span>
+<span class="nc" id="L1476">        x3r = a[6];</span>
+<span class="nc" id="L1477">        x3i = a[7];</span>
+<span class="nc" id="L1478">        x4r = a[8];</span>
+<span class="nc" id="L1479">        x4i = a[9];</span>
+<span class="nc" id="L1480">        x5r = a[10];</span>
+<span class="nc" id="L1481">        x5i = a[11];</span>
+<span class="nc" id="L1482">        x7r = a[14];</span>
+<span class="nc" id="L1483">        x7i = a[15];</span>
+<span class="nc" id="L1484">        x8r = a[16];</span>
+<span class="nc" id="L1485">        x8i = a[17];</span>
+<span class="nc" id="L1486">        x10r = a[20];</span>
+<span class="nc" id="L1487">        x10i = a[21];</span>
+<span class="nc" id="L1488">        x11r = a[22];</span>
+<span class="nc" id="L1489">        x11i = a[23];</span>
+<span class="nc" id="L1490">        x12r = a[24];</span>
+<span class="nc" id="L1491">        x12i = a[25];</span>
+<span class="nc" id="L1492">        x13r = a[26];</span>
+<span class="nc" id="L1493">        x13i = a[27];</span>
+<span class="nc" id="L1494">        x14r = a[28];</span>
+<span class="nc" id="L1495">        x14i = a[29];</span>
+<span class="nc" id="L1496">        a[2] = x8r;</span>
+<span class="nc" id="L1497">        a[3] = x8i;</span>
+<span class="nc" id="L1498">        a[4] = x4r;</span>
+<span class="nc" id="L1499">        a[5] = x4i;</span>
+<span class="nc" id="L1500">        a[6] = x12r;</span>
+<span class="nc" id="L1501">        a[7] = x12i;</span>
+<span class="nc" id="L1502">        a[8] = x2r;</span>
+<span class="nc" id="L1503">        a[9] = x2i;</span>
+<span class="nc" id="L1504">        a[10] = x10r;</span>
+<span class="nc" id="L1505">        a[11] = x10i;</span>
+<span class="nc" id="L1506">        a[14] = x14r;</span>
+<span class="nc" id="L1507">        a[15] = x14i;</span>
+<span class="nc" id="L1508">        a[16] = x1r;</span>
+<span class="nc" id="L1509">        a[17] = x1i;</span>
+<span class="nc" id="L1510">        a[20] = x5r;</span>
+<span class="nc" id="L1511">        a[21] = x5i;</span>
+<span class="nc" id="L1512">        a[22] = x13r;</span>
+<span class="nc" id="L1513">        a[23] = x13i;</span>
+<span class="nc" id="L1514">        a[24] = x3r;</span>
+<span class="nc" id="L1515">        a[25] = x3i;</span>
+<span class="nc" id="L1516">        a[26] = x11r;</span>
+<span class="nc" id="L1517">        a[27] = x11i;</span>
+<span class="nc" id="L1518">        a[28] = x7r;</span>
+<span class="nc" id="L1519">        a[29] = x7i;</span>
+<span class="nc" id="L1520">    }</span>
+
+    private static void bitrv216neg(double[] a) {
+        double x1r,
+                x1i,
+                x2r,
+                x2i,
+                x3r,
+                x3i,
+                x4r,
+                x4i,
+                x5r,
+                x5i,
+                x6r,
+                x6i,
+                x7r,
+                x7i,
+                x8r,
+                x8i,
+                x9r,
+                x9i,
+                x10r,
+                x10i,
+                x11r,
+                x11i,
+                x12r,
+                x12i,
+                x13r,
+                x13i,
+                x14r,
+                x14i,
+                x15r,
+                x15i;
+
+<span class="nc" id="L1554">        x1r = a[2];</span>
+<span class="nc" id="L1555">        x1i = a[3];</span>
+<span class="nc" id="L1556">        x2r = a[4];</span>
+<span class="nc" id="L1557">        x2i = a[5];</span>
+<span class="nc" id="L1558">        x3r = a[6];</span>
+<span class="nc" id="L1559">        x3i = a[7];</span>
+<span class="nc" id="L1560">        x4r = a[8];</span>
+<span class="nc" id="L1561">        x4i = a[9];</span>
+<span class="nc" id="L1562">        x5r = a[10];</span>
+<span class="nc" id="L1563">        x5i = a[11];</span>
+<span class="nc" id="L1564">        x6r = a[12];</span>
+<span class="nc" id="L1565">        x6i = a[13];</span>
+<span class="nc" id="L1566">        x7r = a[14];</span>
+<span class="nc" id="L1567">        x7i = a[15];</span>
+<span class="nc" id="L1568">        x8r = a[16];</span>
+<span class="nc" id="L1569">        x8i = a[17];</span>
+<span class="nc" id="L1570">        x9r = a[18];</span>
+<span class="nc" id="L1571">        x9i = a[19];</span>
+<span class="nc" id="L1572">        x10r = a[20];</span>
+<span class="nc" id="L1573">        x10i = a[21];</span>
+<span class="nc" id="L1574">        x11r = a[22];</span>
+<span class="nc" id="L1575">        x11i = a[23];</span>
+<span class="nc" id="L1576">        x12r = a[24];</span>
+<span class="nc" id="L1577">        x12i = a[25];</span>
+<span class="nc" id="L1578">        x13r = a[26];</span>
+<span class="nc" id="L1579">        x13i = a[27];</span>
+<span class="nc" id="L1580">        x14r = a[28];</span>
+<span class="nc" id="L1581">        x14i = a[29];</span>
+<span class="nc" id="L1582">        x15r = a[30];</span>
+<span class="nc" id="L1583">        x15i = a[31];</span>
+<span class="nc" id="L1584">        a[2] = x15r;</span>
+<span class="nc" id="L1585">        a[3] = x15i;</span>
+<span class="nc" id="L1586">        a[4] = x7r;</span>
+<span class="nc" id="L1587">        a[5] = x7i;</span>
+<span class="nc" id="L1588">        a[6] = x11r;</span>
+<span class="nc" id="L1589">        a[7] = x11i;</span>
+<span class="nc" id="L1590">        a[8] = x3r;</span>
+<span class="nc" id="L1591">        a[9] = x3i;</span>
+<span class="nc" id="L1592">        a[10] = x13r;</span>
+<span class="nc" id="L1593">        a[11] = x13i;</span>
+<span class="nc" id="L1594">        a[12] = x5r;</span>
+<span class="nc" id="L1595">        a[13] = x5i;</span>
+<span class="nc" id="L1596">        a[14] = x9r;</span>
+<span class="nc" id="L1597">        a[15] = x9i;</span>
+<span class="nc" id="L1598">        a[16] = x1r;</span>
+<span class="nc" id="L1599">        a[17] = x1i;</span>
+<span class="nc" id="L1600">        a[18] = x14r;</span>
+<span class="nc" id="L1601">        a[19] = x14i;</span>
+<span class="nc" id="L1602">        a[20] = x6r;</span>
+<span class="nc" id="L1603">        a[21] = x6i;</span>
+<span class="nc" id="L1604">        a[22] = x10r;</span>
+<span class="nc" id="L1605">        a[23] = x10i;</span>
+<span class="nc" id="L1606">        a[24] = x2r;</span>
+<span class="nc" id="L1607">        a[25] = x2i;</span>
+<span class="nc" id="L1608">        a[26] = x12r;</span>
+<span class="nc" id="L1609">        a[27] = x12i;</span>
+<span class="nc" id="L1610">        a[28] = x4r;</span>
+<span class="nc" id="L1611">        a[29] = x4i;</span>
+<span class="nc" id="L1612">        a[30] = x8r;</span>
+<span class="nc" id="L1613">        a[31] = x8i;</span>
+<span class="nc" id="L1614">    }</span>
+
+    private static void bitrv208(double[] a) {
+        double x1r, x1i, x3r, x3i, x4r, x4i, x6r, x6i;
+
+<span class="nc" id="L1619">        x1r = a[2];</span>
+<span class="nc" id="L1620">        x1i = a[3];</span>
+<span class="nc" id="L1621">        x3r = a[6];</span>
+<span class="nc" id="L1622">        x3i = a[7];</span>
+<span class="nc" id="L1623">        x4r = a[8];</span>
+<span class="nc" id="L1624">        x4i = a[9];</span>
+<span class="nc" id="L1625">        x6r = a[12];</span>
+<span class="nc" id="L1626">        x6i = a[13];</span>
+<span class="nc" id="L1627">        a[2] = x4r;</span>
+<span class="nc" id="L1628">        a[3] = x4i;</span>
+<span class="nc" id="L1629">        a[6] = x6r;</span>
+<span class="nc" id="L1630">        a[7] = x6i;</span>
+<span class="nc" id="L1631">        a[8] = x1r;</span>
+<span class="nc" id="L1632">        a[9] = x1i;</span>
+<span class="nc" id="L1633">        a[12] = x3r;</span>
+<span class="nc" id="L1634">        a[13] = x3i;</span>
+<span class="nc" id="L1635">    }</span>
+
+    private static void bitrv208neg(double[] a) {
+        double x1r, x1i, x2r, x2i, x3r, x3i, x4r, x4i, x5r, x5i, x6r, x6i, x7r, x7i;
+
+<span class="nc" id="L1640">        x1r = a[2];</span>
+<span class="nc" id="L1641">        x1i = a[3];</span>
+<span class="nc" id="L1642">        x2r = a[4];</span>
+<span class="nc" id="L1643">        x2i = a[5];</span>
+<span class="nc" id="L1644">        x3r = a[6];</span>
+<span class="nc" id="L1645">        x3i = a[7];</span>
+<span class="nc" id="L1646">        x4r = a[8];</span>
+<span class="nc" id="L1647">        x4i = a[9];</span>
+<span class="nc" id="L1648">        x5r = a[10];</span>
+<span class="nc" id="L1649">        x5i = a[11];</span>
+<span class="nc" id="L1650">        x6r = a[12];</span>
+<span class="nc" id="L1651">        x6i = a[13];</span>
+<span class="nc" id="L1652">        x7r = a[14];</span>
+<span class="nc" id="L1653">        x7i = a[15];</span>
+<span class="nc" id="L1654">        a[2] = x7r;</span>
+<span class="nc" id="L1655">        a[3] = x7i;</span>
+<span class="nc" id="L1656">        a[4] = x3r;</span>
+<span class="nc" id="L1657">        a[5] = x3i;</span>
+<span class="nc" id="L1658">        a[6] = x5r;</span>
+<span class="nc" id="L1659">        a[7] = x5i;</span>
+<span class="nc" id="L1660">        a[8] = x1r;</span>
+<span class="nc" id="L1661">        a[9] = x1i;</span>
+<span class="nc" id="L1662">        a[10] = x6r;</span>
+<span class="nc" id="L1663">        a[11] = x6i;</span>
+<span class="nc" id="L1664">        a[12] = x2r;</span>
+<span class="nc" id="L1665">        a[13] = x2i;</span>
+<span class="nc" id="L1666">        a[14] = x4r;</span>
+<span class="nc" id="L1667">        a[15] = x4i;</span>
+<span class="nc" id="L1668">    }</span>
+
+    private static void cftf1st(int n, double[] a, double[] w, int wOffset) {
+        int j, j0, j1, j2, j3, k, m, mh;
+        double wn4r, csc1, csc3, wk1r, wk1i, wk3r, wk3i, wd1r, wd1i, wd3r, wd3i;
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i, y0r, y0i, y1r, y1i, y2r, y2i, y3r, y3i;
+
+<span class="nc" id="L1675">        mh = n &gt;&gt; 3;</span>
+<span class="nc" id="L1676">        m = 2 * mh;</span>
+<span class="nc" id="L1677">        j1 = m;</span>
+<span class="nc" id="L1678">        j2 = j1 + m;</span>
+<span class="nc" id="L1679">        j3 = j2 + m;</span>
+<span class="nc" id="L1680">        x0r = a[0] + a[j2];</span>
+<span class="nc" id="L1681">        x0i = a[1] + a[j2 + 1];</span>
+<span class="nc" id="L1682">        x1r = a[0] - a[j2];</span>
+<span class="nc" id="L1683">        x1i = a[1] - a[j2 + 1];</span>
+<span class="nc" id="L1684">        x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1685">        x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1686">        x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1687">        x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1688">        a[0] = x0r + x2r;</span>
+<span class="nc" id="L1689">        a[1] = x0i + x2i;</span>
+<span class="nc" id="L1690">        a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1691">        a[j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L1692">        a[j2] = x1r - x3i;</span>
+<span class="nc" id="L1693">        a[j2 + 1] = x1i + x3r;</span>
+<span class="nc" id="L1694">        a[j3] = x1r + x3i;</span>
+<span class="nc" id="L1695">        a[j3 + 1] = x1i - x3r;</span>
+<span class="nc" id="L1696">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L1697">        csc1 = w[wOffset + 2];</span>
+<span class="nc" id="L1698">        csc3 = w[wOffset + 3];</span>
+<span class="nc" id="L1699">        wd1r = 1;</span>
+<span class="nc" id="L1700">        wd1i = 0;</span>
+<span class="nc" id="L1701">        wd3r = 1;</span>
+<span class="nc" id="L1702">        wd3i = 0;</span>
+<span class="nc" id="L1703">        k = 0;</span>
+<span class="nc bnc" id="L1704" title="All 2 branches missed.">        for (j = 2; j &lt; mh - 2; j += 4) {</span>
+<span class="nc" id="L1705">            k += 4;</span>
+<span class="nc" id="L1706">            wk1r = csc1 * (wd1r + w[wOffset + k]);</span>
+<span class="nc" id="L1707">            wk1i = csc1 * (wd1i + w[wOffset + k + 1]);</span>
+<span class="nc" id="L1708">            wk3r = csc3 * (wd3r + w[wOffset + k + 2]);</span>
+<span class="nc" id="L1709">            wk3i = csc3 * (wd3i + w[wOffset + k + 3]);</span>
+<span class="nc" id="L1710">            wd1r = w[wOffset + k];</span>
+<span class="nc" id="L1711">            wd1i = w[wOffset + k + 1];</span>
+<span class="nc" id="L1712">            wd3r = w[wOffset + k + 2];</span>
+<span class="nc" id="L1713">            wd3i = w[wOffset + k + 3];</span>
+<span class="nc" id="L1714">            j1 = j + m;</span>
+<span class="nc" id="L1715">            j2 = j1 + m;</span>
+<span class="nc" id="L1716">            j3 = j2 + m;</span>
+<span class="nc" id="L1717">            x0r = a[j] + a[j2];</span>
+<span class="nc" id="L1718">            x0i = a[j + 1] + a[j2 + 1];</span>
+<span class="nc" id="L1719">            x1r = a[j] - a[j2];</span>
+<span class="nc" id="L1720">            x1i = a[j + 1] - a[j2 + 1];</span>
+<span class="nc" id="L1721">            y0r = a[j + 2] + a[j2 + 2];</span>
+<span class="nc" id="L1722">            y0i = a[j + 3] + a[j2 + 3];</span>
+<span class="nc" id="L1723">            y1r = a[j + 2] - a[j2 + 2];</span>
+<span class="nc" id="L1724">            y1i = a[j + 3] - a[j2 + 3];</span>
+<span class="nc" id="L1725">            x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1726">            x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1727">            x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1728">            x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1729">            y2r = a[j1 + 2] + a[j3 + 2];</span>
+<span class="nc" id="L1730">            y2i = a[j1 + 3] + a[j3 + 3];</span>
+<span class="nc" id="L1731">            y3r = a[j1 + 2] - a[j3 + 2];</span>
+<span class="nc" id="L1732">            y3i = a[j1 + 3] - a[j3 + 3];</span>
+<span class="nc" id="L1733">            a[j] = x0r + x2r;</span>
+<span class="nc" id="L1734">            a[j + 1] = x0i + x2i;</span>
+<span class="nc" id="L1735">            a[j + 2] = y0r + y2r;</span>
+<span class="nc" id="L1736">            a[j + 3] = y0i + y2i;</span>
+<span class="nc" id="L1737">            a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1738">            a[j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L1739">            a[j1 + 2] = y0r - y2r;</span>
+<span class="nc" id="L1740">            a[j1 + 3] = y0i - y2i;</span>
+<span class="nc" id="L1741">            x0r = x1r - x3i;</span>
+<span class="nc" id="L1742">            x0i = x1i + x3r;</span>
+<span class="nc" id="L1743">            a[j2] = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L1744">            a[j2 + 1] = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L1745">            x0r = y1r - y3i;</span>
+<span class="nc" id="L1746">            x0i = y1i + y3r;</span>
+<span class="nc" id="L1747">            a[j2 + 2] = wd1r * x0r - wd1i * x0i;</span>
+<span class="nc" id="L1748">            a[j2 + 3] = wd1r * x0i + wd1i * x0r;</span>
+<span class="nc" id="L1749">            x0r = x1r + x3i;</span>
+<span class="nc" id="L1750">            x0i = x1i - x3r;</span>
+<span class="nc" id="L1751">            a[j3] = wk3r * x0r + wk3i * x0i;</span>
+<span class="nc" id="L1752">            a[j3 + 1] = wk3r * x0i - wk3i * x0r;</span>
+<span class="nc" id="L1753">            x0r = y1r + y3i;</span>
+<span class="nc" id="L1754">            x0i = y1i - y3r;</span>
+<span class="nc" id="L1755">            a[j3 + 2] = wd3r * x0r + wd3i * x0i;</span>
+<span class="nc" id="L1756">            a[j3 + 3] = wd3r * x0i - wd3i * x0r;</span>
+<span class="nc" id="L1757">            j0 = m - j;</span>
+<span class="nc" id="L1758">            j1 = j0 + m;</span>
+<span class="nc" id="L1759">            j2 = j1 + m;</span>
+<span class="nc" id="L1760">            j3 = j2 + m;</span>
+<span class="nc" id="L1761">            x0r = a[j0] + a[j2];</span>
+<span class="nc" id="L1762">            x0i = a[j0 + 1] + a[j2 + 1];</span>
+<span class="nc" id="L1763">            x1r = a[j0] - a[j2];</span>
+<span class="nc" id="L1764">            x1i = a[j0 + 1] - a[j2 + 1];</span>
+<span class="nc" id="L1765">            y0r = a[j0 - 2] + a[j2 - 2];</span>
+<span class="nc" id="L1766">            y0i = a[j0 - 1] + a[j2 - 1];</span>
+<span class="nc" id="L1767">            y1r = a[j0 - 2] - a[j2 - 2];</span>
+<span class="nc" id="L1768">            y1i = a[j0 - 1] - a[j2 - 1];</span>
+<span class="nc" id="L1769">            x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1770">            x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1771">            x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1772">            x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1773">            y2r = a[j1 - 2] + a[j3 - 2];</span>
+<span class="nc" id="L1774">            y2i = a[j1 - 1] + a[j3 - 1];</span>
+<span class="nc" id="L1775">            y3r = a[j1 - 2] - a[j3 - 2];</span>
+<span class="nc" id="L1776">            y3i = a[j1 - 1] - a[j3 - 1];</span>
+<span class="nc" id="L1777">            a[j0] = x0r + x2r;</span>
+<span class="nc" id="L1778">            a[j0 + 1] = x0i + x2i;</span>
+<span class="nc" id="L1779">            a[j0 - 2] = y0r + y2r;</span>
+<span class="nc" id="L1780">            a[j0 - 1] = y0i + y2i;</span>
+<span class="nc" id="L1781">            a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1782">            a[j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L1783">            a[j1 - 2] = y0r - y2r;</span>
+<span class="nc" id="L1784">            a[j1 - 1] = y0i - y2i;</span>
+<span class="nc" id="L1785">            x0r = x1r - x3i;</span>
+<span class="nc" id="L1786">            x0i = x1i + x3r;</span>
+<span class="nc" id="L1787">            a[j2] = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L1788">            a[j2 + 1] = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L1789">            x0r = y1r - y3i;</span>
+<span class="nc" id="L1790">            x0i = y1i + y3r;</span>
+<span class="nc" id="L1791">            a[j2 - 2] = wd1i * x0r - wd1r * x0i;</span>
+<span class="nc" id="L1792">            a[j2 - 1] = wd1i * x0i + wd1r * x0r;</span>
+<span class="nc" id="L1793">            x0r = x1r + x3i;</span>
+<span class="nc" id="L1794">            x0i = x1i - x3r;</span>
+<span class="nc" id="L1795">            a[j3] = wk3i * x0r + wk3r * x0i;</span>
+<span class="nc" id="L1796">            a[j3 + 1] = wk3i * x0i - wk3r * x0r;</span>
+<span class="nc" id="L1797">            x0r = y1r + y3i;</span>
+<span class="nc" id="L1798">            x0i = y1i - y3r;</span>
+<span class="nc" id="L1799">            a[j3 - 2] = wd3i * x0r + wd3r * x0i;</span>
+<span class="nc" id="L1800">            a[j3 - 1] = wd3i * x0i - wd3r * x0r;</span>
+        }
+<span class="nc" id="L1802">        wk1r = csc1 * (wd1r + wn4r);</span>
+<span class="nc" id="L1803">        wk1i = csc1 * (wd1i + wn4r);</span>
+<span class="nc" id="L1804">        wk3r = csc3 * (wd3r - wn4r);</span>
+<span class="nc" id="L1805">        wk3i = csc3 * (wd3i - wn4r);</span>
+<span class="nc" id="L1806">        j0 = mh;</span>
+<span class="nc" id="L1807">        j1 = j0 + m;</span>
+<span class="nc" id="L1808">        j2 = j1 + m;</span>
+<span class="nc" id="L1809">        j3 = j2 + m;</span>
+<span class="nc" id="L1810">        x0r = a[j0 - 2] + a[j2 - 2];</span>
+<span class="nc" id="L1811">        x0i = a[j0 - 1] + a[j2 - 1];</span>
+<span class="nc" id="L1812">        x1r = a[j0 - 2] - a[j2 - 2];</span>
+<span class="nc" id="L1813">        x1i = a[j0 - 1] - a[j2 - 1];</span>
+<span class="nc" id="L1814">        x2r = a[j1 - 2] + a[j3 - 2];</span>
+<span class="nc" id="L1815">        x2i = a[j1 - 1] + a[j3 - 1];</span>
+<span class="nc" id="L1816">        x3r = a[j1 - 2] - a[j3 - 2];</span>
+<span class="nc" id="L1817">        x3i = a[j1 - 1] - a[j3 - 1];</span>
+<span class="nc" id="L1818">        a[j0 - 2] = x0r + x2r;</span>
+<span class="nc" id="L1819">        a[j0 - 1] = x0i + x2i;</span>
+<span class="nc" id="L1820">        a[j1 - 2] = x0r - x2r;</span>
+<span class="nc" id="L1821">        a[j1 - 1] = x0i - x2i;</span>
+<span class="nc" id="L1822">        x0r = x1r - x3i;</span>
+<span class="nc" id="L1823">        x0i = x1i + x3r;</span>
+<span class="nc" id="L1824">        a[j2 - 2] = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L1825">        a[j2 - 1] = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L1826">        x0r = x1r + x3i;</span>
+<span class="nc" id="L1827">        x0i = x1i - x3r;</span>
+<span class="nc" id="L1828">        a[j3 - 2] = wk3r * x0r + wk3i * x0i;</span>
+<span class="nc" id="L1829">        a[j3 - 1] = wk3r * x0i - wk3i * x0r;</span>
+<span class="nc" id="L1830">        x0r = a[j0] + a[j2];</span>
+<span class="nc" id="L1831">        x0i = a[j0 + 1] + a[j2 + 1];</span>
+<span class="nc" id="L1832">        x1r = a[j0] - a[j2];</span>
+<span class="nc" id="L1833">        x1i = a[j0 + 1] - a[j2 + 1];</span>
+<span class="nc" id="L1834">        x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1835">        x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1836">        x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1837">        x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1838">        a[j0] = x0r + x2r;</span>
+<span class="nc" id="L1839">        a[j0 + 1] = x0i + x2i;</span>
+<span class="nc" id="L1840">        a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1841">        a[j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L1842">        x0r = x1r - x3i;</span>
+<span class="nc" id="L1843">        x0i = x1i + x3r;</span>
+<span class="nc" id="L1844">        a[j2] = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L1845">        a[j2 + 1] = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L1846">        x0r = x1r + x3i;</span>
+<span class="nc" id="L1847">        x0i = x1i - x3r;</span>
+<span class="nc" id="L1848">        a[j3] = -wn4r * (x0r + x0i);</span>
+<span class="nc" id="L1849">        a[j3 + 1] = -wn4r * (x0i - x0r);</span>
+<span class="nc" id="L1850">        x0r = a[j0 + 2] + a[j2 + 2];</span>
+<span class="nc" id="L1851">        x0i = a[j0 + 3] + a[j2 + 3];</span>
+<span class="nc" id="L1852">        x1r = a[j0 + 2] - a[j2 + 2];</span>
+<span class="nc" id="L1853">        x1i = a[j0 + 3] - a[j2 + 3];</span>
+<span class="nc" id="L1854">        x2r = a[j1 + 2] + a[j3 + 2];</span>
+<span class="nc" id="L1855">        x2i = a[j1 + 3] + a[j3 + 3];</span>
+<span class="nc" id="L1856">        x3r = a[j1 + 2] - a[j3 + 2];</span>
+<span class="nc" id="L1857">        x3i = a[j1 + 3] - a[j3 + 3];</span>
+<span class="nc" id="L1858">        a[j0 + 2] = x0r + x2r;</span>
+<span class="nc" id="L1859">        a[j0 + 3] = x0i + x2i;</span>
+<span class="nc" id="L1860">        a[j1 + 2] = x0r - x2r;</span>
+<span class="nc" id="L1861">        a[j1 + 3] = x0i - x2i;</span>
+<span class="nc" id="L1862">        x0r = x1r - x3i;</span>
+<span class="nc" id="L1863">        x0i = x1i + x3r;</span>
+<span class="nc" id="L1864">        a[j2 + 2] = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L1865">        a[j2 + 3] = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L1866">        x0r = x1r + x3i;</span>
+<span class="nc" id="L1867">        x0i = x1i - x3r;</span>
+<span class="nc" id="L1868">        a[j3 + 2] = wk3i * x0r + wk3r * x0i;</span>
+<span class="nc" id="L1869">        a[j3 + 3] = wk3i * x0i - wk3r * x0r;</span>
+<span class="nc" id="L1870">    }</span>
+
+    private static void cftb1st(int n, double[] a, double[] w, int wOffset) {
+        int j, j0, j1, j2, j3, k, m, mh;
+        double wn4r, csc1, csc3, wk1r, wk1i, wk3r, wk3i, wd1r, wd1i, wd3r, wd3i;
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i, y0r, y0i, y1r, y1i, y2r, y2i, y3r, y3i;
+
+<span class="nc" id="L1877">        mh = n &gt;&gt; 3;</span>
+<span class="nc" id="L1878">        m = 2 * mh;</span>
+<span class="nc" id="L1879">        j1 = m;</span>
+<span class="nc" id="L1880">        j2 = j1 + m;</span>
+<span class="nc" id="L1881">        j3 = j2 + m;</span>
+<span class="nc" id="L1882">        x0r = a[0] + a[j2];</span>
+<span class="nc" id="L1883">        x0i = -a[1] - a[j2 + 1];</span>
+<span class="nc" id="L1884">        x1r = a[0] - a[j2];</span>
+<span class="nc" id="L1885">        x1i = -a[1] + a[j2 + 1];</span>
+<span class="nc" id="L1886">        x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1887">        x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1888">        x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1889">        x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1890">        a[0] = x0r + x2r;</span>
+<span class="nc" id="L1891">        a[1] = x0i - x2i;</span>
+<span class="nc" id="L1892">        a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1893">        a[j1 + 1] = x0i + x2i;</span>
+<span class="nc" id="L1894">        a[j2] = x1r + x3i;</span>
+<span class="nc" id="L1895">        a[j2 + 1] = x1i + x3r;</span>
+<span class="nc" id="L1896">        a[j3] = x1r - x3i;</span>
+<span class="nc" id="L1897">        a[j3 + 1] = x1i - x3r;</span>
+<span class="nc" id="L1898">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L1899">        csc1 = w[wOffset + 2];</span>
+<span class="nc" id="L1900">        csc3 = w[wOffset + 3];</span>
+<span class="nc" id="L1901">        wd1r = 1;</span>
+<span class="nc" id="L1902">        wd1i = 0;</span>
+<span class="nc" id="L1903">        wd3r = 1;</span>
+<span class="nc" id="L1904">        wd3i = 0;</span>
+<span class="nc" id="L1905">        k = 0;</span>
+<span class="nc bnc" id="L1906" title="All 2 branches missed.">        for (j = 2; j &lt; mh - 2; j += 4) {</span>
+<span class="nc" id="L1907">            k += 4;</span>
+<span class="nc" id="L1908">            wk1r = csc1 * (wd1r + w[wOffset + k]);</span>
+<span class="nc" id="L1909">            wk1i = csc1 * (wd1i + w[wOffset + k + 1]);</span>
+<span class="nc" id="L1910">            wk3r = csc3 * (wd3r + w[wOffset + k + 2]);</span>
+<span class="nc" id="L1911">            wk3i = csc3 * (wd3i + w[wOffset + k + 3]);</span>
+<span class="nc" id="L1912">            wd1r = w[wOffset + k];</span>
+<span class="nc" id="L1913">            wd1i = w[wOffset + k + 1];</span>
+<span class="nc" id="L1914">            wd3r = w[wOffset + k + 2];</span>
+<span class="nc" id="L1915">            wd3i = w[wOffset + k + 3];</span>
+<span class="nc" id="L1916">            j1 = j + m;</span>
+<span class="nc" id="L1917">            j2 = j1 + m;</span>
+<span class="nc" id="L1918">            j3 = j2 + m;</span>
+<span class="nc" id="L1919">            x0r = a[j] + a[j2];</span>
+<span class="nc" id="L1920">            x0i = -a[j + 1] - a[j2 + 1];</span>
+<span class="nc" id="L1921">            x1r = a[j] - a[j2];</span>
+<span class="nc" id="L1922">            x1i = -a[j + 1] + a[j2 + 1];</span>
+<span class="nc" id="L1923">            y0r = a[j + 2] + a[j2 + 2];</span>
+<span class="nc" id="L1924">            y0i = -a[j + 3] - a[j2 + 3];</span>
+<span class="nc" id="L1925">            y1r = a[j + 2] - a[j2 + 2];</span>
+<span class="nc" id="L1926">            y1i = -a[j + 3] + a[j2 + 3];</span>
+<span class="nc" id="L1927">            x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1928">            x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1929">            x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1930">            x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1931">            y2r = a[j1 + 2] + a[j3 + 2];</span>
+<span class="nc" id="L1932">            y2i = a[j1 + 3] + a[j3 + 3];</span>
+<span class="nc" id="L1933">            y3r = a[j1 + 2] - a[j3 + 2];</span>
+<span class="nc" id="L1934">            y3i = a[j1 + 3] - a[j3 + 3];</span>
+<span class="nc" id="L1935">            a[j] = x0r + x2r;</span>
+<span class="nc" id="L1936">            a[j + 1] = x0i - x2i;</span>
+<span class="nc" id="L1937">            a[j + 2] = y0r + y2r;</span>
+<span class="nc" id="L1938">            a[j + 3] = y0i - y2i;</span>
+<span class="nc" id="L1939">            a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1940">            a[j1 + 1] = x0i + x2i;</span>
+<span class="nc" id="L1941">            a[j1 + 2] = y0r - y2r;</span>
+<span class="nc" id="L1942">            a[j1 + 3] = y0i + y2i;</span>
+<span class="nc" id="L1943">            x0r = x1r + x3i;</span>
+<span class="nc" id="L1944">            x0i = x1i + x3r;</span>
+<span class="nc" id="L1945">            a[j2] = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L1946">            a[j2 + 1] = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L1947">            x0r = y1r + y3i;</span>
+<span class="nc" id="L1948">            x0i = y1i + y3r;</span>
+<span class="nc" id="L1949">            a[j2 + 2] = wd1r * x0r - wd1i * x0i;</span>
+<span class="nc" id="L1950">            a[j2 + 3] = wd1r * x0i + wd1i * x0r;</span>
+<span class="nc" id="L1951">            x0r = x1r - x3i;</span>
+<span class="nc" id="L1952">            x0i = x1i - x3r;</span>
+<span class="nc" id="L1953">            a[j3] = wk3r * x0r + wk3i * x0i;</span>
+<span class="nc" id="L1954">            a[j3 + 1] = wk3r * x0i - wk3i * x0r;</span>
+<span class="nc" id="L1955">            x0r = y1r - y3i;</span>
+<span class="nc" id="L1956">            x0i = y1i - y3r;</span>
+<span class="nc" id="L1957">            a[j3 + 2] = wd3r * x0r + wd3i * x0i;</span>
+<span class="nc" id="L1958">            a[j3 + 3] = wd3r * x0i - wd3i * x0r;</span>
+<span class="nc" id="L1959">            j0 = m - j;</span>
+<span class="nc" id="L1960">            j1 = j0 + m;</span>
+<span class="nc" id="L1961">            j2 = j1 + m;</span>
+<span class="nc" id="L1962">            j3 = j2 + m;</span>
+<span class="nc" id="L1963">            x0r = a[j0] + a[j2];</span>
+<span class="nc" id="L1964">            x0i = -a[j0 + 1] - a[j2 + 1];</span>
+<span class="nc" id="L1965">            x1r = a[j0] - a[j2];</span>
+<span class="nc" id="L1966">            x1i = -a[j0 + 1] + a[j2 + 1];</span>
+<span class="nc" id="L1967">            y0r = a[j0 - 2] + a[j2 - 2];</span>
+<span class="nc" id="L1968">            y0i = -a[j0 - 1] - a[j2 - 1];</span>
+<span class="nc" id="L1969">            y1r = a[j0 - 2] - a[j2 - 2];</span>
+<span class="nc" id="L1970">            y1i = -a[j0 - 1] + a[j2 - 1];</span>
+<span class="nc" id="L1971">            x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L1972">            x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L1973">            x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L1974">            x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L1975">            y2r = a[j1 - 2] + a[j3 - 2];</span>
+<span class="nc" id="L1976">            y2i = a[j1 - 1] + a[j3 - 1];</span>
+<span class="nc" id="L1977">            y3r = a[j1 - 2] - a[j3 - 2];</span>
+<span class="nc" id="L1978">            y3i = a[j1 - 1] - a[j3 - 1];</span>
+<span class="nc" id="L1979">            a[j0] = x0r + x2r;</span>
+<span class="nc" id="L1980">            a[j0 + 1] = x0i - x2i;</span>
+<span class="nc" id="L1981">            a[j0 - 2] = y0r + y2r;</span>
+<span class="nc" id="L1982">            a[j0 - 1] = y0i - y2i;</span>
+<span class="nc" id="L1983">            a[j1] = x0r - x2r;</span>
+<span class="nc" id="L1984">            a[j1 + 1] = x0i + x2i;</span>
+<span class="nc" id="L1985">            a[j1 - 2] = y0r - y2r;</span>
+<span class="nc" id="L1986">            a[j1 - 1] = y0i + y2i;</span>
+<span class="nc" id="L1987">            x0r = x1r + x3i;</span>
+<span class="nc" id="L1988">            x0i = x1i + x3r;</span>
+<span class="nc" id="L1989">            a[j2] = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L1990">            a[j2 + 1] = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L1991">            x0r = y1r + y3i;</span>
+<span class="nc" id="L1992">            x0i = y1i + y3r;</span>
+<span class="nc" id="L1993">            a[j2 - 2] = wd1i * x0r - wd1r * x0i;</span>
+<span class="nc" id="L1994">            a[j2 - 1] = wd1i * x0i + wd1r * x0r;</span>
+<span class="nc" id="L1995">            x0r = x1r - x3i;</span>
+<span class="nc" id="L1996">            x0i = x1i - x3r;</span>
+<span class="nc" id="L1997">            a[j3] = wk3i * x0r + wk3r * x0i;</span>
+<span class="nc" id="L1998">            a[j3 + 1] = wk3i * x0i - wk3r * x0r;</span>
+<span class="nc" id="L1999">            x0r = y1r - y3i;</span>
+<span class="nc" id="L2000">            x0i = y1i - y3r;</span>
+<span class="nc" id="L2001">            a[j3 - 2] = wd3i * x0r + wd3r * x0i;</span>
+<span class="nc" id="L2002">            a[j3 - 1] = wd3i * x0i - wd3r * x0r;</span>
+        }
+<span class="nc" id="L2004">        wk1r = csc1 * (wd1r + wn4r);</span>
+<span class="nc" id="L2005">        wk1i = csc1 * (wd1i + wn4r);</span>
+<span class="nc" id="L2006">        wk3r = csc3 * (wd3r - wn4r);</span>
+<span class="nc" id="L2007">        wk3i = csc3 * (wd3i - wn4r);</span>
+<span class="nc" id="L2008">        j0 = mh;</span>
+<span class="nc" id="L2009">        j1 = j0 + m;</span>
+<span class="nc" id="L2010">        j2 = j1 + m;</span>
+<span class="nc" id="L2011">        j3 = j2 + m;</span>
+<span class="nc" id="L2012">        x0r = a[j0 - 2] + a[j2 - 2];</span>
+<span class="nc" id="L2013">        x0i = -a[j0 - 1] - a[j2 - 1];</span>
+<span class="nc" id="L2014">        x1r = a[j0 - 2] - a[j2 - 2];</span>
+<span class="nc" id="L2015">        x1i = -a[j0 - 1] + a[j2 - 1];</span>
+<span class="nc" id="L2016">        x2r = a[j1 - 2] + a[j3 - 2];</span>
+<span class="nc" id="L2017">        x2i = a[j1 - 1] + a[j3 - 1];</span>
+<span class="nc" id="L2018">        x3r = a[j1 - 2] - a[j3 - 2];</span>
+<span class="nc" id="L2019">        x3i = a[j1 - 1] - a[j3 - 1];</span>
+<span class="nc" id="L2020">        a[j0 - 2] = x0r + x2r;</span>
+<span class="nc" id="L2021">        a[j0 - 1] = x0i - x2i;</span>
+<span class="nc" id="L2022">        a[j1 - 2] = x0r - x2r;</span>
+<span class="nc" id="L2023">        a[j1 - 1] = x0i + x2i;</span>
+<span class="nc" id="L2024">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2025">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2026">        a[j2 - 2] = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2027">        a[j2 - 1] = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2028">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2029">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2030">        a[j3 - 2] = wk3r * x0r + wk3i * x0i;</span>
+<span class="nc" id="L2031">        a[j3 - 1] = wk3r * x0i - wk3i * x0r;</span>
+<span class="nc" id="L2032">        x0r = a[j0] + a[j2];</span>
+<span class="nc" id="L2033">        x0i = -a[j0 + 1] - a[j2 + 1];</span>
+<span class="nc" id="L2034">        x1r = a[j0] - a[j2];</span>
+<span class="nc" id="L2035">        x1i = -a[j0 + 1] + a[j2 + 1];</span>
+<span class="nc" id="L2036">        x2r = a[j1] + a[j3];</span>
+<span class="nc" id="L2037">        x2i = a[j1 + 1] + a[j3 + 1];</span>
+<span class="nc" id="L2038">        x3r = a[j1] - a[j3];</span>
+<span class="nc" id="L2039">        x3i = a[j1 + 1] - a[j3 + 1];</span>
+<span class="nc" id="L2040">        a[j0] = x0r + x2r;</span>
+<span class="nc" id="L2041">        a[j0 + 1] = x0i - x2i;</span>
+<span class="nc" id="L2042">        a[j1] = x0r - x2r;</span>
+<span class="nc" id="L2043">        a[j1 + 1] = x0i + x2i;</span>
+<span class="nc" id="L2044">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2045">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2046">        a[j2] = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2047">        a[j2 + 1] = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2048">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2049">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2050">        a[j3] = -wn4r * (x0r + x0i);</span>
+<span class="nc" id="L2051">        a[j3 + 1] = -wn4r * (x0i - x0r);</span>
+<span class="nc" id="L2052">        x0r = a[j0 + 2] + a[j2 + 2];</span>
+<span class="nc" id="L2053">        x0i = -a[j0 + 3] - a[j2 + 3];</span>
+<span class="nc" id="L2054">        x1r = a[j0 + 2] - a[j2 + 2];</span>
+<span class="nc" id="L2055">        x1i = -a[j0 + 3] + a[j2 + 3];</span>
+<span class="nc" id="L2056">        x2r = a[j1 + 2] + a[j3 + 2];</span>
+<span class="nc" id="L2057">        x2i = a[j1 + 3] + a[j3 + 3];</span>
+<span class="nc" id="L2058">        x3r = a[j1 + 2] - a[j3 + 2];</span>
+<span class="nc" id="L2059">        x3i = a[j1 + 3] - a[j3 + 3];</span>
+<span class="nc" id="L2060">        a[j0 + 2] = x0r + x2r;</span>
+<span class="nc" id="L2061">        a[j0 + 3] = x0i - x2i;</span>
+<span class="nc" id="L2062">        a[j1 + 2] = x0r - x2r;</span>
+<span class="nc" id="L2063">        a[j1 + 3] = x0i + x2i;</span>
+<span class="nc" id="L2064">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2065">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2066">        a[j2 + 2] = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2067">        a[j2 + 3] = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2068">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2069">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2070">        a[j3 + 2] = wk3i * x0r + wk3r * x0i;</span>
+<span class="nc" id="L2071">        a[j3 + 3] = wk3i * x0i - wk3r * x0r;</span>
+<span class="nc" id="L2072">    }</span>
+
+    private static void cftrec4(int n, double[] a, int nw, double[] w) {
+        int isplt, j, k, m;
+
+<span class="nc" id="L2077">        m = n;</span>
+<span class="nc bnc" id="L2078" title="All 2 branches missed.">        while (m &gt; 512) {</span>
+<span class="nc" id="L2079">            m &gt;&gt;= 2;</span>
+<span class="nc" id="L2080">            cftmdl1(m, a, n - m, w, nw - (m &gt;&gt; 1));</span>
+        }
+<span class="nc" id="L2082">        cftleaf(m, 1, a, n - m, nw, w);</span>
+<span class="nc" id="L2083">        k = 0;</span>
+<span class="nc bnc" id="L2084" title="All 2 branches missed.">        for (j = n - m; j &gt; 0; j -= m) {</span>
+<span class="nc" id="L2085">            k++;</span>
+<span class="nc" id="L2086">            isplt = cfttree(m, j, k, a, nw, w);</span>
+<span class="nc" id="L2087">            cftleaf(m, isplt, a, j - m, nw, w);</span>
+        }
+<span class="nc" id="L2089">    }</span>
+
+    private static int cfttree(int n, int j, int k, double[] a, int nw, double[] w) {
+        int i, isplt, m;
+
+<span class="nc bnc" id="L2094" title="All 2 branches missed.">        if ((k &amp; 3) != 0) {</span>
+<span class="nc" id="L2095">            isplt = k &amp; 1;</span>
+<span class="nc bnc" id="L2096" title="All 2 branches missed.">            if (isplt != 0) {</span>
+<span class="nc" id="L2097">                cftmdl1(n, a, j - n, w, nw - (n &gt;&gt; 1));</span>
+            } else {
+<span class="nc" id="L2099">                cftmdl2(n, a, j - n, w, nw - n);</span>
+            }
+        } else {
+<span class="nc" id="L2102">            m = n;</span>
+<span class="nc bnc" id="L2103" title="All 2 branches missed.">            for (i = k; (i &amp; 3) == 0; i &gt;&gt;= 2) {</span>
+<span class="nc" id="L2104">                m &lt;&lt;= 2;</span>
+            }
+<span class="nc" id="L2106">            isplt = i &amp; 1;</span>
+<span class="nc bnc" id="L2107" title="All 2 branches missed.">            if (isplt != 0) {</span>
+<span class="nc bnc" id="L2108" title="All 2 branches missed.">                while (m &gt; 128) {</span>
+<span class="nc" id="L2109">                    cftmdl1(m, a, j - m, w, nw - (m &gt;&gt; 1));</span>
+<span class="nc" id="L2110">                    m &gt;&gt;= 2;</span>
+                }
+            } else {
+<span class="nc bnc" id="L2113" title="All 2 branches missed.">                while (m &gt; 128) {</span>
+<span class="nc" id="L2114">                    cftmdl2(m, a, j - m, w, nw - m);</span>
+<span class="nc" id="L2115">                    m &gt;&gt;= 2;</span>
+                }
+            }
+        }
+<span class="nc" id="L2119">        return isplt;</span>
+    }
+
+    private static void cftleaf(int n, int isplt, double[] a, int aOffset, int nw, double[] w) {
+<span class="nc bnc" id="L2123" title="All 2 branches missed.">        if (n == 512) {</span>
+<span class="nc" id="L2124">            cftmdl1(128, a, aOffset + 0, w, nw - 64);</span>
+<span class="nc" id="L2125">            cftf161(a, aOffset + 0, w, nw - 8);</span>
+<span class="nc" id="L2126">            cftf162(a, aOffset + 32, w, nw - 32);</span>
+<span class="nc" id="L2127">            cftf161(a, aOffset + 64, w, nw - 8);</span>
+<span class="nc" id="L2128">            cftf161(a, aOffset + 96, w, nw - 8);</span>
+<span class="nc" id="L2129">            cftmdl2(128, a, aOffset + 128, w, nw - 128);</span>
+<span class="nc" id="L2130">            cftf161(a, aOffset + 128, w, nw - 8);</span>
+<span class="nc" id="L2131">            cftf162(a, aOffset + 160, w, nw - 32);</span>
+<span class="nc" id="L2132">            cftf161(a, aOffset + 192, w, nw - 8);</span>
+<span class="nc" id="L2133">            cftf162(a, aOffset + 224, w, nw - 32);</span>
+<span class="nc" id="L2134">            cftmdl1(128, a, aOffset + 256, w, nw - 64);</span>
+<span class="nc" id="L2135">            cftf161(a, aOffset + 256, w, nw - 8);</span>
+<span class="nc" id="L2136">            cftf162(a, aOffset + 288, w, nw - 32);</span>
+<span class="nc" id="L2137">            cftf161(a, aOffset + 320, w, nw - 8);</span>
+<span class="nc" id="L2138">            cftf161(a, aOffset + 352, w, nw - 8);</span>
+<span class="nc bnc" id="L2139" title="All 2 branches missed.">            if (isplt != 0) {</span>
+<span class="nc" id="L2140">                cftmdl1(128, a, aOffset + 384, w, nw - 64);</span>
+<span class="nc" id="L2141">                cftf161(a, aOffset + 480, w, nw - 8);</span>
+            } else {
+<span class="nc" id="L2143">                cftmdl2(128, a, aOffset + 384, w, nw - 128);</span>
+<span class="nc" id="L2144">                cftf162(a, aOffset + 480, w, nw - 32);</span>
+            }
+<span class="nc" id="L2146">            cftf161(a, aOffset + 384, w, nw - 8);</span>
+<span class="nc" id="L2147">            cftf162(a, aOffset + 416, w, nw - 32);</span>
+<span class="nc" id="L2148">            cftf161(a, aOffset + 448, w, nw - 8);</span>
+        } else {
+<span class="nc" id="L2150">            cftmdl1(64, a, aOffset + 0, w, nw - 32);</span>
+<span class="nc" id="L2151">            cftf081(a, aOffset + 0, w, nw - 8);</span>
+<span class="nc" id="L2152">            cftf082(a, aOffset + 16, w, nw - 8);</span>
+<span class="nc" id="L2153">            cftf081(a, aOffset + 32, w, nw - 8);</span>
+<span class="nc" id="L2154">            cftf081(a, aOffset + 48, w, nw - 8);</span>
+<span class="nc" id="L2155">            cftmdl2(64, a, aOffset + 64, w, nw - 64);</span>
+<span class="nc" id="L2156">            cftf081(a, aOffset + 64, w, nw - 8);</span>
+<span class="nc" id="L2157">            cftf082(a, aOffset + 80, w, nw - 8);</span>
+<span class="nc" id="L2158">            cftf081(a, aOffset + 96, w, nw - 8);</span>
+<span class="nc" id="L2159">            cftf082(a, aOffset + 112, w, nw - 8);</span>
+<span class="nc" id="L2160">            cftmdl1(64, a, aOffset + 128, w, nw - 32);</span>
+<span class="nc" id="L2161">            cftf081(a, aOffset + 128, w, nw - 8);</span>
+<span class="nc" id="L2162">            cftf082(a, aOffset + 144, w, nw - 8);</span>
+<span class="nc" id="L2163">            cftf081(a, aOffset + 160, w, nw - 8);</span>
+<span class="nc" id="L2164">            cftf081(a, aOffset + 176, w, nw - 8);</span>
+<span class="nc bnc" id="L2165" title="All 2 branches missed.">            if (isplt != 0) {</span>
+<span class="nc" id="L2166">                cftmdl1(64, a, aOffset + 192, w, nw - 32);</span>
+<span class="nc" id="L2167">                cftf081(a, aOffset + 240, w, nw - 8);</span>
+            } else {
+<span class="nc" id="L2169">                cftmdl2(64, a, aOffset + 192, w, nw - 64);</span>
+<span class="nc" id="L2170">                cftf082(a, aOffset + 240, w, nw - 8);</span>
+            }
+<span class="nc" id="L2172">            cftf081(a, aOffset + 192, w, nw - 8);</span>
+<span class="nc" id="L2173">            cftf082(a, aOffset + 208, w, nw - 8);</span>
+<span class="nc" id="L2174">            cftf081(a, aOffset + 224, w, nw - 8);</span>
+        }
+<span class="nc" id="L2176">    }</span>
+
+    private static void cftmdl1(int n, double[] a, int aOffset, double[] w, int wOffset) {
+        int j, j0, j1, j2, j3, k, m, mh;
+        double wn4r, wk1r, wk1i, wk3r, wk3i;
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
+
+<span class="nc" id="L2183">        mh = n &gt;&gt; 3;</span>
+<span class="nc" id="L2184">        m = 2 * mh;</span>
+<span class="nc" id="L2185">        j1 = m;</span>
+<span class="nc" id="L2186">        j2 = j1 + m;</span>
+<span class="nc" id="L2187">        j3 = j2 + m;</span>
+<span class="nc" id="L2188">        x0r = a[aOffset + 0] + a[aOffset + j2];</span>
+<span class="nc" id="L2189">        x0i = a[aOffset + 1] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2190">        x1r = a[aOffset + 0] - a[aOffset + j2];</span>
+<span class="nc" id="L2191">        x1i = a[aOffset + 1] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2192">        x2r = a[aOffset + j1] + a[aOffset + j3];</span>
+<span class="nc" id="L2193">        x2i = a[aOffset + j1 + 1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2194">        x3r = a[aOffset + j1] - a[aOffset + j3];</span>
+<span class="nc" id="L2195">        x3i = a[aOffset + j1 + 1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2196">        a[aOffset + 0] = x0r + x2r;</span>
+<span class="nc" id="L2197">        a[aOffset + 1] = x0i + x2i;</span>
+<span class="nc" id="L2198">        a[aOffset + j1] = x0r - x2r;</span>
+<span class="nc" id="L2199">        a[aOffset + j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L2200">        a[aOffset + j2] = x1r - x3i;</span>
+<span class="nc" id="L2201">        a[aOffset + j2 + 1] = x1i + x3r;</span>
+<span class="nc" id="L2202">        a[aOffset + j3] = x1r + x3i;</span>
+<span class="nc" id="L2203">        a[aOffset + j3 + 1] = x1i - x3r;</span>
+<span class="nc" id="L2204">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2205">        k = 0;</span>
+<span class="nc bnc" id="L2206" title="All 2 branches missed.">        for (j = 2; j &lt; mh; j += 2) {</span>
+<span class="nc" id="L2207">            k += 4;</span>
+<span class="nc" id="L2208">            wk1r = w[wOffset + k];</span>
+<span class="nc" id="L2209">            wk1i = w[wOffset + k + 1];</span>
+<span class="nc" id="L2210">            wk3r = w[wOffset + k + 2];</span>
+<span class="nc" id="L2211">            wk3i = w[wOffset + k + 3];</span>
+<span class="nc" id="L2212">            j1 = j + m;</span>
+<span class="nc" id="L2213">            j2 = j1 + m;</span>
+<span class="nc" id="L2214">            j3 = j2 + m;</span>
+<span class="nc" id="L2215">            x0r = a[aOffset + j] + a[aOffset + j2];</span>
+<span class="nc" id="L2216">            x0i = a[aOffset + j + 1] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2217">            x1r = a[aOffset + j] - a[aOffset + j2];</span>
+<span class="nc" id="L2218">            x1i = a[aOffset + j + 1] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2219">            x2r = a[aOffset + j1] + a[aOffset + j3];</span>
+<span class="nc" id="L2220">            x2i = a[aOffset + j1 + 1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2221">            x3r = a[aOffset + j1] - a[aOffset + j3];</span>
+<span class="nc" id="L2222">            x3i = a[aOffset + j1 + 1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2223">            a[aOffset + j] = x0r + x2r;</span>
+<span class="nc" id="L2224">            a[aOffset + j + 1] = x0i + x2i;</span>
+<span class="nc" id="L2225">            a[aOffset + j1] = x0r - x2r;</span>
+<span class="nc" id="L2226">            a[aOffset + j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L2227">            x0r = x1r - x3i;</span>
+<span class="nc" id="L2228">            x0i = x1i + x3r;</span>
+<span class="nc" id="L2229">            a[aOffset + j2] = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2230">            a[aOffset + j2 + 1] = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2231">            x0r = x1r + x3i;</span>
+<span class="nc" id="L2232">            x0i = x1i - x3r;</span>
+<span class="nc" id="L2233">            a[aOffset + j3] = wk3r * x0r + wk3i * x0i;</span>
+<span class="nc" id="L2234">            a[aOffset + j3 + 1] = wk3r * x0i - wk3i * x0r;</span>
+<span class="nc" id="L2235">            j0 = m - j;</span>
+<span class="nc" id="L2236">            j1 = j0 + m;</span>
+<span class="nc" id="L2237">            j2 = j1 + m;</span>
+<span class="nc" id="L2238">            j3 = j2 + m;</span>
+<span class="nc" id="L2239">            x0r = a[aOffset + j0] + a[aOffset + j2];</span>
+<span class="nc" id="L2240">            x0i = a[aOffset + j0 + 1] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2241">            x1r = a[aOffset + j0] - a[aOffset + j2];</span>
+<span class="nc" id="L2242">            x1i = a[aOffset + j0 + 1] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2243">            x2r = a[aOffset + j1] + a[aOffset + j3];</span>
+<span class="nc" id="L2244">            x2i = a[aOffset + j1 + 1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2245">            x3r = a[aOffset + j1] - a[aOffset + j3];</span>
+<span class="nc" id="L2246">            x3i = a[aOffset + j1 + 1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2247">            a[aOffset + j0] = x0r + x2r;</span>
+<span class="nc" id="L2248">            a[aOffset + j0 + 1] = x0i + x2i;</span>
+<span class="nc" id="L2249">            a[aOffset + j1] = x0r - x2r;</span>
+<span class="nc" id="L2250">            a[aOffset + j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L2251">            x0r = x1r - x3i;</span>
+<span class="nc" id="L2252">            x0i = x1i + x3r;</span>
+<span class="nc" id="L2253">            a[aOffset + j2] = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2254">            a[aOffset + j2 + 1] = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2255">            x0r = x1r + x3i;</span>
+<span class="nc" id="L2256">            x0i = x1i - x3r;</span>
+<span class="nc" id="L2257">            a[aOffset + j3] = wk3i * x0r + wk3r * x0i;</span>
+<span class="nc" id="L2258">            a[aOffset + j3 + 1] = wk3i * x0i - wk3r * x0r;</span>
+        }
+<span class="nc" id="L2260">        j0 = mh;</span>
+<span class="nc" id="L2261">        j1 = j0 + m;</span>
+<span class="nc" id="L2262">        j2 = j1 + m;</span>
+<span class="nc" id="L2263">        j3 = j2 + m;</span>
+<span class="nc" id="L2264">        x0r = a[aOffset + j0] + a[aOffset + j2];</span>
+<span class="nc" id="L2265">        x0i = a[aOffset + j0 + 1] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2266">        x1r = a[aOffset + j0] - a[aOffset + j2];</span>
+<span class="nc" id="L2267">        x1i = a[aOffset + j0 + 1] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2268">        x2r = a[aOffset + j1] + a[aOffset + j3];</span>
+<span class="nc" id="L2269">        x2i = a[aOffset + j1 + 1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2270">        x3r = a[aOffset + j1] - a[aOffset + j3];</span>
+<span class="nc" id="L2271">        x3i = a[aOffset + j1 + 1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2272">        a[aOffset + j0] = x0r + x2r;</span>
+<span class="nc" id="L2273">        a[aOffset + j0 + 1] = x0i + x2i;</span>
+<span class="nc" id="L2274">        a[aOffset + j1] = x0r - x2r;</span>
+<span class="nc" id="L2275">        a[aOffset + j1 + 1] = x0i - x2i;</span>
+<span class="nc" id="L2276">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2277">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2278">        a[aOffset + j2] = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2279">        a[aOffset + j2 + 1] = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2280">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2281">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2282">        a[aOffset + j3] = -wn4r * (x0r + x0i);</span>
+<span class="nc" id="L2283">        a[aOffset + j3 + 1] = -wn4r * (x0i - x0r);</span>
+<span class="nc" id="L2284">    }</span>
+
+    private static void cftmdl2(int n, double[] a, int aOffset, double[] w, int wOffset) {
+        int j, j0, j1, j2, j3, k, kr, m, mh;
+        double wn4r, wk1r, wk1i, wk3r, wk3i, wd1r, wd1i, wd3r, wd3i;
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i, y0r, y0i, y2r, y2i;
+
+<span class="nc" id="L2291">        mh = n &gt;&gt; 3;</span>
+<span class="nc" id="L2292">        m = 2 * mh;</span>
+<span class="nc" id="L2293">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2294">        j1 = m;</span>
+<span class="nc" id="L2295">        j2 = j1 + m;</span>
+<span class="nc" id="L2296">        j3 = j2 + m;</span>
+<span class="nc" id="L2297">        x0r = a[aOffset + 0] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2298">        x0i = a[aOffset + 1] + a[aOffset + j2];</span>
+<span class="nc" id="L2299">        x1r = a[aOffset + 0] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2300">        x1i = a[aOffset + 1] - a[aOffset + j2];</span>
+<span class="nc" id="L2301">        x2r = a[aOffset + j1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2302">        x2i = a[aOffset + j1 + 1] + a[aOffset + j3];</span>
+<span class="nc" id="L2303">        x3r = a[aOffset + j1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2304">        x3i = a[aOffset + j1 + 1] - a[aOffset + j3];</span>
+<span class="nc" id="L2305">        y0r = wn4r * (x2r - x2i);</span>
+<span class="nc" id="L2306">        y0i = wn4r * (x2i + x2r);</span>
+<span class="nc" id="L2307">        a[aOffset + 0] = x0r + y0r;</span>
+<span class="nc" id="L2308">        a[aOffset + 1] = x0i + y0i;</span>
+<span class="nc" id="L2309">        a[aOffset + j1] = x0r - y0r;</span>
+<span class="nc" id="L2310">        a[aOffset + j1 + 1] = x0i - y0i;</span>
+<span class="nc" id="L2311">        y0r = wn4r * (x3r - x3i);</span>
+<span class="nc" id="L2312">        y0i = wn4r * (x3i + x3r);</span>
+<span class="nc" id="L2313">        a[aOffset + j2] = x1r - y0i;</span>
+<span class="nc" id="L2314">        a[aOffset + j2 + 1] = x1i + y0r;</span>
+<span class="nc" id="L2315">        a[aOffset + j3] = x1r + y0i;</span>
+<span class="nc" id="L2316">        a[aOffset + j3 + 1] = x1i - y0r;</span>
+<span class="nc" id="L2317">        k = 0;</span>
+<span class="nc" id="L2318">        kr = 2 * m;</span>
+<span class="nc bnc" id="L2319" title="All 2 branches missed.">        for (j = 2; j &lt; mh; j += 2) {</span>
+<span class="nc" id="L2320">            k += 4;</span>
+<span class="nc" id="L2321">            wk1r = w[wOffset + k];</span>
+<span class="nc" id="L2322">            wk1i = w[wOffset + k + 1];</span>
+<span class="nc" id="L2323">            wk3r = w[wOffset + k + 2];</span>
+<span class="nc" id="L2324">            wk3i = w[wOffset + k + 3];</span>
+<span class="nc" id="L2325">            kr -= 4;</span>
+<span class="nc" id="L2326">            wd1i = w[wOffset + kr];</span>
+<span class="nc" id="L2327">            wd1r = w[wOffset + kr + 1];</span>
+<span class="nc" id="L2328">            wd3i = w[wOffset + kr + 2];</span>
+<span class="nc" id="L2329">            wd3r = w[wOffset + kr + 3];</span>
+<span class="nc" id="L2330">            j1 = j + m;</span>
+<span class="nc" id="L2331">            j2 = j1 + m;</span>
+<span class="nc" id="L2332">            j3 = j2 + m;</span>
+<span class="nc" id="L2333">            x0r = a[aOffset + j] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2334">            x0i = a[aOffset + j + 1] + a[aOffset + j2];</span>
+<span class="nc" id="L2335">            x1r = a[aOffset + j] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2336">            x1i = a[aOffset + j + 1] - a[aOffset + j2];</span>
+<span class="nc" id="L2337">            x2r = a[aOffset + j1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2338">            x2i = a[aOffset + j1 + 1] + a[aOffset + j3];</span>
+<span class="nc" id="L2339">            x3r = a[aOffset + j1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2340">            x3i = a[aOffset + j1 + 1] - a[aOffset + j3];</span>
+<span class="nc" id="L2341">            y0r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2342">            y0i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2343">            y2r = wd1r * x2r - wd1i * x2i;</span>
+<span class="nc" id="L2344">            y2i = wd1r * x2i + wd1i * x2r;</span>
+<span class="nc" id="L2345">            a[aOffset + j] = y0r + y2r;</span>
+<span class="nc" id="L2346">            a[aOffset + j + 1] = y0i + y2i;</span>
+<span class="nc" id="L2347">            a[aOffset + j1] = y0r - y2r;</span>
+<span class="nc" id="L2348">            a[aOffset + j1 + 1] = y0i - y2i;</span>
+<span class="nc" id="L2349">            y0r = wk3r * x1r + wk3i * x1i;</span>
+<span class="nc" id="L2350">            y0i = wk3r * x1i - wk3i * x1r;</span>
+<span class="nc" id="L2351">            y2r = wd3r * x3r + wd3i * x3i;</span>
+<span class="nc" id="L2352">            y2i = wd3r * x3i - wd3i * x3r;</span>
+<span class="nc" id="L2353">            a[aOffset + j2] = y0r + y2r;</span>
+<span class="nc" id="L2354">            a[aOffset + j2 + 1] = y0i + y2i;</span>
+<span class="nc" id="L2355">            a[aOffset + j3] = y0r - y2r;</span>
+<span class="nc" id="L2356">            a[aOffset + j3 + 1] = y0i - y2i;</span>
+<span class="nc" id="L2357">            j0 = m - j;</span>
+<span class="nc" id="L2358">            j1 = j0 + m;</span>
+<span class="nc" id="L2359">            j2 = j1 + m;</span>
+<span class="nc" id="L2360">            j3 = j2 + m;</span>
+<span class="nc" id="L2361">            x0r = a[aOffset + j0] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2362">            x0i = a[aOffset + j0 + 1] + a[aOffset + j2];</span>
+<span class="nc" id="L2363">            x1r = a[aOffset + j0] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2364">            x1i = a[aOffset + j0 + 1] - a[aOffset + j2];</span>
+<span class="nc" id="L2365">            x2r = a[aOffset + j1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2366">            x2i = a[aOffset + j1 + 1] + a[aOffset + j3];</span>
+<span class="nc" id="L2367">            x3r = a[aOffset + j1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2368">            x3i = a[aOffset + j1 + 1] - a[aOffset + j3];</span>
+<span class="nc" id="L2369">            y0r = wd1i * x0r - wd1r * x0i;</span>
+<span class="nc" id="L2370">            y0i = wd1i * x0i + wd1r * x0r;</span>
+<span class="nc" id="L2371">            y2r = wk1i * x2r - wk1r * x2i;</span>
+<span class="nc" id="L2372">            y2i = wk1i * x2i + wk1r * x2r;</span>
+<span class="nc" id="L2373">            a[aOffset + j0] = y0r + y2r;</span>
+<span class="nc" id="L2374">            a[aOffset + j0 + 1] = y0i + y2i;</span>
+<span class="nc" id="L2375">            a[aOffset + j1] = y0r - y2r;</span>
+<span class="nc" id="L2376">            a[aOffset + j1 + 1] = y0i - y2i;</span>
+<span class="nc" id="L2377">            y0r = wd3i * x1r + wd3r * x1i;</span>
+<span class="nc" id="L2378">            y0i = wd3i * x1i - wd3r * x1r;</span>
+<span class="nc" id="L2379">            y2r = wk3i * x3r + wk3r * x3i;</span>
+<span class="nc" id="L2380">            y2i = wk3i * x3i - wk3r * x3r;</span>
+<span class="nc" id="L2381">            a[aOffset + j2] = y0r + y2r;</span>
+<span class="nc" id="L2382">            a[aOffset + j2 + 1] = y0i + y2i;</span>
+<span class="nc" id="L2383">            a[aOffset + j3] = y0r - y2r;</span>
+<span class="nc" id="L2384">            a[aOffset + j3 + 1] = y0i - y2i;</span>
+        }
+<span class="nc" id="L2386">        wk1r = w[wOffset + m];</span>
+<span class="nc" id="L2387">        wk1i = w[wOffset + m + 1];</span>
+<span class="nc" id="L2388">        j0 = mh;</span>
+<span class="nc" id="L2389">        j1 = j0 + m;</span>
+<span class="nc" id="L2390">        j2 = j1 + m;</span>
+<span class="nc" id="L2391">        j3 = j2 + m;</span>
+<span class="nc" id="L2392">        x0r = a[aOffset + j0] - a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2393">        x0i = a[aOffset + j0 + 1] + a[aOffset + j2];</span>
+<span class="nc" id="L2394">        x1r = a[aOffset + j0] + a[aOffset + j2 + 1];</span>
+<span class="nc" id="L2395">        x1i = a[aOffset + j0 + 1] - a[aOffset + j2];</span>
+<span class="nc" id="L2396">        x2r = a[aOffset + j1] - a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2397">        x2i = a[aOffset + j1 + 1] + a[aOffset + j3];</span>
+<span class="nc" id="L2398">        x3r = a[aOffset + j1] + a[aOffset + j3 + 1];</span>
+<span class="nc" id="L2399">        x3i = a[aOffset + j1 + 1] - a[aOffset + j3];</span>
+<span class="nc" id="L2400">        y0r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2401">        y0i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2402">        y2r = wk1i * x2r - wk1r * x2i;</span>
+<span class="nc" id="L2403">        y2i = wk1i * x2i + wk1r * x2r;</span>
+<span class="nc" id="L2404">        a[aOffset + j0] = y0r + y2r;</span>
+<span class="nc" id="L2405">        a[aOffset + j0 + 1] = y0i + y2i;</span>
+<span class="nc" id="L2406">        a[aOffset + j1] = y0r - y2r;</span>
+<span class="nc" id="L2407">        a[aOffset + j1 + 1] = y0i - y2i;</span>
+<span class="nc" id="L2408">        y0r = wk1i * x1r - wk1r * x1i;</span>
+<span class="nc" id="L2409">        y0i = wk1i * x1i + wk1r * x1r;</span>
+<span class="nc" id="L2410">        y2r = wk1r * x3r - wk1i * x3i;</span>
+<span class="nc" id="L2411">        y2i = wk1r * x3i + wk1i * x3r;</span>
+<span class="nc" id="L2412">        a[aOffset + j2] = y0r - y2r;</span>
+<span class="nc" id="L2413">        a[aOffset + j2 + 1] = y0i - y2i;</span>
+<span class="nc" id="L2414">        a[aOffset + j3] = y0r + y2r;</span>
+<span class="nc" id="L2415">        a[aOffset + j3 + 1] = y0i + y2i;</span>
+<span class="nc" id="L2416">    }</span>
+
+    private static void cftfx41(int n, double[] a, int nw, double[] w) {
+<span class="nc bnc" id="L2419" title="All 2 branches missed.">        if (n == 128) {</span>
+<span class="nc" id="L2420">            cftf161(a, 0, w, nw - 8);</span>
+<span class="nc" id="L2421">            cftf162(a, 32, w, nw - 32);</span>
+<span class="nc" id="L2422">            cftf161(a, 64, w, nw - 8);</span>
+<span class="nc" id="L2423">            cftf161(a, 96, w, nw - 8);</span>
+        } else {
+<span class="nc" id="L2425">            cftf081(a, 0, w, nw - 8);</span>
+<span class="nc" id="L2426">            cftf082(a, 16, w, nw - 8);</span>
+<span class="nc" id="L2427">            cftf081(a, 32, w, nw - 8);</span>
+<span class="nc" id="L2428">            cftf081(a, 48, w, nw - 8);</span>
+        }
+<span class="nc" id="L2430">    }</span>
+
+    private static void cftf161(double[] a, int aOffset, double[] w, int wOffset) {
+        double wn4r,
+                wk1r,
+                wk1i,
+                x0r,
+                x0i,
+                x1r,
+                x1i,
+                x2r,
+                x2i,
+                x3r,
+                x3i,
+                y0r,
+                y0i,
+                y1r,
+                y1i,
+                y2r,
+                y2i,
+                y3r,
+                y3i,
+                y4r,
+                y4i,
+                y5r,
+                y5i,
+                y6r,
+                y6i,
+                y7r,
+                y7i,
+                y8r,
+                y8i,
+                y9r,
+                y9i,
+                y10r,
+                y10i,
+                y11r,
+                y11i,
+                y12r,
+                y12i,
+                y13r,
+                y13i,
+                y14r,
+                y14i,
+                y15r,
+                y15i;
+
+<span class="nc" id="L2477">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2478">        wk1r = w[wOffset + 2];</span>
+<span class="nc" id="L2479">        wk1i = w[wOffset + 3];</span>
+<span class="nc" id="L2480">        x0r = a[aOffset + 0] + a[aOffset + 16];</span>
+<span class="nc" id="L2481">        x0i = a[aOffset + 1] + a[aOffset + 17];</span>
+<span class="nc" id="L2482">        x1r = a[aOffset + 0] - a[aOffset + 16];</span>
+<span class="nc" id="L2483">        x1i = a[aOffset + 1] - a[aOffset + 17];</span>
+<span class="nc" id="L2484">        x2r = a[aOffset + 8] + a[aOffset + 24];</span>
+<span class="nc" id="L2485">        x2i = a[aOffset + 9] + a[aOffset + 25];</span>
+<span class="nc" id="L2486">        x3r = a[aOffset + 8] - a[aOffset + 24];</span>
+<span class="nc" id="L2487">        x3i = a[aOffset + 9] - a[aOffset + 25];</span>
+<span class="nc" id="L2488">        y0r = x0r + x2r;</span>
+<span class="nc" id="L2489">        y0i = x0i + x2i;</span>
+<span class="nc" id="L2490">        y4r = x0r - x2r;</span>
+<span class="nc" id="L2491">        y4i = x0i - x2i;</span>
+<span class="nc" id="L2492">        y8r = x1r - x3i;</span>
+<span class="nc" id="L2493">        y8i = x1i + x3r;</span>
+<span class="nc" id="L2494">        y12r = x1r + x3i;</span>
+<span class="nc" id="L2495">        y12i = x1i - x3r;</span>
+<span class="nc" id="L2496">        x0r = a[aOffset + 2] + a[aOffset + 18];</span>
+<span class="nc" id="L2497">        x0i = a[aOffset + 3] + a[aOffset + 19];</span>
+<span class="nc" id="L2498">        x1r = a[aOffset + 2] - a[aOffset + 18];</span>
+<span class="nc" id="L2499">        x1i = a[aOffset + 3] - a[aOffset + 19];</span>
+<span class="nc" id="L2500">        x2r = a[aOffset + 10] + a[aOffset + 26];</span>
+<span class="nc" id="L2501">        x2i = a[aOffset + 11] + a[aOffset + 27];</span>
+<span class="nc" id="L2502">        x3r = a[aOffset + 10] - a[aOffset + 26];</span>
+<span class="nc" id="L2503">        x3i = a[aOffset + 11] - a[aOffset + 27];</span>
+<span class="nc" id="L2504">        y1r = x0r + x2r;</span>
+<span class="nc" id="L2505">        y1i = x0i + x2i;</span>
+<span class="nc" id="L2506">        y5r = x0r - x2r;</span>
+<span class="nc" id="L2507">        y5i = x0i - x2i;</span>
+<span class="nc" id="L2508">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2509">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2510">        y9r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2511">        y9i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2512">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2513">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2514">        y13r = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2515">        y13i = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2516">        x0r = a[aOffset + 4] + a[aOffset + 20];</span>
+<span class="nc" id="L2517">        x0i = a[aOffset + 5] + a[aOffset + 21];</span>
+<span class="nc" id="L2518">        x1r = a[aOffset + 4] - a[aOffset + 20];</span>
+<span class="nc" id="L2519">        x1i = a[aOffset + 5] - a[aOffset + 21];</span>
+<span class="nc" id="L2520">        x2r = a[aOffset + 12] + a[aOffset + 28];</span>
+<span class="nc" id="L2521">        x2i = a[aOffset + 13] + a[aOffset + 29];</span>
+<span class="nc" id="L2522">        x3r = a[aOffset + 12] - a[aOffset + 28];</span>
+<span class="nc" id="L2523">        x3i = a[aOffset + 13] - a[aOffset + 29];</span>
+<span class="nc" id="L2524">        y2r = x0r + x2r;</span>
+<span class="nc" id="L2525">        y2i = x0i + x2i;</span>
+<span class="nc" id="L2526">        y6r = x0r - x2r;</span>
+<span class="nc" id="L2527">        y6i = x0i - x2i;</span>
+<span class="nc" id="L2528">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2529">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2530">        y10r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2531">        y10i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2532">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2533">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2534">        y14r = wn4r * (x0r + x0i);</span>
+<span class="nc" id="L2535">        y14i = wn4r * (x0i - x0r);</span>
+<span class="nc" id="L2536">        x0r = a[aOffset + 6] + a[aOffset + 22];</span>
+<span class="nc" id="L2537">        x0i = a[aOffset + 7] + a[aOffset + 23];</span>
+<span class="nc" id="L2538">        x1r = a[aOffset + 6] - a[aOffset + 22];</span>
+<span class="nc" id="L2539">        x1i = a[aOffset + 7] - a[aOffset + 23];</span>
+<span class="nc" id="L2540">        x2r = a[aOffset + 14] + a[aOffset + 30];</span>
+<span class="nc" id="L2541">        x2i = a[aOffset + 15] + a[aOffset + 31];</span>
+<span class="nc" id="L2542">        x3r = a[aOffset + 14] - a[aOffset + 30];</span>
+<span class="nc" id="L2543">        x3i = a[aOffset + 15] - a[aOffset + 31];</span>
+<span class="nc" id="L2544">        y3r = x0r + x2r;</span>
+<span class="nc" id="L2545">        y3i = x0i + x2i;</span>
+<span class="nc" id="L2546">        y7r = x0r - x2r;</span>
+<span class="nc" id="L2547">        y7i = x0i - x2i;</span>
+<span class="nc" id="L2548">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2549">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2550">        y11r = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2551">        y11i = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2552">        x0r = x1r + x3i;</span>
+<span class="nc" id="L2553">        x0i = x1i - x3r;</span>
+<span class="nc" id="L2554">        y15r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2555">        y15i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2556">        x0r = y12r - y14r;</span>
+<span class="nc" id="L2557">        x0i = y12i - y14i;</span>
+<span class="nc" id="L2558">        x1r = y12r + y14r;</span>
+<span class="nc" id="L2559">        x1i = y12i + y14i;</span>
+<span class="nc" id="L2560">        x2r = y13r - y15r;</span>
+<span class="nc" id="L2561">        x2i = y13i - y15i;</span>
+<span class="nc" id="L2562">        x3r = y13r + y15r;</span>
+<span class="nc" id="L2563">        x3i = y13i + y15i;</span>
+<span class="nc" id="L2564">        a[aOffset + 24] = x0r + x2r;</span>
+<span class="nc" id="L2565">        a[aOffset + 25] = x0i + x2i;</span>
+<span class="nc" id="L2566">        a[aOffset + 26] = x0r - x2r;</span>
+<span class="nc" id="L2567">        a[aOffset + 27] = x0i - x2i;</span>
+<span class="nc" id="L2568">        a[aOffset + 28] = x1r - x3i;</span>
+<span class="nc" id="L2569">        a[aOffset + 29] = x1i + x3r;</span>
+<span class="nc" id="L2570">        a[aOffset + 30] = x1r + x3i;</span>
+<span class="nc" id="L2571">        a[aOffset + 31] = x1i - x3r;</span>
+<span class="nc" id="L2572">        x0r = y8r + y10r;</span>
+<span class="nc" id="L2573">        x0i = y8i + y10i;</span>
+<span class="nc" id="L2574">        x1r = y8r - y10r;</span>
+<span class="nc" id="L2575">        x1i = y8i - y10i;</span>
+<span class="nc" id="L2576">        x2r = y9r + y11r;</span>
+<span class="nc" id="L2577">        x2i = y9i + y11i;</span>
+<span class="nc" id="L2578">        x3r = y9r - y11r;</span>
+<span class="nc" id="L2579">        x3i = y9i - y11i;</span>
+<span class="nc" id="L2580">        a[aOffset + 16] = x0r + x2r;</span>
+<span class="nc" id="L2581">        a[aOffset + 17] = x0i + x2i;</span>
+<span class="nc" id="L2582">        a[aOffset + 18] = x0r - x2r;</span>
+<span class="nc" id="L2583">        a[aOffset + 19] = x0i - x2i;</span>
+<span class="nc" id="L2584">        a[aOffset + 20] = x1r - x3i;</span>
+<span class="nc" id="L2585">        a[aOffset + 21] = x1i + x3r;</span>
+<span class="nc" id="L2586">        a[aOffset + 22] = x1r + x3i;</span>
+<span class="nc" id="L2587">        a[aOffset + 23] = x1i - x3r;</span>
+<span class="nc" id="L2588">        x0r = y5r - y7i;</span>
+<span class="nc" id="L2589">        x0i = y5i + y7r;</span>
+<span class="nc" id="L2590">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2591">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2592">        x0r = y5r + y7i;</span>
+<span class="nc" id="L2593">        x0i = y5i - y7r;</span>
+<span class="nc" id="L2594">        x3r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2595">        x3i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2596">        x0r = y4r - y6i;</span>
+<span class="nc" id="L2597">        x0i = y4i + y6r;</span>
+<span class="nc" id="L2598">        x1r = y4r + y6i;</span>
+<span class="nc" id="L2599">        x1i = y4i - y6r;</span>
+<span class="nc" id="L2600">        a[aOffset + 8] = x0r + x2r;</span>
+<span class="nc" id="L2601">        a[aOffset + 9] = x0i + x2i;</span>
+<span class="nc" id="L2602">        a[aOffset + 10] = x0r - x2r;</span>
+<span class="nc" id="L2603">        a[aOffset + 11] = x0i - x2i;</span>
+<span class="nc" id="L2604">        a[aOffset + 12] = x1r - x3i;</span>
+<span class="nc" id="L2605">        a[aOffset + 13] = x1i + x3r;</span>
+<span class="nc" id="L2606">        a[aOffset + 14] = x1r + x3i;</span>
+<span class="nc" id="L2607">        a[aOffset + 15] = x1i - x3r;</span>
+<span class="nc" id="L2608">        x0r = y0r + y2r;</span>
+<span class="nc" id="L2609">        x0i = y0i + y2i;</span>
+<span class="nc" id="L2610">        x1r = y0r - y2r;</span>
+<span class="nc" id="L2611">        x1i = y0i - y2i;</span>
+<span class="nc" id="L2612">        x2r = y1r + y3r;</span>
+<span class="nc" id="L2613">        x2i = y1i + y3i;</span>
+<span class="nc" id="L2614">        x3r = y1r - y3r;</span>
+<span class="nc" id="L2615">        x3i = y1i - y3i;</span>
+<span class="nc" id="L2616">        a[aOffset + 0] = x0r + x2r;</span>
+<span class="nc" id="L2617">        a[aOffset + 1] = x0i + x2i;</span>
+<span class="nc" id="L2618">        a[aOffset + 2] = x0r - x2r;</span>
+<span class="nc" id="L2619">        a[aOffset + 3] = x0i - x2i;</span>
+<span class="nc" id="L2620">        a[aOffset + 4] = x1r - x3i;</span>
+<span class="nc" id="L2621">        a[aOffset + 5] = x1i + x3r;</span>
+<span class="nc" id="L2622">        a[aOffset + 6] = x1r + x3i;</span>
+<span class="nc" id="L2623">        a[aOffset + 7] = x1i - x3r;</span>
+<span class="nc" id="L2624">    }</span>
+
+    private static void cftf162(double[] a, int aOffset, double[] w, int wOffset) {
+        double wn4r,
+                wk1r,
+                wk1i,
+                wk2r,
+                wk2i,
+                wk3r,
+                wk3i,
+                x0r,
+                x0i,
+                x1r,
+                x1i,
+                x2r,
+                x2i,
+                y0r,
+                y0i,
+                y1r,
+                y1i,
+                y2r,
+                y2i,
+                y3r,
+                y3i,
+                y4r,
+                y4i,
+                y5r,
+                y5i,
+                y6r,
+                y6i,
+                y7r,
+                y7i,
+                y8r,
+                y8i,
+                y9r,
+                y9i,
+                y10r,
+                y10i,
+                y11r,
+                y11i,
+                y12r,
+                y12i,
+                y13r,
+                y13i,
+                y14r,
+                y14i,
+                y15r,
+                y15i;
+
+<span class="nc" id="L2673">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2674">        wk1r = w[wOffset + 4];</span>
+<span class="nc" id="L2675">        wk1i = w[wOffset + 5];</span>
+<span class="nc" id="L2676">        wk3r = w[wOffset + 6];</span>
+<span class="nc" id="L2677">        wk3i = -w[wOffset + 7];</span>
+<span class="nc" id="L2678">        wk2r = w[wOffset + 8];</span>
+<span class="nc" id="L2679">        wk2i = w[wOffset + 9];</span>
+<span class="nc" id="L2680">        x1r = a[aOffset + 0] - a[aOffset + 17];</span>
+<span class="nc" id="L2681">        x1i = a[aOffset + 1] + a[aOffset + 16];</span>
+<span class="nc" id="L2682">        x0r = a[aOffset + 8] - a[aOffset + 25];</span>
+<span class="nc" id="L2683">        x0i = a[aOffset + 9] + a[aOffset + 24];</span>
+<span class="nc" id="L2684">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2685">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2686">        y0r = x1r + x2r;</span>
+<span class="nc" id="L2687">        y0i = x1i + x2i;</span>
+<span class="nc" id="L2688">        y4r = x1r - x2r;</span>
+<span class="nc" id="L2689">        y4i = x1i - x2i;</span>
+<span class="nc" id="L2690">        x1r = a[aOffset + 0] + a[aOffset + 17];</span>
+<span class="nc" id="L2691">        x1i = a[aOffset + 1] - a[aOffset + 16];</span>
+<span class="nc" id="L2692">        x0r = a[aOffset + 8] + a[aOffset + 25];</span>
+<span class="nc" id="L2693">        x0i = a[aOffset + 9] - a[aOffset + 24];</span>
+<span class="nc" id="L2694">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2695">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2696">        y8r = x1r - x2i;</span>
+<span class="nc" id="L2697">        y8i = x1i + x2r;</span>
+<span class="nc" id="L2698">        y12r = x1r + x2i;</span>
+<span class="nc" id="L2699">        y12i = x1i - x2r;</span>
+<span class="nc" id="L2700">        x0r = a[aOffset + 2] - a[aOffset + 19];</span>
+<span class="nc" id="L2701">        x0i = a[aOffset + 3] + a[aOffset + 18];</span>
+<span class="nc" id="L2702">        x1r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2703">        x1i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2704">        x0r = a[aOffset + 10] - a[aOffset + 27];</span>
+<span class="nc" id="L2705">        x0i = a[aOffset + 11] + a[aOffset + 26];</span>
+<span class="nc" id="L2706">        x2r = wk3i * x0r - wk3r * x0i;</span>
+<span class="nc" id="L2707">        x2i = wk3i * x0i + wk3r * x0r;</span>
+<span class="nc" id="L2708">        y1r = x1r + x2r;</span>
+<span class="nc" id="L2709">        y1i = x1i + x2i;</span>
+<span class="nc" id="L2710">        y5r = x1r - x2r;</span>
+<span class="nc" id="L2711">        y5i = x1i - x2i;</span>
+<span class="nc" id="L2712">        x0r = a[aOffset + 2] + a[aOffset + 19];</span>
+<span class="nc" id="L2713">        x0i = a[aOffset + 3] - a[aOffset + 18];</span>
+<span class="nc" id="L2714">        x1r = wk3r * x0r - wk3i * x0i;</span>
+<span class="nc" id="L2715">        x1i = wk3r * x0i + wk3i * x0r;</span>
+<span class="nc" id="L2716">        x0r = a[aOffset + 10] + a[aOffset + 27];</span>
+<span class="nc" id="L2717">        x0i = a[aOffset + 11] - a[aOffset + 26];</span>
+<span class="nc" id="L2718">        x2r = wk1r * x0r + wk1i * x0i;</span>
+<span class="nc" id="L2719">        x2i = wk1r * x0i - wk1i * x0r;</span>
+<span class="nc" id="L2720">        y9r = x1r - x2r;</span>
+<span class="nc" id="L2721">        y9i = x1i - x2i;</span>
+<span class="nc" id="L2722">        y13r = x1r + x2r;</span>
+<span class="nc" id="L2723">        y13i = x1i + x2i;</span>
+<span class="nc" id="L2724">        x0r = a[aOffset + 4] - a[aOffset + 21];</span>
+<span class="nc" id="L2725">        x0i = a[aOffset + 5] + a[aOffset + 20];</span>
+<span class="nc" id="L2726">        x1r = wk2r * x0r - wk2i * x0i;</span>
+<span class="nc" id="L2727">        x1i = wk2r * x0i + wk2i * x0r;</span>
+<span class="nc" id="L2728">        x0r = a[aOffset + 12] - a[aOffset + 29];</span>
+<span class="nc" id="L2729">        x0i = a[aOffset + 13] + a[aOffset + 28];</span>
+<span class="nc" id="L2730">        x2r = wk2i * x0r - wk2r * x0i;</span>
+<span class="nc" id="L2731">        x2i = wk2i * x0i + wk2r * x0r;</span>
+<span class="nc" id="L2732">        y2r = x1r + x2r;</span>
+<span class="nc" id="L2733">        y2i = x1i + x2i;</span>
+<span class="nc" id="L2734">        y6r = x1r - x2r;</span>
+<span class="nc" id="L2735">        y6i = x1i - x2i;</span>
+<span class="nc" id="L2736">        x0r = a[aOffset + 4] + a[aOffset + 21];</span>
+<span class="nc" id="L2737">        x0i = a[aOffset + 5] - a[aOffset + 20];</span>
+<span class="nc" id="L2738">        x1r = wk2i * x0r - wk2r * x0i;</span>
+<span class="nc" id="L2739">        x1i = wk2i * x0i + wk2r * x0r;</span>
+<span class="nc" id="L2740">        x0r = a[aOffset + 12] + a[aOffset + 29];</span>
+<span class="nc" id="L2741">        x0i = a[aOffset + 13] - a[aOffset + 28];</span>
+<span class="nc" id="L2742">        x2r = wk2r * x0r - wk2i * x0i;</span>
+<span class="nc" id="L2743">        x2i = wk2r * x0i + wk2i * x0r;</span>
+<span class="nc" id="L2744">        y10r = x1r - x2r;</span>
+<span class="nc" id="L2745">        y10i = x1i - x2i;</span>
+<span class="nc" id="L2746">        y14r = x1r + x2r;</span>
+<span class="nc" id="L2747">        y14i = x1i + x2i;</span>
+<span class="nc" id="L2748">        x0r = a[aOffset + 6] - a[aOffset + 23];</span>
+<span class="nc" id="L2749">        x0i = a[aOffset + 7] + a[aOffset + 22];</span>
+<span class="nc" id="L2750">        x1r = wk3r * x0r - wk3i * x0i;</span>
+<span class="nc" id="L2751">        x1i = wk3r * x0i + wk3i * x0r;</span>
+<span class="nc" id="L2752">        x0r = a[aOffset + 14] - a[aOffset + 31];</span>
+<span class="nc" id="L2753">        x0i = a[aOffset + 15] + a[aOffset + 30];</span>
+<span class="nc" id="L2754">        x2r = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2755">        x2i = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2756">        y3r = x1r + x2r;</span>
+<span class="nc" id="L2757">        y3i = x1i + x2i;</span>
+<span class="nc" id="L2758">        y7r = x1r - x2r;</span>
+<span class="nc" id="L2759">        y7i = x1i - x2i;</span>
+<span class="nc" id="L2760">        x0r = a[aOffset + 6] + a[aOffset + 23];</span>
+<span class="nc" id="L2761">        x0i = a[aOffset + 7] - a[aOffset + 22];</span>
+<span class="nc" id="L2762">        x1r = wk1i * x0r + wk1r * x0i;</span>
+<span class="nc" id="L2763">        x1i = wk1i * x0i - wk1r * x0r;</span>
+<span class="nc" id="L2764">        x0r = a[aOffset + 14] + a[aOffset + 31];</span>
+<span class="nc" id="L2765">        x0i = a[aOffset + 15] - a[aOffset + 30];</span>
+<span class="nc" id="L2766">        x2r = wk3i * x0r - wk3r * x0i;</span>
+<span class="nc" id="L2767">        x2i = wk3i * x0i + wk3r * x0r;</span>
+<span class="nc" id="L2768">        y11r = x1r + x2r;</span>
+<span class="nc" id="L2769">        y11i = x1i + x2i;</span>
+<span class="nc" id="L2770">        y15r = x1r - x2r;</span>
+<span class="nc" id="L2771">        y15i = x1i - x2i;</span>
+<span class="nc" id="L2772">        x1r = y0r + y2r;</span>
+<span class="nc" id="L2773">        x1i = y0i + y2i;</span>
+<span class="nc" id="L2774">        x2r = y1r + y3r;</span>
+<span class="nc" id="L2775">        x2i = y1i + y3i;</span>
+<span class="nc" id="L2776">        a[aOffset + 0] = x1r + x2r;</span>
+<span class="nc" id="L2777">        a[aOffset + 1] = x1i + x2i;</span>
+<span class="nc" id="L2778">        a[aOffset + 2] = x1r - x2r;</span>
+<span class="nc" id="L2779">        a[aOffset + 3] = x1i - x2i;</span>
+<span class="nc" id="L2780">        x1r = y0r - y2r;</span>
+<span class="nc" id="L2781">        x1i = y0i - y2i;</span>
+<span class="nc" id="L2782">        x2r = y1r - y3r;</span>
+<span class="nc" id="L2783">        x2i = y1i - y3i;</span>
+<span class="nc" id="L2784">        a[aOffset + 4] = x1r - x2i;</span>
+<span class="nc" id="L2785">        a[aOffset + 5] = x1i + x2r;</span>
+<span class="nc" id="L2786">        a[aOffset + 6] = x1r + x2i;</span>
+<span class="nc" id="L2787">        a[aOffset + 7] = x1i - x2r;</span>
+<span class="nc" id="L2788">        x1r = y4r - y6i;</span>
+<span class="nc" id="L2789">        x1i = y4i + y6r;</span>
+<span class="nc" id="L2790">        x0r = y5r - y7i;</span>
+<span class="nc" id="L2791">        x0i = y5i + y7r;</span>
+<span class="nc" id="L2792">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2793">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2794">        a[aOffset + 8] = x1r + x2r;</span>
+<span class="nc" id="L2795">        a[aOffset + 9] = x1i + x2i;</span>
+<span class="nc" id="L2796">        a[aOffset + 10] = x1r - x2r;</span>
+<span class="nc" id="L2797">        a[aOffset + 11] = x1i - x2i;</span>
+<span class="nc" id="L2798">        x1r = y4r + y6i;</span>
+<span class="nc" id="L2799">        x1i = y4i - y6r;</span>
+<span class="nc" id="L2800">        x0r = y5r + y7i;</span>
+<span class="nc" id="L2801">        x0i = y5i - y7r;</span>
+<span class="nc" id="L2802">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2803">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2804">        a[aOffset + 12] = x1r - x2i;</span>
+<span class="nc" id="L2805">        a[aOffset + 13] = x1i + x2r;</span>
+<span class="nc" id="L2806">        a[aOffset + 14] = x1r + x2i;</span>
+<span class="nc" id="L2807">        a[aOffset + 15] = x1i - x2r;</span>
+<span class="nc" id="L2808">        x1r = y8r + y10r;</span>
+<span class="nc" id="L2809">        x1i = y8i + y10i;</span>
+<span class="nc" id="L2810">        x2r = y9r - y11r;</span>
+<span class="nc" id="L2811">        x2i = y9i - y11i;</span>
+<span class="nc" id="L2812">        a[aOffset + 16] = x1r + x2r;</span>
+<span class="nc" id="L2813">        a[aOffset + 17] = x1i + x2i;</span>
+<span class="nc" id="L2814">        a[aOffset + 18] = x1r - x2r;</span>
+<span class="nc" id="L2815">        a[aOffset + 19] = x1i - x2i;</span>
+<span class="nc" id="L2816">        x1r = y8r - y10r;</span>
+<span class="nc" id="L2817">        x1i = y8i - y10i;</span>
+<span class="nc" id="L2818">        x2r = y9r + y11r;</span>
+<span class="nc" id="L2819">        x2i = y9i + y11i;</span>
+<span class="nc" id="L2820">        a[aOffset + 20] = x1r - x2i;</span>
+<span class="nc" id="L2821">        a[aOffset + 21] = x1i + x2r;</span>
+<span class="nc" id="L2822">        a[aOffset + 22] = x1r + x2i;</span>
+<span class="nc" id="L2823">        a[aOffset + 23] = x1i - x2r;</span>
+<span class="nc" id="L2824">        x1r = y12r - y14i;</span>
+<span class="nc" id="L2825">        x1i = y12i + y14r;</span>
+<span class="nc" id="L2826">        x0r = y13r + y15i;</span>
+<span class="nc" id="L2827">        x0i = y13i - y15r;</span>
+<span class="nc" id="L2828">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2829">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2830">        a[aOffset + 24] = x1r + x2r;</span>
+<span class="nc" id="L2831">        a[aOffset + 25] = x1i + x2i;</span>
+<span class="nc" id="L2832">        a[aOffset + 26] = x1r - x2r;</span>
+<span class="nc" id="L2833">        a[aOffset + 27] = x1i - x2i;</span>
+<span class="nc" id="L2834">        x1r = y12r + y14i;</span>
+<span class="nc" id="L2835">        x1i = y12i - y14r;</span>
+<span class="nc" id="L2836">        x0r = y13r - y15i;</span>
+<span class="nc" id="L2837">        x0i = y13i + y15r;</span>
+<span class="nc" id="L2838">        x2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2839">        x2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2840">        a[aOffset + 28] = x1r - x2i;</span>
+<span class="nc" id="L2841">        a[aOffset + 29] = x1i + x2r;</span>
+<span class="nc" id="L2842">        a[aOffset + 30] = x1r + x2i;</span>
+<span class="nc" id="L2843">        a[aOffset + 31] = x1i - x2r;</span>
+<span class="nc" id="L2844">    }</span>
+
+    private static void cftf081(double[] a, int aOffset, double[] w, int wOffset) {
+        double wn4r,
+                x0r,
+                x0i,
+                x1r,
+                x1i,
+                x2r,
+                x2i,
+                x3r,
+                x3i,
+                y0r,
+                y0i,
+                y1r,
+                y1i,
+                y2r,
+                y2i,
+                y3r,
+                y3i,
+                y4r,
+                y4i,
+                y5r,
+                y5i,
+                y6r,
+                y6i,
+                y7r,
+                y7i;
+
+<span class="nc" id="L2873">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2874">        x0r = a[aOffset + 0] + a[aOffset + 8];</span>
+<span class="nc" id="L2875">        x0i = a[aOffset + 1] + a[aOffset + 9];</span>
+<span class="nc" id="L2876">        x1r = a[aOffset + 0] - a[aOffset + 8];</span>
+<span class="nc" id="L2877">        x1i = a[aOffset + 1] - a[aOffset + 9];</span>
+<span class="nc" id="L2878">        x2r = a[aOffset + 4] + a[aOffset + 12];</span>
+<span class="nc" id="L2879">        x2i = a[aOffset + 5] + a[aOffset + 13];</span>
+<span class="nc" id="L2880">        x3r = a[aOffset + 4] - a[aOffset + 12];</span>
+<span class="nc" id="L2881">        x3i = a[aOffset + 5] - a[aOffset + 13];</span>
+<span class="nc" id="L2882">        y0r = x0r + x2r;</span>
+<span class="nc" id="L2883">        y0i = x0i + x2i;</span>
+<span class="nc" id="L2884">        y2r = x0r - x2r;</span>
+<span class="nc" id="L2885">        y2i = x0i - x2i;</span>
+<span class="nc" id="L2886">        y1r = x1r - x3i;</span>
+<span class="nc" id="L2887">        y1i = x1i + x3r;</span>
+<span class="nc" id="L2888">        y3r = x1r + x3i;</span>
+<span class="nc" id="L2889">        y3i = x1i - x3r;</span>
+<span class="nc" id="L2890">        x0r = a[aOffset + 2] + a[aOffset + 10];</span>
+<span class="nc" id="L2891">        x0i = a[aOffset + 3] + a[aOffset + 11];</span>
+<span class="nc" id="L2892">        x1r = a[aOffset + 2] - a[aOffset + 10];</span>
+<span class="nc" id="L2893">        x1i = a[aOffset + 3] - a[aOffset + 11];</span>
+<span class="nc" id="L2894">        x2r = a[aOffset + 6] + a[aOffset + 14];</span>
+<span class="nc" id="L2895">        x2i = a[aOffset + 7] + a[aOffset + 15];</span>
+<span class="nc" id="L2896">        x3r = a[aOffset + 6] - a[aOffset + 14];</span>
+<span class="nc" id="L2897">        x3i = a[aOffset + 7] - a[aOffset + 15];</span>
+<span class="nc" id="L2898">        y4r = x0r + x2r;</span>
+<span class="nc" id="L2899">        y4i = x0i + x2i;</span>
+<span class="nc" id="L2900">        y6r = x0r - x2r;</span>
+<span class="nc" id="L2901">        y6i = x0i - x2i;</span>
+<span class="nc" id="L2902">        x0r = x1r - x3i;</span>
+<span class="nc" id="L2903">        x0i = x1i + x3r;</span>
+<span class="nc" id="L2904">        x2r = x1r + x3i;</span>
+<span class="nc" id="L2905">        x2i = x1i - x3r;</span>
+<span class="nc" id="L2906">        y5r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2907">        y5i = wn4r * (x0r + x0i);</span>
+<span class="nc" id="L2908">        y7r = wn4r * (x2r - x2i);</span>
+<span class="nc" id="L2909">        y7i = wn4r * (x2r + x2i);</span>
+<span class="nc" id="L2910">        a[aOffset + 8] = y1r + y5r;</span>
+<span class="nc" id="L2911">        a[aOffset + 9] = y1i + y5i;</span>
+<span class="nc" id="L2912">        a[aOffset + 10] = y1r - y5r;</span>
+<span class="nc" id="L2913">        a[aOffset + 11] = y1i - y5i;</span>
+<span class="nc" id="L2914">        a[aOffset + 12] = y3r - y7i;</span>
+<span class="nc" id="L2915">        a[aOffset + 13] = y3i + y7r;</span>
+<span class="nc" id="L2916">        a[aOffset + 14] = y3r + y7i;</span>
+<span class="nc" id="L2917">        a[aOffset + 15] = y3i - y7r;</span>
+<span class="nc" id="L2918">        a[aOffset + 0] = y0r + y4r;</span>
+<span class="nc" id="L2919">        a[aOffset + 1] = y0i + y4i;</span>
+<span class="nc" id="L2920">        a[aOffset + 2] = y0r - y4r;</span>
+<span class="nc" id="L2921">        a[aOffset + 3] = y0i - y4i;</span>
+<span class="nc" id="L2922">        a[aOffset + 4] = y2r - y6i;</span>
+<span class="nc" id="L2923">        a[aOffset + 5] = y2i + y6r;</span>
+<span class="nc" id="L2924">        a[aOffset + 6] = y2r + y6i;</span>
+<span class="nc" id="L2925">        a[aOffset + 7] = y2i - y6r;</span>
+<span class="nc" id="L2926">    }</span>
+
+    private static void cftf082(double[] a, int aOffset, double[] w, int wOffset) {
+        double wn4r,
+                wk1r,
+                wk1i,
+                x0r,
+                x0i,
+                x1r,
+                x1i,
+                y0r,
+                y0i,
+                y1r,
+                y1i,
+                y2r,
+                y2i,
+                y3r,
+                y3i,
+                y4r,
+                y4i,
+                y5r,
+                y5i,
+                y6r,
+                y6i,
+                y7r,
+                y7i;
+
+<span class="nc" id="L2953">        wn4r = w[wOffset + 1];</span>
+<span class="nc" id="L2954">        wk1r = w[wOffset + 2];</span>
+<span class="nc" id="L2955">        wk1i = w[wOffset + 3];</span>
+<span class="nc" id="L2956">        y0r = a[aOffset + 0] - a[aOffset + 9];</span>
+<span class="nc" id="L2957">        y0i = a[aOffset + 1] + a[aOffset + 8];</span>
+<span class="nc" id="L2958">        y1r = a[aOffset + 0] + a[aOffset + 9];</span>
+<span class="nc" id="L2959">        y1i = a[aOffset + 1] - a[aOffset + 8];</span>
+<span class="nc" id="L2960">        x0r = a[aOffset + 4] - a[aOffset + 13];</span>
+<span class="nc" id="L2961">        x0i = a[aOffset + 5] + a[aOffset + 12];</span>
+<span class="nc" id="L2962">        y2r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2963">        y2i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2964">        x0r = a[aOffset + 4] + a[aOffset + 13];</span>
+<span class="nc" id="L2965">        x0i = a[aOffset + 5] - a[aOffset + 12];</span>
+<span class="nc" id="L2966">        y3r = wn4r * (x0r - x0i);</span>
+<span class="nc" id="L2967">        y3i = wn4r * (x0i + x0r);</span>
+<span class="nc" id="L2968">        x0r = a[aOffset + 2] - a[aOffset + 11];</span>
+<span class="nc" id="L2969">        x0i = a[aOffset + 3] + a[aOffset + 10];</span>
+<span class="nc" id="L2970">        y4r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2971">        y4i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2972">        x0r = a[aOffset + 2] + a[aOffset + 11];</span>
+<span class="nc" id="L2973">        x0i = a[aOffset + 3] - a[aOffset + 10];</span>
+<span class="nc" id="L2974">        y5r = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2975">        y5i = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2976">        x0r = a[aOffset + 6] - a[aOffset + 15];</span>
+<span class="nc" id="L2977">        x0i = a[aOffset + 7] + a[aOffset + 14];</span>
+<span class="nc" id="L2978">        y6r = wk1i * x0r - wk1r * x0i;</span>
+<span class="nc" id="L2979">        y6i = wk1i * x0i + wk1r * x0r;</span>
+<span class="nc" id="L2980">        x0r = a[aOffset + 6] + a[aOffset + 15];</span>
+<span class="nc" id="L2981">        x0i = a[aOffset + 7] - a[aOffset + 14];</span>
+<span class="nc" id="L2982">        y7r = wk1r * x0r - wk1i * x0i;</span>
+<span class="nc" id="L2983">        y7i = wk1r * x0i + wk1i * x0r;</span>
+<span class="nc" id="L2984">        x0r = y0r + y2r;</span>
+<span class="nc" id="L2985">        x0i = y0i + y2i;</span>
+<span class="nc" id="L2986">        x1r = y4r + y6r;</span>
+<span class="nc" id="L2987">        x1i = y4i + y6i;</span>
+<span class="nc" id="L2988">        a[aOffset + 0] = x0r + x1r;</span>
+<span class="nc" id="L2989">        a[aOffset + 1] = x0i + x1i;</span>
+<span class="nc" id="L2990">        a[aOffset + 2] = x0r - x1r;</span>
+<span class="nc" id="L2991">        a[aOffset + 3] = x0i - x1i;</span>
+<span class="nc" id="L2992">        x0r = y0r - y2r;</span>
+<span class="nc" id="L2993">        x0i = y0i - y2i;</span>
+<span class="nc" id="L2994">        x1r = y4r - y6r;</span>
+<span class="nc" id="L2995">        x1i = y4i - y6i;</span>
+<span class="nc" id="L2996">        a[aOffset + 4] = x0r - x1i;</span>
+<span class="nc" id="L2997">        a[aOffset + 5] = x0i + x1r;</span>
+<span class="nc" id="L2998">        a[aOffset + 6] = x0r + x1i;</span>
+<span class="nc" id="L2999">        a[aOffset + 7] = x0i - x1r;</span>
+<span class="nc" id="L3000">        x0r = y1r - y3i;</span>
+<span class="nc" id="L3001">        x0i = y1i + y3r;</span>
+<span class="nc" id="L3002">        x1r = y5r - y7r;</span>
+<span class="nc" id="L3003">        x1i = y5i - y7i;</span>
+<span class="nc" id="L3004">        a[aOffset + 8] = x0r + x1r;</span>
+<span class="nc" id="L3005">        a[aOffset + 9] = x0i + x1i;</span>
+<span class="nc" id="L3006">        a[aOffset + 10] = x0r - x1r;</span>
+<span class="nc" id="L3007">        a[aOffset + 11] = x0i - x1i;</span>
+<span class="nc" id="L3008">        x0r = y1r + y3i;</span>
+<span class="nc" id="L3009">        x0i = y1i - y3r;</span>
+<span class="nc" id="L3010">        x1r = y5r + y7r;</span>
+<span class="nc" id="L3011">        x1i = y5i + y7i;</span>
+<span class="nc" id="L3012">        a[aOffset + 12] = x0r - x1i;</span>
+<span class="nc" id="L3013">        a[aOffset + 13] = x0i + x1r;</span>
+<span class="nc" id="L3014">        a[aOffset + 14] = x0r + x1i;</span>
+<span class="nc" id="L3015">        a[aOffset + 15] = x0i - x1r;</span>
+<span class="nc" id="L3016">    }</span>
+
+    private static void cftf040(double[] a) {
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
+
+<span class="nc" id="L3021">        x0r = a[0] + a[4];</span>
+<span class="nc" id="L3022">        x0i = a[1] + a[5];</span>
+<span class="nc" id="L3023">        x1r = a[0] - a[4];</span>
+<span class="nc" id="L3024">        x1i = a[1] - a[5];</span>
+<span class="nc" id="L3025">        x2r = a[2] + a[6];</span>
+<span class="nc" id="L3026">        x2i = a[3] + a[7];</span>
+<span class="nc" id="L3027">        x3r = a[2] - a[6];</span>
+<span class="nc" id="L3028">        x3i = a[3] - a[7];</span>
+<span class="nc" id="L3029">        a[0] = x0r + x2r;</span>
+<span class="nc" id="L3030">        a[1] = x0i + x2i;</span>
+<span class="nc" id="L3031">        a[2] = x1r - x3i;</span>
+<span class="nc" id="L3032">        a[3] = x1i + x3r;</span>
+<span class="nc" id="L3033">        a[4] = x0r - x2r;</span>
+<span class="nc" id="L3034">        a[5] = x0i - x2i;</span>
+<span class="nc" id="L3035">        a[6] = x1r + x3i;</span>
+<span class="nc" id="L3036">        a[7] = x1i - x3r;</span>
+<span class="nc" id="L3037">    }</span>
+
+    private static void cftb040(double[] a) {
+        double x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
+
+<span class="nc" id="L3042">        x0r = a[0] + a[4];</span>
+<span class="nc" id="L3043">        x0i = a[1] + a[5];</span>
+<span class="nc" id="L3044">        x1r = a[0] - a[4];</span>
+<span class="nc" id="L3045">        x1i = a[1] - a[5];</span>
+<span class="nc" id="L3046">        x2r = a[2] + a[6];</span>
+<span class="nc" id="L3047">        x2i = a[3] + a[7];</span>
+<span class="nc" id="L3048">        x3r = a[2] - a[6];</span>
+<span class="nc" id="L3049">        x3i = a[3] - a[7];</span>
+<span class="nc" id="L3050">        a[0] = x0r + x2r;</span>
+<span class="nc" id="L3051">        a[1] = x0i + x2i;</span>
+<span class="nc" id="L3052">        a[2] = x1r + x3i;</span>
+<span class="nc" id="L3053">        a[3] = x1i - x3r;</span>
+<span class="nc" id="L3054">        a[4] = x0r - x2r;</span>
+<span class="nc" id="L3055">        a[5] = x0i - x2i;</span>
+<span class="nc" id="L3056">        a[6] = x1r - x3i;</span>
+<span class="nc" id="L3057">        a[7] = x1i + x3r;</span>
+<span class="nc" id="L3058">    }</span>
+
+    private static void cftx020(double[] a) {
+        double x0r, x0i;
+
+<span class="nc" id="L3063">        x0r = a[0] - a[2];</span>
+<span class="nc" id="L3064">        x0i = a[1] - a[3];</span>
+<span class="nc" id="L3065">        a[0] += a[2];</span>
+<span class="nc" id="L3066">        a[1] += a[3];</span>
+<span class="nc" id="L3067">        a[2] = x0r;</span>
+<span class="nc" id="L3068">        a[3] = x0i;</span>
+<span class="nc" id="L3069">    }</span>
+
+    private static void rftfsub(int n, double[] a, int nc, double[] c, int cOffset) {
+        int j, k, kk, ks, m;
+        double wkr, wki, xr, xi, yr, yi;
+
+<span class="nc" id="L3075">        m = n &gt;&gt; 1;</span>
+<span class="nc" id="L3076">        ks = 2 * nc / m;</span>
+<span class="nc" id="L3077">        kk = 0;</span>
+<span class="nc bnc" id="L3078" title="All 2 branches missed.">        for (j = 2; j &lt; m; j += 2) {</span>
+<span class="nc" id="L3079">            k = n - j;</span>
+<span class="nc" id="L3080">            kk += ks;</span>
+<span class="nc" id="L3081">            wkr = 0.5 - c[cOffset + nc - kk];</span>
+<span class="nc" id="L3082">            wki = c[cOffset + kk];</span>
+<span class="nc" id="L3083">            xr = a[j] - a[k];</span>
+<span class="nc" id="L3084">            xi = a[j + 1] + a[k + 1];</span>
+<span class="nc" id="L3085">            yr = wkr * xr - wki * xi;</span>
+<span class="nc" id="L3086">            yi = wkr * xi + wki * xr;</span>
+<span class="nc" id="L3087">            a[j] -= yr;</span>
+<span class="nc" id="L3088">            a[j + 1] -= yi;</span>
+<span class="nc" id="L3089">            a[k] += yr;</span>
+<span class="nc" id="L3090">            a[k + 1] -= yi;</span>
+        }
+<span class="nc" id="L3092">    }</span>
+
+    private static void rftbsub(int n, double[] a, int nc, double[] c, int cOffset) {
+        int j, k, kk, ks, m;
+        double wkr, wki, xr, xi, yr, yi;
+
+<span class="nc" id="L3098">        m = n &gt;&gt; 1;</span>
+<span class="nc" id="L3099">        ks = 2 * nc / m;</span>
+<span class="nc" id="L3100">        kk = 0;</span>
+<span class="nc bnc" id="L3101" title="All 2 branches missed.">        for (j = 2; j &lt; m; j += 2) {</span>
+<span class="nc" id="L3102">            k = n - j;</span>
+<span class="nc" id="L3103">            kk += ks;</span>
+<span class="nc" id="L3104">            wkr = 0.5 - c[cOffset + nc - kk];</span>
+<span class="nc" id="L3105">            wki = c[cOffset + kk];</span>
+<span class="nc" id="L3106">            xr = a[j] - a[k];</span>
+<span class="nc" id="L3107">            xi = a[j + 1] + a[k + 1];</span>
+<span class="nc" id="L3108">            yr = wkr * xr + wki * xi;</span>
+<span class="nc" id="L3109">            yi = wkr * xi - wki * xr;</span>
+<span class="nc" id="L3110">            a[j] -= yr;</span>
+<span class="nc" id="L3111">            a[j + 1] -= yi;</span>
+<span class="nc" id="L3112">            a[k] += yr;</span>
+<span class="nc" id="L3113">            a[k + 1] -= yi;</span>
+        }
+<span class="nc" id="L3115">    }</span>
+
+    private static void dctsub(int n, double[] a, int nc, double[] c, int cOffset) {
+        int j, k, kk, ks, m;
+        double wkr, wki, xr;
+
+<span class="nc" id="L3121">        m = n &gt;&gt; 1;</span>
+<span class="nc" id="L3122">        ks = nc / n;</span>
+<span class="nc" id="L3123">        kk = 0;</span>
+<span class="nc bnc" id="L3124" title="All 2 branches missed.">        for (j = 1; j &lt; m; j++) {</span>
+<span class="nc" id="L3125">            k = n - j;</span>
+<span class="nc" id="L3126">            kk += ks;</span>
+<span class="nc" id="L3127">            wkr = c[cOffset + kk] - c[cOffset + nc - kk];</span>
+<span class="nc" id="L3128">            wki = c[cOffset + kk] + c[cOffset + nc - kk];</span>
+<span class="nc" id="L3129">            xr = wki * a[j] - wkr * a[k];</span>
+<span class="nc" id="L3130">            a[j] = wkr * a[j] + wki * a[k];</span>
+<span class="nc" id="L3131">            a[k] = xr;</span>
+        }
+<span class="nc" id="L3133">        a[m] *= c[cOffset + 0];</span>
+<span class="nc" id="L3134">    }</span>
+
+    private static void dstsub(int n, double[] a, int nc, double[] c, int cOffset) {
+        int j, k, kk, ks, m;
+        double wkr, wki, xr;
+
+<span class="nc" id="L3140">        m = n &gt;&gt; 1;</span>
+<span class="nc" id="L3141">        ks = nc / n;</span>
+<span class="nc" id="L3142">        kk = 0;</span>
+<span class="nc bnc" id="L3143" title="All 2 branches missed.">        for (j = 1; j &lt; m; j++) {</span>
+<span class="nc" id="L3144">            k = n - j;</span>
+<span class="nc" id="L3145">            kk += ks;</span>
+<span class="nc" id="L3146">            wkr = c[cOffset + kk] - c[cOffset + nc - kk];</span>
+<span class="nc" id="L3147">            wki = c[cOffset + kk] + c[cOffset + nc - kk];</span>
+<span class="nc" id="L3148">            xr = wki * a[k] - wkr * a[j];</span>
+<span class="nc" id="L3149">            a[k] = wkr * a[k] + wki * a[j];</span>
+<span class="nc" id="L3150">            a[j] = xr;</span>
+        }
+<span class="nc" id="L3152">        a[m] *= c[cOffset + 0];</span>
+<span class="nc" id="L3153">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

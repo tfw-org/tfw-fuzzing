@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BranchComponent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">BranchComponent.java</span></div><h1>BranchComponent.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import tfw.check.Argument;
+import tfw.tsm.AddRemoveOperation.Operation;
+import tfw.tsm.TransactionMgr.AddComponentRunnable;
+import tfw.tsm.TransactionMgr.RemoveComponentRunnable;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+public abstract class BranchComponent extends TreeComponent {
+    public static final String DEFAULT_EXPORT_TAG = &quot;All&quot;;
+
+    /** This component's children */
+<span class="nc" id="L19">    private Map&lt;String, TreeComponent&gt; children = null;</span>
+
+<span class="nc" id="L21">    private final ArrayList&lt;Object&gt; deferredAddRemoveSets = new ArrayList&lt;Object&gt;();</span>
+<span class="nc" id="L22">    protected Set&lt;TreeComponent&gt; immediateChildren = null;</span>
+
+    public abstract void remove(TreeComponent treeComponent);
+
+    BranchComponent(String name, Sink[] sinks, Source[] sources, EventChannel[] eventChannels) {
+<span class="nc" id="L27">        super(name, sinks, sources, eventChannels);</span>
+<span class="nc" id="L28">    }</span>
+
+    void addToChildren(TreeComponent child) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (child.getParent() != null) {</span>
+<span class="nc" id="L32">            throw new IllegalArgumentException(&quot;Child, '&quot; + child.getName() + &quot;', already has a parent.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (child == this) {</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;child == this not allowed&quot;);</span>
+        }
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (child.isRooted()) {</span>
+<span class="nc" id="L40">            throw new IllegalArgumentException(&quot;Child, '&quot; + child.getName() + &quot;' is rooted. Can't add a rooted tree!&quot;);</span>
+        }
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (children == null) {</span>
+<span class="nc" id="L44">            this.children = new HashMap&lt;String, TreeComponent&gt;();</span>
+        }
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (children.containsKey(child.getName())) {</span>
+<span class="nc" id="L47">            throw new IllegalArgumentException(&quot;Attempt to add child with duplicate name, '&quot; + child.getName() + &quot;'&quot;);</span>
+        }
+<span class="nc" id="L49">        children.put(child.getName(), child);</span>
+<span class="nc" id="L50">        child.setParent(this);</span>
+<span class="nc" id="L51">    }</span>
+
+    void removeFromChildren(TreeComponent child) {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (child.getParent() != this) {</span>
+<span class="nc" id="L55">            throw new IllegalArgumentException(&quot;child, &quot; + child.getName()</span>
+<span class="nc" id="L56">                    + &quot;, not connected to this component, '&quot; + this.getFullyQualifiedName()</span>
+                    + &quot;'&quot;);
+        }
+<span class="nc" id="L59">        children.remove(child.getName());</span>
+<span class="nc" id="L60">        child.setParent(null);</span>
+<span class="nc" id="L61">    }</span>
+
+    /**
+     * Returns an copy of this component's map of children.
+     *
+     * @return an copy of this component's map of children.
+     */
+    Map&lt;String, TreeComponent&gt; getChildren() {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (children == null) {</span>
+<span class="nc" id="L70">            return new HashMap&lt;String, TreeComponent&gt;();</span>
+        }
+
+<span class="nc" id="L73">        synchronized (children) {</span>
+<span class="nc" id="L74">            return new HashMap&lt;String, TreeComponent&gt;(children);</span>
+        }
+    }
+
+    /**
+     * Recursively terminates child component ports and terminates leaf ports.
+     * The initial call to this method to kick off the recursion is made by the
+     * transaction manager.
+     *
+     * @return Unterminated ports.
+     */
+    Set&lt;Port&gt; terminateChildAndLocalConnections() {
+<span class="nc" id="L86">        HashSet&lt;Port&gt; unterminatedConnections = new HashSet&lt;Port&gt;();</span>
+<span class="nc" id="L87">        TreeComponent[] treeComponents = getChildComponents();</span>
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        for (int i = 0; i &lt; treeComponents.length; i++) {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (treeComponents[i] instanceof BranchComponent) {</span>
+<span class="nc" id="L91">                unterminatedConnections.addAll(</span>
+<span class="nc" id="L92">                        ((BranchComponent) treeComponents[i]).terminateChildAndLocalConnections());</span>
+            } else {
+<span class="nc" id="L94">                unterminatedConnections.addAll(treeComponents[i].terminateLocally(unterminatedConnections));</span>
+            }
+        }
+
+<span class="nc" id="L98">        return terminateLocally(unterminatedConnections);</span>
+    }
+
+    private TreeComponent[] getChildComponents() {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (children == null) {</span>
+<span class="nc" id="L103">            return new TreeComponent[0];</span>
+        }
+<span class="nc" id="L105">        synchronized (children) {</span>
+<span class="nc" id="L106">            return children.values().toArray(new TreeComponent[children.size()]);</span>
+        }
+    }
+
+    /**
+     * Calls disconnectPorts() and then recursively calls disconnect on the
+     * child components.
+     */
+    void disconnect() {
+<span class="nc" id="L115">        disconnectPorts();</span>
+
+<span class="nc" id="L117">        TreeComponent[] childComponents = getChildComponents();</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        for (int i = 0; i &lt; childComponents.length; i++) {</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (childComponents[i] instanceof BranchComponent) {</span>
+<span class="nc" id="L120">                ((BranchComponent) childComponents[i]).disconnect();</span>
+            } else {
+<span class="nc" id="L122">                childComponents[i].disconnectPorts();</span>
+            }
+        }
+<span class="nc" id="L125">    }</span>
+
+    /**
+     * Returns the this components tree state using the
+     * {@link #DEFAULT_EXPORT_TAG}.
+     *
+     * @return this components tree state.
+     * @throws IllegalStateException
+     *             if this component is not rooted.
+     * @throws IllegalStateException
+     *             if called outside of the of the transaction manager's
+     *             transaction queue thread.
+     */
+    public TreeState getTreeState() {
+<span class="nc" id="L139">        return getTreeState(DEFAULT_EXPORT_TAG);</span>
+    }
+
+    /**
+     * Returns the this components tree state using the
+     * {@link #DEFAULT_EXPORT_TAG}.
+     *
+     * @param exportTag
+     *            The event channel export tag. Only event channels with this
+     *            export tag will be included in the tree state.
+     * @return this components tree state.
+     * @throws IllegalStateException
+     *             if this component is not rooted.
+     * @throws IllegalStateException
+     *             if called outside of the of the transaction manager's
+     *             transaction queue thread.
+     */
+    public TreeState getTreeState(String exportTag) {
+<span class="nc" id="L157">        Argument.assertNotNull(exportTag, &quot;exportTag&quot;);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (!isRooted()) {</span>
+<span class="nc" id="L159">            throw new IllegalStateException(&quot;This component is not rooted and therefore it's state is undefined.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (!getTransactionManager().isDispatchThread()) {</span>
+<span class="nc" id="L163">            throw new IllegalStateException(&quot;This method can not be called from outside the transaction queue thread&quot;);</span>
+        }
+
+<span class="nc" id="L166">        TreeStateBuffer buff = new TreeStateBuffer();</span>
+<span class="nc" id="L167">        buff.setName(this.getName());</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        for (EventChannel ec : this.eventChannels.values()) {</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            if (isExport(ec, exportTag)) {</span>
+<span class="nc" id="L171">                EventChannelState ecs = new EventChannelState(ec.getECD(), ec.getState());</span>
+<span class="nc" id="L172">                buff.addState(ecs);</span>
+            }
+<span class="nc" id="L174">        }</span>
+
+<span class="nc" id="L176">        TreeComponent[] childComponents = getChildComponents();</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        for (int i = 0; i &lt; childComponents.length; i++) {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (childComponents[i] instanceof BranchComponent) {</span>
+<span class="nc" id="L179">                buff.addChild(((BranchComponent) childComponents[i]).getTreeState(exportTag));</span>
+            }
+        }
+
+<span class="nc" id="L183">        return buff.toTreeState();</span>
+    }
+
+    private static boolean isExport(EventChannel ec, String exportTag) {
+<span class="nc bnc" id="L187" title="All 6 branches missed.">        if (ec.getECD() instanceof StatelessTriggerECD || !ec.getECD().isFireOnConnect() || ec.getState() == null) {</span>
+<span class="nc" id="L188">            return false;</span>
+        }
+
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (!(ec instanceof Terminator)) {</span>
+<span class="nc" id="L192">            return false;</span>
+        }
+<span class="nc" id="L194">        return ((Terminator) ec).isExportTag(exportTag);</span>
+    }
+
+    /**
+     * Sets the state of this tree.
+     *
+     * @param state
+     *            The state.
+     * @param skipMissingEventChannels
+     *            A flag indicating whether to allow missing event channels. If
+     *            &lt;code&gt;false&lt;/code&gt; an IllegalArgumentException will be
+     *            thrown if the &lt;code&gt;state&lt;/code&gt; contains state for an event
+     *            channel which is not present in the tree structure.
+     * @param skipMissingChildBranches
+     *            A flag indicating whether to allow missing child branches. if
+     *            &lt;code&gt;false&lt;/code&gt; an IllegalArgumentException will be
+     *            thrown if the &lt;code&gt;state&lt;/code&gt; contains child tree states
+     *            for a branch which is not present in the tree structure.
+     * @throws IllegalStateException
+     *             if this component is not rooted.
+     * @throws IllegalStateException
+     *             if called outside of the of the transaction manager's
+     *             transaction queue thread.
+     */
+    public void setTreeState(TreeState state, boolean skipMissingEventChannels, boolean skipMissingChildBranches) {
+<span class="nc" id="L219">        Argument.assertNotNull(state, &quot;state&quot;);</span>
+
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (!isRooted()) {</span>
+<span class="nc" id="L222">            throw new IllegalStateException(</span>
+<span class="nc" id="L223">                    &quot;This component (&quot; + getName() + &quot;) is not rooted and therefore it's state is undefined.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (!getTransactionManager().isDispatchThread()) {</span>
+<span class="nc" id="L227">            throw new IllegalStateException(&quot;This method can not be called from outside the transaction queue thread&quot;);</span>
+        }
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (!this.getName().equals(state.getName())) {</span>
+<span class="nc" id="L231">            throw new IllegalArgumentException(&quot;TreeState name does not match, expected &lt;&quot; + this.getName()</span>
+<span class="nc" id="L232">                    + &quot;&gt; found &lt;&quot; + state.getName() + &quot;&gt;.&quot;);</span>
+        }
+
+<span class="nc" id="L235">        EventChannelState[] ecs = state.getState();</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        for (int i = 0; i &lt; ecs.length; i++) {</span>
+<span class="nc" id="L238">            Terminator ec = (Terminator) this.eventChannels.get(ecs[i].getEventChannelName());</span>
+
+<span class="nc bnc" id="L240" title="All 2 branches missed.">            if (ec == null) {</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">                if (skipMissingEventChannels) {</span>
+<span class="nc" id="L242">                    continue;</span>
+                }
+<span class="nc" id="L244">                throw new IllegalArgumentException(</span>
+<span class="nc" id="L245">                        &quot;TreeState contains state for an unknown event channel '&quot; + ecs[i].getEventChannelName() + &quot;'&quot;);</span>
+            }
+
+<span class="nc" id="L248">            ec.importState(ecs[i].getState());</span>
+        }
+
+<span class="nc" id="L251">        TreeState[] childTreeState = state.getChildren();</span>
+
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (children == null) {</span>
+<span class="nc bnc" id="L254" title="All 4 branches missed.">            if (childTreeState.length == 0 || skipMissingChildBranches) {</span>
+<span class="nc" id="L255">                return;</span>
+            }
+<span class="nc" id="L257">            throw new IllegalArgumentException(&quot;'state' contains child tree state and this component has no children&quot;);</span>
+        }
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        for (int i = 0; i &lt; childTreeState.length; i++) {</span>
+<span class="nc" id="L260">            TreeComponent child = children.get(childTreeState[i].getName());</span>
+
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            if (child == null) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                if (skipMissingChildBranches) {</span>
+<span class="nc" id="L264">                    continue;</span>
+                }
+<span class="nc" id="L266">                throw new IllegalArgumentException(</span>
+<span class="nc" id="L267">                        &quot;TreeState contains unknown child tree state with name '&quot; + childTreeState[i].getName());</span>
+            }
+
+<span class="nc bnc" id="L270" title="All 2 branches missed.">            if (child instanceof BranchComponent) {</span>
+<span class="nc" id="L271">                ((BranchComponent) child)</span>
+<span class="nc" id="L272">                        .setTreeState(childTreeState[i], skipMissingEventChannels, skipMissingChildBranches);</span>
+            }
+        }
+<span class="nc" id="L275">    }</span>
+
+    final synchronized void performAddRemoveOperations(AddRemoveOperation[] operations) {
+<span class="nc" id="L278">        Argument.assertElementNotNull(operations, &quot;operations&quot;);</span>
+
+<span class="nc" id="L280">        boolean containsAdd = false;</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        for (AddRemoveOperation operation : operations) {</span>
+<span class="nc bnc" id="L282" title="All 2 branches missed.">            if (operation.getOperation() == Operation.ADD) {</span>
+<span class="nc" id="L283">                containsAdd = true;</span>
+<span class="nc" id="L284">                break;</span>
+            }
+        }
+<span class="nc bnc" id="L287" title="All 4 branches missed.">        if (containsAdd &amp;&amp; immediateChildren == null) {</span>
+<span class="nc" id="L288">            immediateChildren = new HashSet&lt;TreeComponent&gt;();</span>
+        }
+<span class="nc" id="L290">        List&lt;Runnable&gt; runnables = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        for (AddRemoveOperation operation : operations) {</span>
+<span class="nc" id="L292">            TreeComponent child = operation.getTreeComponent();</span>
+<span class="nc bnc" id="L293" title="All 2 branches missed.">            if (operation.getOperation() == Operation.ADD) {</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">                if (!immediateChildren.add(child)) {</span>
+<span class="nc" id="L295">                    throw new IllegalStateException(</span>
+<span class="nc" id="L296">                            child.getFullyQualifiedName() + &quot; is already a child of this Branch&quot;);</span>
+                }
+                // Create the CHILD -&gt; PARENT relationship.
+<span class="nc bnc" id="L299" title="All 2 branches missed.">                if (child.immediateParent == null) {</span>
+<span class="nc" id="L300">                    child.immediateParent = this;</span>
+                } else {
+<span class="nc" id="L302">                    throw new IllegalStateException(child.getFullyQualifiedName() + &quot; already has a parent!&quot;);</span>
+                }
+<span class="nc" id="L304">                runnables.add(new TransactionMgr.AddComponentRunnable(this, child));</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">            } else if (operation.getOperation() == Operation.REMOVE) {</span>
+<span class="nc bnc" id="L306" title="All 4 branches missed.">                if (immediateChildren == null || !immediateChildren.remove(child)) {</span>
+<span class="nc" id="L307">                    throw new IllegalStateException(child.getFullyQualifiedName() + &quot; is not a child of this Branch!&quot;);</span>
+                }
+                // Remove the CHILD -&gt; PARENT relationship.
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                if (child.immediateParent == this) {</span>
+<span class="nc" id="L311">                    child.immediateParent = null;</span>
+                } else {
+<span class="nc" id="L313">                    throw new IllegalStateException(</span>
+<span class="nc" id="L314">                            child.getFullyQualifiedName() + &quot; has &quot; + child.immediateParent + &quot; Parent!&quot;);</span>
+                }
+<span class="nc" id="L316">                runnables.add(new RemoveComponentRunnable(this, child));</span>
+            }
+        }
+
+<span class="nc bnc" id="L320" title="All 4 branches missed.">        if (immediateChildren != null &amp;&amp; immediateChildren.isEmpty()) {</span>
+<span class="nc" id="L321">            immediateChildren = null;</span>
+        }
+
+        // Perform deferred add on child &amp; descendants if this node has a Root.
+<span class="nc bnc" id="L325" title="All 2 branches missed.">        if (immediateRoot != null) {</span>
+<span class="nc" id="L326">            synchronized (immediateRoot) {</span>
+<span class="nc" id="L327">                TransactionMgr transactionMgr = immediateRoot.getTransactionManager();</span>
+
+<span class="nc" id="L329">                transactionMgr.lockTransactionQueue();</span>
+                try {
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                    for (Runnable runnable : runnables) {</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">                        if (runnable instanceof AddComponentRunnable) {</span>
+<span class="nc" id="L333">                            AddComponentRunnable acr = (AddComponentRunnable) runnable;</span>
+
+<span class="nc" id="L335">                            acr.setTransactionMgr(transactionMgr);</span>
+<span class="nc" id="L336">                            transactionMgr.addComponent(</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">                                    acr, TransactionMgr.isTraceLogging() ? new Throwable(&quot;AddComponent&quot;) : null);</span>
+
+<span class="nc" id="L339">                            ArrayList&lt;Object&gt; allDeferredAddRemoveSets = new ArrayList&lt;Object&gt;();</span>
+
+<span class="nc" id="L341">                            addChildAndDescendents(this, acr.child, allDeferredAddRemoveSets);</span>
+<span class="nc" id="L342">                            TransactionMgrUtil.postAddRemoveSetsToQueue(</span>
+<span class="nc" id="L343">                                    allDeferredAddRemoveSets.toArray(), transactionMgr);</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                        } else if (runnable instanceof RemoveComponentRunnable) {</span>
+<span class="nc" id="L345">                            RemoveComponentRunnable rcr = (RemoveComponentRunnable) runnable;</span>
+
+<span class="nc" id="L347">                            rcr.setTransactionMgr(transactionMgr);</span>
+<span class="nc" id="L348">                            transactionMgr.removeComponent(</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                                    rcr, TransactionMgr.isTraceLogging() ? new Throwable(&quot;RemoveComponent&quot;) : null);</span>
+<span class="nc" id="L350">                            removeChildAndDescendents(this, rcr.child);</span>
+                        }
+<span class="nc" id="L352">                    }</span>
+                } finally {
+<span class="nc" id="L354">                    transactionMgr.unlockTransactionQueue();</span>
+                }
+<span class="nc" id="L356">            }</span>
+        } else {
+<span class="nc bnc" id="L358" title="All 2 branches missed.">            for (Runnable runnable : runnables) {</span>
+<span class="nc" id="L359">                synchronized (deferredAddRemoveSets) {</span>
+<span class="nc" id="L360">                    deferredAddRemoveSets.add(runnable);</span>
+<span class="nc" id="L361">                }</span>
+<span class="nc bnc" id="L362" title="All 2 branches missed.">                if (runnable instanceof AddComponentRunnable) {</span>
+<span class="nc" id="L363">                    AddComponentRunnable acr = (AddComponentRunnable) runnable;</span>
+
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                    if (acr.child instanceof Initiator) {</span>
+<span class="nc" id="L366">                        Initiator initiator = (Initiator) acr.child;</span>
+
+<span class="nc" id="L368">                        Initiator.TransactionContainer[] sourceNState = initiator.getDeferredStateChangesAndClear();</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">                        if (sourceNState != null) {</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">                            for (int i = 0; i &lt; sourceNState.length; i++) {</span>
+<span class="nc" id="L371">                                addStateChange(sourceNState[i]);</span>
+                            }
+                        }
+                    }
+                }
+<span class="nc" id="L376">            }</span>
+        }
+<span class="nc" id="L378">    }</span>
+
+    /**
+     * Adds a child component to this branch.
+     *
+     * @param child
+     *            the child component.
+     */
+    final synchronized void addChild(final TreeComponent child) {
+<span class="nc" id="L387">        Argument.assertNotNull(child, &quot;child&quot;);</span>
+
+        // Create the PARENT -&gt; CHILD relationship.
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (immediateChildren == null) {</span>
+<span class="nc" id="L391">            immediateChildren = new HashSet&lt;TreeComponent&gt;();</span>
+        }
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (!immediateChildren.add(child)) {</span>
+<span class="nc" id="L394">            throw new IllegalStateException(child.getFullyQualifiedName() + &quot; is already a child of this Branch&quot;);</span>
+        }
+
+        // Create the CHILD -&gt; PARENT relationship.
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        if (child.immediateParent == null) {</span>
+<span class="nc" id="L399">            child.immediateParent = this;</span>
+        } else {
+<span class="nc" id="L401">            throw new IllegalStateException(child.getFullyQualifiedName() + &quot; already has a parent!&quot;);</span>
+        }
+
+<span class="nc" id="L404">        TransactionMgr.AddComponentRunnable addComponentRunnable = new TransactionMgr.AddComponentRunnable(this, child);</span>
+
+        // Perform deferred add on child &amp; descendants if this node has a Root.
+<span class="nc bnc" id="L407" title="All 2 branches missed.">        if (immediateRoot != null) {</span>
+<span class="nc" id="L408">            synchronized (immediateRoot) {</span>
+<span class="nc" id="L409">                addComponentRunnable.setTransactionMgr(immediateRoot.getTransactionManager());</span>
+<span class="nc" id="L410">                immediateRoot</span>
+<span class="nc" id="L411">                        .getTransactionManager()</span>
+<span class="nc" id="L412">                        .addComponent(</span>
+                                addComponentRunnable,
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                                TransactionMgr.isTraceLogging() ? new Throwable(&quot;AddComponent&quot;) : null);</span>
+<span class="nc" id="L415">                List&lt;Object&gt; allDeferredAddRemoveSets = new ArrayList&lt;Object&gt;();</span>
+
+<span class="nc" id="L417">                addChildAndDescendents(this, child, allDeferredAddRemoveSets);</span>
+
+<span class="nc" id="L419">                TransactionMgrUtil.postAddRemoveSetsToQueue(</span>
+<span class="nc" id="L420">                        allDeferredAddRemoveSets.toArray(), immediateRoot.getTransactionManager());</span>
+<span class="nc" id="L421">            }</span>
+        } else {
+<span class="nc" id="L423">            synchronized (deferredAddRemoveSets) {</span>
+<span class="nc" id="L424">                deferredAddRemoveSets.add(addComponentRunnable);</span>
+<span class="nc" id="L425">            }</span>
+
+<span class="nc bnc" id="L427" title="All 2 branches missed.">            if (child instanceof Initiator) {</span>
+<span class="nc" id="L428">                Initiator.TransactionContainer[] containers = ((Initiator) child).getDeferredStateChangesAndClear();</span>
+
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                if (containers != null) {</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">                    for (int i = 0; i &lt; containers.length; i++) {</span>
+<span class="nc" id="L432">                        addStateChange(containers[i]);</span>
+                    }
+                }
+            }
+        }
+<span class="nc" id="L437">    }</span>
+
+    private synchronized void addChildAndDescendents(
+            final TreeComponent parent, final TreeComponent child, List&lt;Object&gt; allDeferredAddRemoveSets) {
+<span class="nc" id="L441">        synchronized (child) {</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">            if (child.immediateRoot != null) {</span>
+<span class="nc" id="L443">                throw new IllegalStateException(child.getFullyQualifiedName() + &quot; already has a Root!&quot;);</span>
+            }
+<span class="nc" id="L445">            child.immediateRoot = immediateRoot;</span>
+
+<span class="nc bnc" id="L447" title="All 2 branches missed.">            if (child instanceof BranchComponent) {</span>
+<span class="nc" id="L448">                BranchComponent ptc = (BranchComponent) child;</span>
+
+<span class="nc" id="L450">                synchronized (ptc.deferredAddRemoveSets) {</span>
+<span class="nc" id="L451">                    allDeferredAddRemoveSets.addAll(ptc.deferredAddRemoveSets);</span>
+<span class="nc" id="L452">                    ptc.deferredAddRemoveSets.clear();</span>
+<span class="nc" id="L453">                }</span>
+
+<span class="nc bnc" id="L455" title="All 2 branches missed.">                if (ptc.immediateChildren != null) {</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">                    for (TreeComponent element : ptc.immediateChildren) {</span>
+<span class="nc" id="L457">                        addChildAndDescendents(child, element, allDeferredAddRemoveSets);</span>
+<span class="nc" id="L458">                    }</span>
+                }
+            }
+
+<span class="nc bnc" id="L462" title="All 2 branches missed.">            if (child instanceof Initiator) {</span>
+<span class="nc" id="L463">                Initiator.TransactionContainer[] transactionContainers =</span>
+<span class="nc" id="L464">                        ((Initiator) child).getDeferredStateChangesAndClear();</span>
+
+<span class="nc bnc" id="L466" title="All 2 branches missed.">                if (transactionContainers != null) {</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">                    for (int i = 0; i &lt; transactionContainers.length; i++) {</span>
+<span class="nc" id="L468">                        Initiator.SourceNState sourceNState = transactionContainers[i].state;</span>
+
+<span class="nc" id="L470">                        immediateRoot</span>
+<span class="nc" id="L471">                                .getTransactionManager()</span>
+<span class="nc" id="L472">                                .addStateChange(</span>
+                                        sourceNState.sources,
+                                        sourceNState.state,
+                                        transactionContainers[i].transactionState,
+                                        transactionContainers[i].setLocation);
+                    }
+                }
+            }
+<span class="nc" id="L480">        }</span>
+<span class="nc" id="L481">    }</span>
+
+    synchronized void addStateChange(Initiator.TransactionContainer transactionContainer) {
+<span class="nc" id="L484">        Argument.assertNotNull(transactionContainer, &quot;transactionContainer&quot;);</span>
+
+<span class="nc" id="L486">        synchronized (deferredAddRemoveSets) {</span>
+<span class="nc" id="L487">            deferredAddRemoveSets.add(transactionContainer);</span>
+<span class="nc" id="L488">        }</span>
+<span class="nc" id="L489">    }</span>
+
+    /**
+     * Removes a child component.
+     *
+     * @param child
+     *            the component to be removed.
+     */
+    final synchronized void removeChild(final TreeComponent child) {
+<span class="nc" id="L498">        Argument.assertNotNull(child, &quot;child&quot;);</span>
+
+        // Remove the PARENT -&gt; CHILD relationship.
+<span class="nc bnc" id="L501" title="All 4 branches missed.">        if (immediateChildren == null || !immediateChildren.remove(child)) {</span>
+<span class="nc" id="L502">            throw new IllegalStateException(child.getFullyQualifiedName() + &quot; is not a child of this Branch!&quot;);</span>
+        }
+<span class="nc bnc" id="L504" title="All 2 branches missed.">        if (immediateChildren.size() == 0) {</span>
+<span class="nc" id="L505">            immediateChildren = null;</span>
+        }
+
+        // Remove the CHILD -&gt; PARENT relationship.
+<span class="nc bnc" id="L509" title="All 2 branches missed.">        if (child.immediateParent == this) {</span>
+<span class="nc" id="L510">            child.immediateParent = null;</span>
+        } else {
+<span class="nc" id="L512">            throw new IllegalStateException(</span>
+<span class="nc" id="L513">                    child.getFullyQualifiedName() + &quot; has &quot; + child.immediateParent + &quot; Parent!&quot;);</span>
+        }
+
+<span class="nc" id="L516">        TransactionMgr.RemoveComponentRunnable removeComponentRunnable =</span>
+                new TransactionMgr.RemoveComponentRunnable(this, child);
+
+        // Perform deferred remove on child &amp; descendents if this node has a Root.
+<span class="nc bnc" id="L520" title="All 2 branches missed.">        if (immediateRoot != null) {</span>
+<span class="nc" id="L521">            synchronized (immediateRoot) {</span>
+<span class="nc" id="L522">                removeComponentRunnable.setTransactionMgr(immediateRoot.getTransactionManager());</span>
+<span class="nc" id="L523">                immediateRoot</span>
+<span class="nc" id="L524">                        .getTransactionManager()</span>
+<span class="nc" id="L525">                        .removeComponent(</span>
+                                removeComponentRunnable,
+<span class="nc bnc" id="L527" title="All 2 branches missed.">                                TransactionMgr.isTraceLogging() ? new Throwable(&quot;RemoveComponent&quot;) : null);</span>
+
+<span class="nc" id="L529">                removeChildAndDescendents(this, child);</span>
+<span class="nc" id="L530">            }</span>
+        } else {
+<span class="nc" id="L532">            synchronized (deferredAddRemoveSets) {</span>
+<span class="nc" id="L533">                deferredAddRemoveSets.add(removeComponentRunnable);</span>
+<span class="nc" id="L534">            }</span>
+        }
+<span class="nc" id="L536">    }</span>
+
+    private synchronized void removeChildAndDescendents(final TreeComponent parent, final TreeComponent child) {
+<span class="nc" id="L539">        synchronized (child) {</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">            if (child instanceof BranchComponent) {</span>
+<span class="nc" id="L541">                BranchComponent ptc = (BranchComponent) child;</span>
+
+<span class="nc bnc" id="L543" title="All 2 branches missed.">                if (ptc.immediateChildren != null) {</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">                    for (TreeComponent element : ptc.immediateChildren) {</span>
+<span class="nc" id="L545">                        removeChildAndDescendents(child, element);</span>
+<span class="nc" id="L546">                    }</span>
+                }
+            }
+
+<span class="nc bnc" id="L550" title="All 2 branches missed.">            if (child.immediateRoot != immediateRoot) {</span>
+<span class="nc" id="L551">                throw new IllegalStateException(</span>
+<span class="nc" id="L552">                        child.getFullyQualifiedName() + &quot; has &quot; + child.immediateRoot + &quot; Root!&quot;);</span>
+            }
+<span class="nc" id="L554">            child.immediateRoot = null;</span>
+<span class="nc" id="L555">        }</span>
+<span class="nc" id="L556">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

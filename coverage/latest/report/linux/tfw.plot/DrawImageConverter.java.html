@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrawImageConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.plot</a> &gt; <span class="el_source">DrawImageConverter.java</span></div><h1>DrawImageConverter.java</h1><pre class="source lang-java linenums">package tfw.plot;
+
+import java.awt.Image;
+import java.awt.image.ImageObserver;
+import tfw.awt.ecd.GraphicECD;
+import tfw.awt.ecd.ImageECD;
+import tfw.awt.ecd.ImageObserverECD;
+import tfw.awt.graphic.DrawImageGraphic;
+import tfw.tsm.TriggeredConverter;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+public class DrawImageConverter extends TriggeredConverter {
+    private final ImageECD imageECD;
+    private final IntegerECD xECD;
+    private final IntegerECD yECD;
+    private final ImageObserverECD imageObserverECD;
+    private final GraphicECD graphicECD;
+
+    public DrawImageConverter(
+            String name,
+            StatelessTriggerECD triggerECD,
+            ImageECD imageECD,
+            IntegerECD xECD,
+            IntegerECD yECD,
+            ImageObserverECD imageObserverECD,
+            GraphicECD graphicECD) {
+<span class="nc" id="L29">        super(</span>
+                &quot;DrawImageConverter[&quot; + name + &quot;]&quot;,
+                triggerECD,
+                new ObjectECD[] {imageECD, xECD, yECD, imageObserverECD},
+                new ObjectECD[] {graphicECD});
+
+<span class="nc" id="L35">        this.imageECD = imageECD;</span>
+<span class="nc" id="L36">        this.xECD = xECD;</span>
+<span class="nc" id="L37">        this.yECD = yECD;</span>
+<span class="nc" id="L38">        this.imageObserverECD = imageObserverECD;</span>
+<span class="nc" id="L39">        this.graphicECD = graphicECD;</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    protected void convert() {
+<span class="nc" id="L44">        Image image = (Image) get(imageECD);</span>
+<span class="nc" id="L45">        int x = ((Integer) get(xECD)).intValue();</span>
+<span class="nc" id="L46">        int y = ((Integer) get(yECD)).intValue();</span>
+<span class="nc" id="L47">        ImageObserver imageObserver = (ImageObserver) get(imageObserverECD);</span>
+
+<span class="nc" id="L49">        set(graphicECD, DrawImageGraphic.create(null, image, x, y, imageObserver));</span>
+<span class="nc" id="L50">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

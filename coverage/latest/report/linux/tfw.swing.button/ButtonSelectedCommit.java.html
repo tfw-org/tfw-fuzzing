@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ButtonSelectedCommit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.button</a> &gt; <span class="el_source">ButtonSelectedCommit.java</span></div><h1>ButtonSelectedCommit.java</h1><pre class="source lang-java linenums">package tfw.swing.button;
+
+import java.awt.EventQueue;
+import java.awt.event.ItemListener;
+import javax.swing.AbstractButton;
+import tfw.tsm.Commit;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public final class ButtonSelectedCommit extends Commit {
+    private final BooleanECD selectedECD;
+    private final ItemListener[] itemListeners;
+    private final AbstractButton abstractButton;
+
+    public ButtonSelectedCommit(
+            String name,
+            BooleanECD selectedECD,
+            Initiator[] initiators,
+            ItemListener[] itemListeners,
+            AbstractButton abstractButton) {
+<span class="nc" id="L22">        super(&quot;ButtonSelectedCommit[&quot; + name + &quot;]&quot;, new ObjectECD[] {selectedECD}, null, initiators);</span>
+
+<span class="nc" id="L24">        this.selectedECD = selectedECD;</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (itemListeners == null) {</span>
+<span class="nc" id="L26">            this.itemListeners = null;</span>
+        } else {
+<span class="nc" id="L28">            this.itemListeners = new ItemListener[itemListeners.length];</span>
+<span class="nc" id="L29">            System.arraycopy(itemListeners, 0, this.itemListeners, 0, itemListeners.length);</span>
+        }
+<span class="nc" id="L31">        this.abstractButton = abstractButton;</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    protected void commit() {
+<span class="nc" id="L36">        final boolean selected = ((Boolean) get(selectedECD)).booleanValue();</span>
+
+<span class="nc" id="L38">        EventQueue.invokeLater(new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                if (itemListeners != null) {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                    for (int i = 0; i &lt; itemListeners.length; i++) {</span>
+<span class="nc" id="L43">                        abstractButton.removeItemListener(itemListeners[i]);</span>
+                    }
+                }
+
+<span class="nc" id="L47">                abstractButton.setSelected(selected);</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                if (itemListeners != null) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    for (int i = 0; i &lt; itemListeners.length; i++) {</span>
+<span class="nc" id="L51">                        abstractButton.addItemListener(itemListeners[i]);</span>
+                    }
+                }
+<span class="nc" id="L54">            }</span>
+        });
+<span class="nc" id="L56">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

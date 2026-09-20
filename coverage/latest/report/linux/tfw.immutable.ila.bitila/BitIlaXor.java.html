@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaXor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaXor.java</span></div><h1>BitIlaXor.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.bitila.BitIlaUtil.BitFunction;
+
+public final class BitIlaXor {
+<span class="nc" id="L8">    private static final BitFunction XOR_BIT_FUNCTION = new BitFunction() {</span>
+        @Override
+        public void partialLong(
+                long[] left, long leftOffsetInBits, long[] right, long rightOffsetInBits, long lengthInBits) {
+<span class="nc" id="L12">            final long rightPartial = BitIlaUtil.getPartialLong(right, rightOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L13">            final long leftPartial = BitIlaUtil.getPartialLong(left, leftOffsetInBits, lengthInBits);</span>
+
+<span class="nc" id="L15">            BitIlaUtil.setPartialLong(left, leftOffsetInBits, rightPartial ^ leftPartial, lengthInBits);</span>
+<span class="nc" id="L16">        }</span>
+
+        @Override
+        public void forwardAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc bnc" id="L21" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &lt; rightOffsetInLongs + lengthInLongs; i++, j++) {</span>
+<span class="nc" id="L22">                left[j] ^= right[i];</span>
+            }
+<span class="nc" id="L24">        }</span>
+
+        @Override
+        public void forwardMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &lt; rightOffsetInLongs + lengthInLongs; i++, j++) {</span>
+<span class="nc" id="L35">                left[j] ^= right[i] &lt;&lt; rightOffsetMod64 | right[i + 1] &gt;&gt;&gt; (Long.SIZE - rightOffsetMod64);</span>
+            }
+<span class="nc" id="L37">        }</span>
+
+        @Override
+        public void reverseAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &gt; rightOffsetInLongs - lengthInLongs; i--, j--) {</span>
+<span class="nc" id="L43">                left[j] ^= right[i];</span>
+            }
+<span class="nc" id="L45">        }</span>
+
+        @Override
+        public void reverseMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &gt; rightOffsetInLongs - lengthInLongs; i--, j--) {</span>
+<span class="nc" id="L56">                left[j] ^= right[i] &lt;&lt; rightOffsetMod64 | right[i + 1] &gt;&gt;&gt; (Long.SIZE - rightOffsetMod64);</span>
+            }
+<span class="nc" id="L58">        }</span>
+    };
+
+    private BitIlaXor() {}
+
+    public static void xor(
+            final long[] left,
+            final long leftOffsetInBits,
+            final long[] right,
+            final long rightOffsetInBits,
+            final long lengthInBits) {
+<span class="nc" id="L69">        BitIlaUtil.performBitFunction(XOR_BIT_FUNCTION, left, leftOffsetInBits, right, rightOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L70">    }</span>
+
+    public static BitIla create(final BitIla leftIla, final BitIla rightIla) {
+<span class="nc" id="L73">        return new BitIlaImpl(leftIla, rightIla);</span>
+    }
+
+    private static class BitIlaImpl extends AbstractBitIla {
+        private final BitIla leftIla;
+        private final BitIla rightIla;
+
+<span class="nc" id="L80">        public BitIlaImpl(final BitIla leftIla, final BitIla rightIla) {</span>
+<span class="nc" id="L81">            Argument.assertNotNull(leftIla, &quot;leftIla&quot;);</span>
+<span class="nc" id="L82">            Argument.assertNotNull(rightIla, &quot;rightIla&quot;);</span>
+
+<span class="nc" id="L84">            this.leftIla = leftIla;</span>
+<span class="nc" id="L85">            this.rightIla = rightIla;</span>
+<span class="nc" id="L86">        }</span>
+
+        @Override
+        protected long lengthInBitsImpl() throws IOException {
+<span class="nc" id="L90">            return leftIla.lengthInBits();</span>
+        }
+
+        @Override
+        protected void getImpl(long[] array, long arrayOffsetInBits, long ilaStartInBits, long lengthInBits)
+                throws IOException {
+<span class="nc" id="L96">            final long rightOffsetInBits = arrayOffsetInBits % Long.SIZE;</span>
+<span class="nc" id="L97">            final long[] rightArray = new long[(int) ((rightOffsetInBits + lengthInBits) / Long.SIZE + 1)];</span>
+
+<span class="nc" id="L99">            leftIla.get(array, arrayOffsetInBits, ilaStartInBits, lengthInBits);</span>
+<span class="nc" id="L100">            rightIla.get(rightArray, rightOffsetInBits, ilaStartInBits, lengthInBits);</span>
+
+<span class="nc" id="L102">            xor(array, arrayOffsetInBits, rightArray, rightOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L103">        }</span>
+
+        @Override
+        public void closeImpl() throws IOException {
+<span class="nc" id="L107">            leftIla.close();</span>
+<span class="nc" id="L108">            rightIla.close();</span>
+<span class="nc" id="L109">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

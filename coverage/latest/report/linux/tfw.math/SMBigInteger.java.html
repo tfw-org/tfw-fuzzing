@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SMBigInteger.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.math</a> &gt; <span class="el_source">SMBigInteger.java</span></div><h1>SMBigInteger.java</h1><pre class="source lang-java linenums">package tfw.math;
+
+<span class="nc" id="L3">public class SMBigInteger extends SignedMutableBigInteger {</span>
+<span class="nc" id="L4">    private static final SMBigInteger TWO_SMBIGINTEGER = new SMBigInteger();</span>
+
+    static {
+<span class="nc" id="L7">        TWO_SMBIGINTEGER.setValue(2);</span>
+<span class="nc" id="L8">    }</span>
+
+    // Based on private constructor BigInteger(long).
+    public void setValue(long value) {
+<span class="nc bnc" id="L12" title="All 2 branches missed.">        if (value &lt; 0) {</span>
+<span class="nc" id="L13">            sign = -1;</span>
+<span class="nc" id="L14">            value = -value;</span>
+        } else {
+<span class="nc" id="L16">            sign = 1;</span>
+        }
+<span class="nc" id="L18">        ensureCapacity(2);</span>
+
+<span class="nc" id="L20">        int highWord = (int) (value &gt;&gt;&gt; 32);</span>
+
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        if (highWord == 0) {</span>
+<span class="nc" id="L23">            this.value[0] = (int) value;</span>
+<span class="nc" id="L24">            this.intLen = 1;</span>
+        } else {
+<span class="nc" id="L26">            this.value[0] = highWord;</span>
+<span class="nc" id="L27">            this.value[1] = (int) value;</span>
+<span class="nc" id="L28">            this.intLen = 2;</span>
+        }
+
+<span class="nc" id="L31">        this.offset = 0;</span>
+<span class="nc" id="L32">    }</span>
+
+    // Based on BigInteger.longValue().
+    public long longValue() {
+<span class="nc" id="L36">        long result = 0;</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        for (int i = offset + intLen - 1, p = 0; i &gt;= offset; i--, p++) {</span>
+<span class="nc" id="L39">            result += (this.value[i] &amp; BigInteger.LONG_MASK) &lt;&lt; (32 * p);</span>
+        }
+
+<span class="nc" id="L42">        return result;</span>
+    }
+
+    public long boundedLongValue() {
+<span class="nc" id="L46">        long longValue = longValue();</span>
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (intLen &gt; 2) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (sign == 1) {</span>
+<span class="nc" id="L50">                return Long.MAX_VALUE;</span>
+            } else {
+<span class="nc" id="L52">                return Long.MIN_VALUE;</span>
+            }
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        } else if (intLen == 2) {</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            boolean unsignedLongCompare = (longValue + Long.MIN_VALUE) &gt; (Long.MAX_VALUE + Long.MIN_VALUE);</span>
+
+<span class="nc bnc" id="L57" title="All 4 branches missed.">            if (sign == 1 &amp;&amp; unsignedLongCompare) {</span>
+<span class="nc" id="L58">                return Long.MAX_VALUE;</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">            } else if (sign == -1 &amp;&amp; unsignedLongCompare) {</span>
+<span class="nc" id="L60">                return Long.MIN_VALUE;</span>
+            }
+        }
+
+<span class="nc" id="L64">        return sign * longValue;</span>
+    }
+
+    public void signedDivide(SMBigInteger divisor, SMBigInteger quotient, SMBigInteger remainder) {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (divisor.boundedLongValue() == 0) {</span>
+<span class="nc" id="L69">            throw new ArithmeticException(&quot;/ by zero&quot;);</span>
+        }
+
+<span class="nc" id="L72">        quotient.sign = sign * divisor.sign;</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        MutableBigInteger mbi = divide(divisor, quotient, remainder != null);</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (remainder != null) {</span>
+<span class="nc" id="L77">            remainder.sign = quotient.sign;</span>
+<span class="nc" id="L78">            remainder.copyValue(mbi);</span>
+        }
+<span class="nc" id="L80">    }</span>
+
+    public void signedDivide(SMBigInteger divisor, SMBigInteger quotient, RoundingMode roundingMode) {
+<span class="nc" id="L83">        final SMBigInteger buffer1 = new SMBigInteger();</span>
+<span class="nc" id="L84">        final SMBigInteger buffer2 = new SMBigInteger();</span>
+
+<span class="nc" id="L86">        signedDivide(divisor, quotient, buffer1);</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (buffer1.isZero()) {</span>
+<span class="nc" id="L89">            return;</span>
+        }
+
+<span class="nc bnc" id="L92" title="All 6 branches missed.">        switch (roundingMode) {</span>
+            case UNNECESSARY:
+<span class="nc" id="L94">                return;</span>
+            case DOWN:
+<span class="nc" id="L96">                return;</span>
+            case UP:
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (quotient.sign == 1) {</span>
+<span class="nc" id="L99">                    quotient.setValue(quotient.boundedLongValue() + 1);</span>
+                } else {
+<span class="nc" id="L101">                    quotient.setValue(quotient.boundedLongValue() - 1);</span>
+                }
+<span class="nc" id="L103">                return;</span>
+            case CEILING:
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (quotient.sign == 1) {</span>
+<span class="nc" id="L106">                    quotient.setValue(quotient.boundedLongValue() + 1);</span>
+                }
+<span class="nc" id="L108">                return;</span>
+            case FLOOR:
+<span class="nc" id="L110">                quotient.setValue(quotient.boundedLongValue() - 1);</span>
+<span class="nc" id="L111">                return;</span>
+            case HALF_UP:
+            case HALF_DOWN:
+            case HALF_EVEN:
+            default:
+                break;
+        }
+
+<span class="nc" id="L119">        buffer1.signedMultiply(TWO_SMBIGINTEGER, buffer2);</span>
+<span class="nc" id="L120">        buffer2.sign = divisor.sign;</span>
+<span class="nc" id="L121">        buffer2.signedSubtract(divisor);</span>
+
+<span class="nc bnc" id="L123" title="All 4 branches missed.">        switch (roundingMode) {</span>
+            case HALF_DOWN:
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                if (buffer2.sign == 1) {</span>
+<span class="nc" id="L126">                    quotient.setValue(quotient.boundedLongValue() + quotient.sign);</span>
+                }
+                break;
+            case HALF_EVEN:
+<span class="nc bnc" id="L130" title="All 6 branches missed.">                if ((buffer2.sign == 1 || buffer2.sign == 0) &amp;&amp; quotient.isOdd()) {</span>
+<span class="nc" id="L131">                    quotient.setValue(quotient.boundedLongValue() + quotient.sign);</span>
+                }
+                break;
+            case HALF_UP:
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                if (buffer2.sign != -1) {</span>
+<span class="nc" id="L136">                    quotient.setValue(quotient.boundedLongValue() + quotient.sign);</span>
+                }
+                break;
+            case CEILING:
+            case DOWN:
+            case FLOOR:
+            case UNNECESSARY:
+            case UP:
+            default:
+                break;
+        }
+<span class="nc" id="L147">    }</span>
+
+    public void signedMultiply(SMBigInteger right, SMBigInteger result) {
+<span class="nc" id="L150">        result.sign = sign * right.sign;</span>
+
+<span class="nc" id="L152">        multiply(right, result);</span>
+<span class="nc" id="L153">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaUtil.java</span></div><h1>BitIlaUtil.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.math.BigInteger;
+import tfw.check.Argument;
+
+public final class BitIlaUtil {
+<span class="nc" id="L7">    private static final BitFunction COPY_BIT_FUNCTION = new BitFunction() {</span>
+        @Override
+        public void partialLong(
+                long[] left, long leftOffsetInBits, long[] right, long rightOffsetInBits, long lengthInBits) {
+<span class="nc" id="L11">            final long partial = getPartialLong(right, rightOffsetInBits, lengthInBits);</span>
+
+<span class="nc" id="L13">            setPartialLong(left, leftOffsetInBits, partial, lengthInBits);</span>
+<span class="nc" id="L14">        }</span>
+
+        @Override
+        public void forwardAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc" id="L19">            System.arraycopy(right, rightOffsetInLongs, left, leftOffsetInLongs, lengthInLongs);</span>
+<span class="nc" id="L20">        }</span>
+
+        @Override
+        public void forwardMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &lt; rightOffsetInLongs + lengthInLongs; i++, j++) {</span>
+<span class="nc" id="L31">                left[j] = right[i] &lt;&lt; rightOffsetMod64 | right[i + 1] &gt;&gt;&gt; (Long.SIZE - rightOffsetMod64);</span>
+            }
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        public void reverseAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc" id="L38">            System.arraycopy(</span>
+                    right,
+                    rightOffsetInLongs - (lengthInLongs - 1),
+                    left,
+                    leftOffsetInLongs - (lengthInLongs - 1),
+                    lengthInLongs);
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        public void reverseMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &gt; rightOffsetInLongs - lengthInLongs; i--, j--) {</span>
+<span class="nc" id="L55">                left[j] = right[i] &lt;&lt; rightOffsetMod64 | right[i + 1] &gt;&gt;&gt; (Long.SIZE - rightOffsetMod64);</span>
+            }
+<span class="nc" id="L57">        }</span>
+    };
+
+    public interface BitFunction {
+        void partialLong(long[] left, long leftOffsetInBits, long[] right, long rightOffsetInBits, long lengthInBits);
+
+        void forwardAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs);
+
+        void forwardMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64);
+
+        void reverseAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs);
+
+        void reverseMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64);
+    }
+
+    private BitIlaUtil() {}
+
+    public static void performBitFunction(
+            final BitFunction bitFunction,
+            final long[] left,
+            final long leftOffsetInBits,
+            final long[] right,
+            final long rightOffsetInBits,
+            final long lengthInBits) {
+<span class="nc" id="L95">        Argument.assertNotNull(bitFunction, &quot;bitFunction&quot;);</span>
+<span class="nc" id="L96">        Argument.assertNotNull(left, &quot;left&quot;);</span>
+<span class="nc" id="L97">        Argument.assertNotNull(right, &quot;right&quot;);</span>
+<span class="nc" id="L98">        Argument.assertNotLessThan(leftOffsetInBits, 0, &quot;leftOffsetInBits&quot;);</span>
+<span class="nc" id="L99">        Argument.assertNotLessThan(rightOffsetInBits, 0, &quot;rightOffsetInBits&quot;);</span>
+<span class="nc" id="L100">        Argument.assertNotLessThan(lengthInBits, 1, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L101">        Argument.assertNotGreaterThan(</span>
+                leftOffsetInBits + lengthInBits,
+                left.length * (long) Long.SIZE,
+                &quot;leftOffsetInBits + lengthInBits&quot;,
+                &quot;left.length * Long.SIZE&quot;);
+<span class="nc" id="L106">        Argument.assertNotGreaterThan(</span>
+                rightOffsetInBits + lengthInBits,
+                right.length * (long) Long.SIZE,
+                &quot;rightOffsetInBits + lengthInBits&quot;,
+                &quot;right.length * Long.SIZE&quot;);
+
+<span class="nc" id="L112">        final BigInteger leftLastIndex = BigInteger.valueOf(leftOffsetInBits).add(BigInteger.valueOf(left.length));</span>
+<span class="nc" id="L113">        final BigInteger actualLeftLastIndex = BigInteger.valueOf(left.length * (long) Long.SIZE);</span>
+<span class="nc" id="L114">        final BigInteger rightLastIndex = BigInteger.valueOf(rightOffsetInBits).add(BigInteger.valueOf(right.length));</span>
+<span class="nc" id="L115">        final BigInteger actualRightLastIndex = BigInteger.valueOf(right.length * (long) Long.SIZE);</span>
+
+<span class="nc" id="L117">        Argument.assertNotGreaterThan(leftLastIndex.compareTo(actualLeftLastIndex), 0, &quot;leftOffsetInBits+lengthInBits&quot;);</span>
+<span class="nc" id="L118">        Argument.assertNotGreaterThan(</span>
+<span class="nc" id="L119">                rightLastIndex.compareTo(actualRightLastIndex), 0, &quot;rightOffsetInBits+lengthInBits&quot;);</span>
+
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (lengthInBits &lt; Long.SIZE) {</span>
+<span class="nc" id="L122">            bitFunction.partialLong(left, leftOffsetInBits, right, rightOffsetInBits, lengthInBits);</span>
+<span class="nc bnc" id="L123" title="All 6 branches missed.">        } else if (right == left</span>
+                &amp;&amp; rightOffsetInBits &lt; leftOffsetInBits
+                &amp;&amp; rightOffsetInBits + lengthInBits &gt; leftOffsetInBits) {
+<span class="nc" id="L126">            reverseBitFunction(bitFunction, left, leftOffsetInBits, right, rightOffsetInBits, lengthInBits);</span>
+        } else {
+<span class="nc" id="L128">            forwardBitFunction(bitFunction, left, leftOffsetInBits, right, rightOffsetInBits, lengthInBits);</span>
+        }
+<span class="nc" id="L130">    }</span>
+
+    private static void reverseBitFunction(
+            BitFunction bitFunction,
+            long[] left,
+            long leftOffsetInBits,
+            long[] right,
+            long rightOffsetInBits,
+            long lengthInBits) {
+<span class="nc" id="L139">        rightOffsetInBits += lengthInBits;</span>
+<span class="nc" id="L140">        leftOffsetInBits += lengthInBits;</span>
+
+<span class="nc" id="L142">        long rightOffsetMod64 = rightOffsetInBits % Long.SIZE;</span>
+<span class="nc" id="L143">        long leftOffsetMod64 = leftOffsetInBits % Long.SIZE;</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (leftOffsetMod64 != 0) {</span>
+<span class="nc" id="L146">            final long trailingPartialSize = Math.min(leftOffsetMod64, lengthInBits);</span>
+
+<span class="nc" id="L148">            lengthInBits -= trailingPartialSize;</span>
+<span class="nc" id="L149">            leftOffsetInBits -= trailingPartialSize;</span>
+<span class="nc" id="L150">            rightOffsetInBits -= trailingPartialSize;</span>
+<span class="nc" id="L151">            rightOffsetMod64 = rightOffsetInBits % Long.SIZE;</span>
+
+<span class="nc" id="L153">            bitFunction.partialLong(left, leftOffsetInBits, right, rightOffsetInBits, trailingPartialSize);</span>
+        }
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (lengthInBits &gt; Long.SIZE - 1) {</span>
+<span class="nc" id="L157">            final int lengthInLongs = (int) (lengthInBits / Long.SIZE);</span>
+<span class="nc" id="L158">            final int leftOffsetInLongs = (int) ((leftOffsetInBits - Long.SIZE) / Long.SIZE);</span>
+<span class="nc" id="L159">            final int rightOffsetInLongs = (int) ((rightOffsetInBits - Long.SIZE) / Long.SIZE);</span>
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            if (rightOffsetMod64 == 0) {</span>
+<span class="nc" id="L162">                bitFunction.reverseAlignedFullLongs(left, leftOffsetInLongs, right, rightOffsetInLongs, lengthInLongs);</span>
+            } else {
+<span class="nc" id="L164">                bitFunction.reverseMisalignedFullLongs(</span>
+                        left, leftOffsetInLongs, right, rightOffsetInLongs, lengthInLongs, (int) rightOffsetMod64);
+            }
+
+<span class="nc" id="L168">            rightOffsetInBits -= lengthInLongs * (long) Long.SIZE;</span>
+<span class="nc" id="L169">            leftOffsetInBits -= lengthInLongs * (long) Long.SIZE;</span>
+        }
+
+<span class="nc" id="L172">        final long leadingPartialSize = lengthInBits % Long.SIZE;</span>
+
+<span class="nc" id="L174">        rightOffsetInBits -= leadingPartialSize;</span>
+<span class="nc" id="L175">        leftOffsetInBits -= leadingPartialSize;</span>
+
+<span class="nc" id="L177">        bitFunction.partialLong(left, leftOffsetInBits, right, rightOffsetInBits, leadingPartialSize);</span>
+<span class="nc" id="L178">    }</span>
+
+    private static void forwardBitFunction(
+            BitFunction bitFunction,
+            long[] left,
+            long leftOffsetInBits,
+            long[] right,
+            long rightOffsetInBits,
+            long lengthInBits) {
+<span class="nc" id="L187">        long rightOffsetMod64 = rightOffsetInBits % Long.SIZE;</span>
+<span class="nc" id="L188">        long leftOffsetMod64 = leftOffsetInBits % Long.SIZE;</span>
+
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (leftOffsetMod64 != 0) {</span>
+<span class="nc" id="L191">            final long leadingPartialSize = Math.min(Long.SIZE - leftOffsetMod64, lengthInBits);</span>
+
+<span class="nc" id="L193">            bitFunction.partialLong(left, leftOffsetInBits, right, rightOffsetInBits, leadingPartialSize);</span>
+
+<span class="nc" id="L195">            lengthInBits -= leadingPartialSize;</span>
+<span class="nc" id="L196">            leftOffsetInBits += leadingPartialSize;</span>
+<span class="nc" id="L197">            rightOffsetInBits += leadingPartialSize;</span>
+<span class="nc" id="L198">            rightOffsetMod64 = rightOffsetInBits % Long.SIZE;</span>
+        }
+
+<span class="nc" id="L201">        final int lengthInLongs = (int) (lengthInBits / Long.SIZE);</span>
+<span class="nc" id="L202">        final int leftOffsetInLongs = (int) (leftOffsetInBits / Long.SIZE);</span>
+<span class="nc" id="L203">        final int rightOffsetInLongs = (int) (rightOffsetInBits / Long.SIZE);</span>
+
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (rightOffsetMod64 == 0) {</span>
+<span class="nc" id="L206">            bitFunction.forwardAlignedFullLongs(left, leftOffsetInLongs, right, rightOffsetInLongs, lengthInLongs);</span>
+        } else {
+<span class="nc" id="L208">            bitFunction.forwardMisalignedFullLongs(</span>
+                    left, leftOffsetInLongs, right, rightOffsetInLongs, lengthInLongs, (int) rightOffsetMod64);
+        }
+
+<span class="nc" id="L212">        rightOffsetInBits += lengthInLongs * (long) Long.SIZE;</span>
+<span class="nc" id="L213">        leftOffsetInBits += lengthInLongs * (long) Long.SIZE;</span>
+
+<span class="nc" id="L215">        final long trailingPartialSize = lengthInBits % Long.SIZE;</span>
+
+<span class="nc" id="L217">        bitFunction.partialLong(left, leftOffsetInBits, right, rightOffsetInBits, trailingPartialSize);</span>
+<span class="nc" id="L218">    }</span>
+
+    public static long getPartialLong(final long[] array, final long offsetInBits, final long lengthInBits) {
+<span class="nc" id="L221">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L222">        Argument.assertNotLessThan(offsetInBits, 0, &quot;offsetInBits&quot;);</span>
+<span class="nc" id="L223">        Argument.assertNotLessThan(lengthInBits, 0, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L224">        Argument.assertLessThan(</span>
+                offsetInBits + lengthInBits,
+                array.length * (long) Long.SIZE,
+                &quot;offsetInBits + lengthInBits&quot;,
+                &quot;array.length * (long)Long.SIZE&quot;);
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (lengthInBits == 0) {</span>
+<span class="nc" id="L231">            return 0;</span>
+        }
+
+<span class="nc" id="L234">        final int offsetInLongs = (int) (offsetInBits / Long.SIZE);</span>
+<span class="nc" id="L235">        final int offsetMod64 = (int) (offsetInBits % Long.SIZE);</span>
+
+<span class="nc" id="L237">        long full = array[offsetInLongs] &lt;&lt; offsetMod64;</span>
+
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (offsetMod64 + lengthInBits &gt; Long.SIZE) {</span>
+<span class="nc" id="L240">            full |= array[offsetInLongs + 1] &gt;&gt;&gt; (Long.SIZE - offsetMod64);</span>
+        }
+
+<span class="nc" id="L243">        return full &gt;&gt;&gt; (Long.SIZE - lengthInBits);</span>
+    }
+
+    public static void setPartialLong(
+            final long[] array, final long offsetInBits, long partialLong, final long lengthInBits) {
+<span class="nc" id="L248">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L249">        Argument.assertNotLessThan(offsetInBits, 0, &quot;offsetInBits&quot;);</span>
+<span class="nc" id="L250">        Argument.assertNotLessThan(lengthInBits, 0, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L251">        Argument.assertNotGreaterThan(</span>
+                offsetInBits + lengthInBits,
+                array.length * (long) Long.SIZE,
+                &quot;offsetInBits + lengthInBits&quot;,
+                &quot;array.length * (long)Long.SIZE&quot;);
+
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (lengthInBits == 0) {</span>
+<span class="nc" id="L258">            return;</span>
+        }
+
+<span class="nc" id="L261">        final int offsetInLongs = (int) (offsetInBits / Long.SIZE);</span>
+<span class="nc" id="L262">        final int offsetMod64 = (int) (offsetInBits % Long.SIZE);</span>
+<span class="nc" id="L263">        final long first = array[offsetInLongs];</span>
+
+<span class="nc" id="L265">        partialLong &lt;&lt;= (int) (Long.SIZE - lengthInBits);</span>
+
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (offsetMod64 + lengthInBits &lt;= Long.SIZE) {</span>
+<span class="nc" id="L268">            long mask = 1L &lt;&lt; (Long.SIZE - 1L);</span>
+
+<span class="nc" id="L270">            mask &gt;&gt;= (int) (lengthInBits - 1L);</span>
+<span class="nc" id="L271">            partialLong &gt;&gt;&gt;= offsetMod64;</span>
+<span class="nc" id="L272">            mask &gt;&gt;&gt;= offsetMod64;</span>
+<span class="nc" id="L273">            array[offsetInLongs] = (first &amp; ~mask) | partialLong;</span>
+<span class="nc" id="L274">        } else {</span>
+<span class="nc" id="L275">            final long second = array[offsetInLongs + 1];</span>
+<span class="nc" id="L276">            final int firstLengthInBits = Long.SIZE - offsetMod64;</span>
+<span class="nc" id="L277">            final int secondLengthInBits = (int) lengthInBits - firstLengthInBits;</span>
+
+<span class="nc" id="L279">            array[offsetInLongs] = first &gt;&gt;&gt; firstLengthInBits &lt;&lt; firstLengthInBits | partialLong &gt;&gt;&gt; offsetMod64;</span>
+<span class="nc" id="L280">            array[offsetInLongs + 1] =</span>
+                    partialLong &lt;&lt; firstLengthInBits | second &lt;&lt; secondLengthInBits &gt;&gt;&gt; secondLengthInBits;
+        }
+<span class="nc" id="L283">    }</span>
+
+    public static void setLeftJustifiedPartialLong(
+            final long[] array, final long offset, final long partialLong, final long lengthInBits) {
+<span class="nc" id="L287">        setPartialLong(array, offset, partialLong &gt;&gt;&gt; (Long.SIZE - lengthInBits), lengthInBits);</span>
+<span class="nc" id="L288">    }</span>
+
+    public static long getBit(final long[] array, long offset) {
+<span class="nc" id="L291">        return getPartialLong(array, offset, 1);</span>
+    }
+
+    public static void setBit(long[] array, long offset, long bit) {
+<span class="nc" id="L295">        setPartialLong(array, offset, bit &amp; 1L, 1);</span>
+<span class="nc" id="L296">    }</span>
+
+    public static void copy(
+            final long[] left,
+            final long leftOffsetInBits,
+            final long[] right,
+            final long rightOffsetInBits,
+            final long lengthInBits) {
+<span class="nc" id="L304">        performBitFunction(COPY_BIT_FUNCTION, left, leftOffsetInBits, right, rightOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L305">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

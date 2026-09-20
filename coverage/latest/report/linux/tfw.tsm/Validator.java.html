@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Validator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Validator.java</span></div><h1>Validator.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * The base class for all components which perform validation in the validation
+ * phase of a transaction. Subclasses must implement the
+ * {@link #validateState()} method.
+ */
+public abstract class Validator extends RollbackHandler {
+    /**
+     * Creates a validate with the specified attributes.
+     *
+     * @param name
+     *            the name of this validator component.
+     * @param triggeringSinks
+     *            the set of sinks which trigger this validator.
+     *
+     */
+    public Validator(String name, ObjectECD[] triggeringSinks, RollbackECD[] initiators) {
+<span class="nc" id="L25">        this(name, triggeringSinks, null, initiators);</span>
+<span class="nc" id="L26">    }</span>
+
+    /**
+     * Creates a validator with the specified attributes.
+     *
+     * @param name
+     *            the name of this validator component.
+     * @param triggeringSinks
+     *            the set of sinks which trigger this validator.
+     * @param nonTriggeringSinks
+     *            the set of sinks which do not trigger this validator, but are
+     *            used in validation. Note that the event channels associated
+     *            with these sinks must be non-null before the
+     *            {@link #validateState()} method will be called.
+     * @param initiators
+     *            the set of sources used to initiate new transactions.
+     */
+    public Validator(
+            String name, ObjectECD[] triggeringSinks, ObjectECD[] nonTriggeringSinks, RollbackECD[] initiators) {
+<span class="nc" id="L45">        super(name, checkSinks(triggeringSinks), nonTriggeringSinks, initiators);</span>
+<span class="nc" id="L46">    }</span>
+
+    /**
+     * Creates a triggered validator. The validator will only run when the
+     * trigger fires.
+     *
+     * @param name
+     *            The name of this validator.
+     * @param trigger
+     *            The trigger which causes the validator to execute.
+     * @param nonTriggeringSinks
+     *            the set of sinks which do not trigger this validator, but are
+     *            used in validation. Note that the event channels associated
+     *            with these sinks must be non-null before the
+     *            {@link #validateState()} method will be called.
+     * @param initiators
+     *            the set of sources used to initiate new transactions.
+     */
+    public Validator(
+            String name, StatelessTriggerECD trigger, ObjectECD[] nonTriggeringSinks, RollbackECD[] initiators) {
+<span class="nc" id="L66">        super(name, new EventChannelDescription[] {trigger}, nonTriggeringSinks, initiators);</span>
+<span class="nc" id="L67">    }</span>
+
+    private static ObjectECD[] checkSinks(ObjectECD[] triggeringSinks) {
+<span class="nc" id="L70">        Argument.assertNotNull(triggeringSinks, &quot;triggeringSinks&quot;);</span>
+<span class="nc" id="L71">        return triggeringSinks;</span>
+    }
+
+    /**
+     * Returns the state of the specified event channel prior to the current
+     * state change cycle.
+     *
+     * @param sinkEventChannel
+     *            the sink event channel whose state is to be returned.
+     * @return the state of the event channel during the previous state change
+     *         cycle.
+     */
+    protected final Object getPreviousCycleState(ObjectECD sinkEventChannel) {
+<span class="nc" id="L84">        Argument.assertNotNull(sinkEventChannel, &quot;sinkEventChannel&quot;);</span>
+<span class="nc" id="L85">        assertNotStateless(sinkEventChannel);</span>
+<span class="nc" id="L86">        Sink sink = getSink(sinkEventChannel);</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (sink == null) {</span>
+<span class="nc" id="L89">            throw new IllegalArgumentException(sinkEventChannel.getEventChannelName() + &quot; not found&quot;);</span>
+        }
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (sink.eventChannel == null) {</span>
+<span class="nc" id="L93">            throw new IllegalStateException(sinkEventChannel + &quot; is not connected to an event channel&quot;);</span>
+        }
+
+<span class="nc" id="L96">        return sink.eventChannel.getPreviousCycleState();</span>
+    }
+
+    @Override
+    final void stateChange(EventChannel eventChannel) {
+<span class="nc" id="L101">        getTransactionManager().addValidator(this);</span>
+<span class="nc" id="L102">    }</span>
+
+    final void validate() {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (isStateNonNull()) {</span>
+<span class="nc" id="L106">            validateState();</span>
+        } else {
+<span class="nc" id="L108">            debugValidateState();</span>
+        }
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * Called in the validation phase of a transaction where one or more of the
+     * triggering event channels specified at construction has its state
+     * changed.
+     */
+    protected abstract void validateState();
+
+    /**
+     * This method is called in the validation phase of a transaction where one
+     * or more of the triggering event channels specified at construction has
+     * its state changed and one or more of the event channels has
+     * &lt;code&gt;null&lt;/code&gt;.
+     */
+    protected void debugValidateState() {
+        // Do nothing by default.
+<span class="nc" id="L127">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlaInterleaveTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.byteila</a> &gt; <span class="el_source">ByteIlaInterleaveTest.java</span></div><h1>ByteIlaInterleaveTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.byteila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L12">final class ByteIlaInterleaveTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L15">        final ByteIla ila1 = ByteIlaFromArray.create(new byte[10]);</span>
+<span class="nc" id="L16">        final ByteIla ila2 = ByteIlaFromArray.create(new byte[20]);</span>
+<span class="nc" id="L17">        final ByteIla[] ilas1 = (ByteIla[]) Array.newInstance(ByteIla.class, 0);</span>
+<span class="nc" id="L18">        final ByteIla[] ilas2 = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+<span class="nc" id="L19">        final ByteIla[] ilas3 = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+<span class="nc" id="L20">        final ByteIla[] ilas4 = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+<span class="nc" id="L21">        final ByteIla[] ilas5 = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+<span class="nc" id="L22">        final ByteIla[] ilas6 = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+<span class="nc" id="L23">        final byte[] buffer = new byte[10];</span>
+
+<span class="nc" id="L25">        ilas3[0] = null;</span>
+<span class="nc" id="L26">        ilas3[1] = ila1;</span>
+<span class="nc" id="L27">        ilas4[0] = ila1;</span>
+<span class="nc" id="L28">        ilas4[1] = null;</span>
+<span class="nc" id="L29">        ilas5[0] = ila1;</span>
+<span class="nc" id="L30">        ilas5[1] = ila1;</span>
+<span class="nc" id="L31">        ilas6[0] = ila1;</span>
+<span class="nc" id="L32">        ilas6[1] = ila2;</span>
+
+<span class="nc" id="L34">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(null, buffer))</span>
+<span class="nc" id="L35">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L36">                .hasMessage(&quot;ilas == null not allowed!&quot;);</span>
+<span class="nc" id="L37">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas5, null))</span>
+<span class="nc" id="L38">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L39">                .hasMessage(&quot;buffer == null not allowed!&quot;);</span>
+<span class="nc" id="L40">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas1, buffer))</span>
+<span class="nc" id="L41">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L42">                .hasMessage(&quot;ilas.length (=0) &lt; 1 not allowed!&quot;);</span>
+<span class="nc" id="L43">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas2, buffer))</span>
+<span class="nc" id="L44">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L45">                .hasMessage(&quot;ilas[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L46">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas3, buffer))</span>
+<span class="nc" id="L47">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L48">                .hasMessage(&quot;ilas[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L49">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas4, buffer))</span>
+<span class="nc" id="L50">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L51">                .hasMessage(&quot;ilas[1] == null not allowed!&quot;);</span>
+<span class="nc" id="L52">        assertThatThrownBy(() -&gt; ByteIlaInterleave.create(ilas6, buffer))</span>
+<span class="nc" id="L53">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L54">                .hasMessage(&quot;ilas[0].length() (=20) != ilas[1].length() (=10) not allowed!&quot;);</span>
+<span class="nc" id="L55">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L59">        final Random random = new Random(0);</span>
+<span class="nc" id="L60">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (int jj = 2; jj &lt; 6; ++jj) {</span>
+<span class="nc" id="L62">            final byte[][] target = new byte[jj][length];</span>
+<span class="nc" id="L63">            final byte[] array = new byte[jj * length];</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            for (int ii = 0; ii &lt; jj * length; ++ii) {</span>
+<span class="nc" id="L65">                array[ii] = target[ii % jj][ii / jj] = (byte) random.nextInt();</span>
+            }
+<span class="nc" id="L67">            ByteIla[] ilas = (ByteIla[]) Array.newInstance(ByteIla.class, jj);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (int ii = 0; ii &lt; jj; ++ii) {</span>
+<span class="nc" id="L69">                ilas[ii] = ByteIlaFromArray.create(target[ii]);</span>
+            }
+<span class="nc" id="L71">            ByteIla targetIla = ByteIlaFromArray.create(array);</span>
+<span class="nc" id="L72">            ByteIla actualIla = ByteIlaInterleave.create(ilas, new byte[1000]);</span>
+
+<span class="nc" id="L74">            ByteIlaCheck.check(targetIla, actualIla);</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L80">        final TestCloseByteIla ila0 = new TestCloseByteIla();</span>
+<span class="nc" id="L81">        final TestCloseByteIla ila1 = new TestCloseByteIla();</span>
+<span class="nc" id="L82">        final ByteIla[] ilas = (ByteIla[]) Array.newInstance(ByteIla.class, 2);</span>
+
+<span class="nc" id="L84">        ilas[0] = ila0;</span>
+<span class="nc" id="L85">        ilas[1] = ila1;</span>
+<span class="nc" id="L86">        try (ByteIla ila = ByteIlaInterleave.create(ilas, new byte[1000])) {</span>
+<span class="nc" id="L87">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L90">        assertThat(ila0.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L91">        assertThat(ila1.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L92">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

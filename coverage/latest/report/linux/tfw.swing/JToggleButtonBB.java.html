@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JToggleButtonBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JToggleButtonBB.java</span></div><h1>JToggleButtonBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import java.awt.event.ItemListener;
+import javax.swing.JToggleButton;
+import tfw.awt.component.EnabledCommit;
+import tfw.swing.button.ButtonSelectedCommit;
+import tfw.swing.button.ButtonSelectedInitiator;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+
+public class JToggleButtonBB extends JToggleButton implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JToggleButtonBB(String name, BooleanECD enabledECD, BooleanECD selectedECD) {
+<span class="nc" id="L18">        this(new Branch(&quot;JButtonBB[&quot; + name + &quot;]&quot;), enabledECD, selectedECD);</span>
+<span class="nc" id="L19">    }</span>
+
+<span class="nc" id="L21">    public JToggleButtonBB(Branch branch, BooleanECD enabledECD, BooleanECD selectedECD) {</span>
+<span class="nc" id="L22">        this.branch = branch;</span>
+
+<span class="nc" id="L24">        branch.add(new EnabledCommit(&quot;JButtonBB&quot;, enabledECD, this, null));</span>
+
+<span class="nc" id="L26">        ButtonSelectedInitiator buttonSelectedInitiator =</span>
+                new ButtonSelectedInitiator(&quot;JToggleButtonBB&quot;, selectedECD, this);
+
+<span class="nc" id="L29">        addItemListener(buttonSelectedInitiator);</span>
+<span class="nc" id="L30">        branch.add(buttonSelectedInitiator);</span>
+
+<span class="nc" id="L32">        ButtonSelectedCommit buttonSelectedCommit = new ButtonSelectedCommit(</span>
+                &quot;JToggleButtonBB&quot;,
+                selectedECD,
+                new Initiator[] {buttonSelectedInitiator},
+                new ItemListener[] {buttonSelectedInitiator},
+                this);
+
+<span class="nc" id="L39">        branch.add(buttonSelectedCommit);</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L44">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LongIlaRemoveTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.longila</a> &gt; <span class="el_source">LongIlaRemoveTest.java</span></div><h1>LongIlaRemoveTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.longila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L11">final class LongIlaRemoveTest {</span>
+    @Test
+    void argumentsTest() throws Exception {
+<span class="nc" id="L14">        final LongIla ila = LongIlaFromArray.create(new long[10]);</span>
+<span class="nc" id="L15">        final long ilaLength = ila.length();</span>
+
+<span class="nc" id="L17">        assertThatThrownBy(() -&gt; LongIlaRemove.create(null, 0))</span>
+<span class="nc" id="L18">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L19">                .hasMessage(&quot;ila == null not allowed!&quot;);</span>
+<span class="nc" id="L20">        assertThatThrownBy(() -&gt; LongIlaRemove.create(ila, -1))</span>
+<span class="nc" id="L21">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L22">                .hasMessage(&quot;index (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L23">        assertThatThrownBy(() -&gt; LongIlaRemove.create(ila, ilaLength))</span>
+<span class="nc" id="L24">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L25">                .hasMessage(&quot;index (=10) &gt;= ila.length() (=10) not allowed!&quot;);</span>
+<span class="nc" id="L26">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L30">        final Random random = new Random(0);</span>
+<span class="nc" id="L31">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L32">        final long[] array = new long[length];</span>
+<span class="nc" id="L33">        final long[] target = new long[length - 1];</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        for (int index = 0; index &lt; length; ++index) {</span>
+<span class="nc" id="L35">            int targetii = 0;</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L37">                array[ii] = random.nextLong();</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">                if (ii != index) {</span>
+<span class="nc" id="L39">                    target[targetii++] = array[ii];</span>
+                }
+            }
+<span class="nc" id="L42">            LongIla origIla = LongIlaFromArray.create(array);</span>
+<span class="nc" id="L43">            LongIla targetIla = LongIlaFromArray.create(target);</span>
+<span class="nc" id="L44">            LongIla actualIla = LongIlaRemove.create(origIla, index);</span>
+
+<span class="nc" id="L46">            LongIlaCheck.check(targetIla, actualIla);</span>
+        }
+<span class="nc" id="L48">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L52">        final TestCloseLongIla testIla = new TestCloseLongIla();</span>
+
+<span class="nc" id="L54">        try (LongIla ila = LongIlaRemove.create(testIla, 0)) {</span>
+<span class="nc" id="L55">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L58">        assertThat(testIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L59">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

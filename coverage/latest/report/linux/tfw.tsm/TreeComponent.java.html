@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeComponent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">TreeComponent.java</span></div><h1>TreeComponent.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.StatelessTriggerPredicate;
+
+/**
+ * The base class for all components.
+ */
+public class TreeComponent {
+<span class="nc" id="L17">    private static final Map&lt;EventChannelDescription, Sink&gt; EMPTY_SINK_MAP =</span>
+<span class="nc" id="L18">            Collections.unmodifiableMap(new HashMap&lt;EventChannelDescription, Sink&gt;(0));</span>
+<span class="nc" id="L19">    private static final List&lt;EventChannelDescription&gt; EMPTY_ECD_LIST =</span>
+<span class="nc" id="L20">            Collections.unmodifiableList(new ArrayList&lt;EventChannelDescription&gt;(0));</span>
+<span class="nc" id="L21">    private static final List&lt;Source&gt; EMPTY_SOURCE_LIST = Collections.unmodifiableList(new ArrayList&lt;Source&gt;(0));</span>
+<span class="nc" id="L22">    private static final Map&lt;String, EventChannel&gt; EMPTY_EVENTCHANNEL_MAP =</span>
+<span class="nc" id="L23">            Collections.unmodifiableMap(new HashMap&lt;String, EventChannel&gt;(0));</span>
+
+    /** The name of the component. */
+    private final String name;
+
+    /** This component's parent. */
+<span class="nc" id="L29">    private TreeComponent parent = null;</span>
+
+    /** This components sinks. */
+    final Map&lt;EventChannelDescription, Sink&gt; sinks;
+
+    final List&lt;EventChannelDescription&gt; sinksECDList;
+
+    /** This components sources. */
+    final List&lt;Source&gt; sources;
+
+    /** This components event channels. */
+    final Map&lt;String, EventChannel&gt; eventChannels;
+
+    /** The transaction manager for the parent tree. */
+<span class="nc" id="L43">    private TransactionMgr transactionMgr = null;</span>
+
+<span class="nc" id="L45">    protected Root immediateRoot = null;</span>
+<span class="nc" id="L46">    protected BranchComponent immediateParent = null;</span>
+    /**
+     * Creates a tree component with the specified attributes.
+     *
+     * @param name
+     *            the name of the component.
+     * @param sinks
+     *            the sinks for this component.
+     * @param sources
+     *            the sources for this component.
+     * @param eventChannels
+     *            the event channels for this component.
+     */
+<span class="nc" id="L59">    TreeComponent(String name, Sink[] sinks, Source[] sources, EventChannel[] eventChannels) {</span>
+<span class="nc" id="L60">        Argument.assertNotNull(name, &quot;name&quot;);</span>
+<span class="nc" id="L61">        this.name = name;</span>
+<span class="nc" id="L62">        this.sinks = initializeSinks(sinks);</span>
+<span class="nc" id="L63">        this.sources = initializeSources(sources);</span>
+<span class="nc" id="L64">        this.eventChannels = initializeEventChannels(eventChannels);</span>
+
+<span class="nc bnc" id="L66" title="All 4 branches missed.">        if (sinks != null &amp;&amp; sinks.length &gt; 0) {</span>
+<span class="nc" id="L67">            ArrayList&lt;EventChannelDescription&gt; arrayList = new ArrayList&lt;EventChannelDescription&gt;(sinks.length);</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            for (int i = 0; i &lt; sinks.length; i++) {</span>
+<span class="nc" id="L70">                arrayList.add(sinks[i].ecd);</span>
+            }
+<span class="nc" id="L72">            sinksECDList = Collections.unmodifiableList(arrayList);</span>
+<span class="nc" id="L73">        } else {</span>
+<span class="nc" id="L74">            sinksECDList = EMPTY_ECD_LIST;</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * Disconnects this component from its parent if it is connected to a
+     * parent.
+     */
+    public void disconnectFromParent() {
+<span class="nc bnc" id="L83" title="All 4 branches missed.">        if (parent != null &amp;&amp; parent instanceof BranchComponent) {</span>
+<span class="nc" id="L84">            ((BranchComponent) parent).remove(this);</span>
+        }
+<span class="nc" id="L86">    }</span>
+
+    /**
+     * Creates an unmodifiable map of the specified sinks.
+     *
+     * @param sinks
+     *            the sinks.
+     * @return an unmodifiable map of the sinks, mapped by event channel name.
+     */
+    private Map&lt;EventChannelDescription, Sink&gt; initializeSinks(Sink[] sinks) {
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (sinks != null &amp;&amp; sinks.length &gt; 0) {</span>
+<span class="nc" id="L97">            Map&lt;EventChannelDescription, Sink&gt; map = new HashMap&lt;EventChannelDescription, Sink&gt;(sinks.length);</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            for (int i = 0; i &lt; sinks.length; i++) {</span>
+<span class="nc" id="L100">                sinks[i].setTreeComponent(this);</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                if (map.put(sinks[i].ecd, sinks[i]) != null) {</span>
+<span class="nc" id="L103">                    throw new IllegalArgumentException(</span>
+<span class="nc" id="L104">                            &quot;Multiple sinks detected for event channel '&quot; + sinks[i].ecd.getEventChannelName() + &quot;'&quot;);</span>
+                }
+            }
+
+<span class="nc" id="L108">            return Collections.unmodifiableMap(map);</span>
+        } else {
+<span class="nc" id="L110">            return EMPTY_SINK_MAP;</span>
+        }
+    }
+
+    /**
+     * Creates an unmodifiable map of the specified sources.
+     *
+     * @param sources
+     *            the sources.
+     * @return an unmodifiable map of the sources, mapped by event channel name.
+     */
+    private List&lt;Source&gt; initializeSources(Source[] sources) {
+        List&lt;Source&gt; list;
+
+<span class="nc bnc" id="L124" title="All 4 branches missed.">        if (sources != null &amp;&amp; sources.length &gt; 0) {</span>
+<span class="nc" id="L125">            list = new ArrayList&lt;Source&gt;(sources.length);</span>
+
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="nc" id="L128">                sources[i].setTreeComponent(this);</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (list.contains(sources[i])) {</span>
+<span class="nc" id="L131">                    throw new IllegalArgumentException(&quot;Multiple sources detected for event channel '&quot;</span>
+<span class="nc" id="L132">                            + sources[i].ecd.getEventChannelName() + &quot;'&quot;);</span>
+                }
+
+<span class="nc" id="L135">                list.add(sources[i]);</span>
+            }
+
+<span class="nc" id="L138">            return Collections.unmodifiableList(list);</span>
+        } else {
+<span class="nc" id="L140">            return EMPTY_SOURCE_LIST;</span>
+        }
+    }
+
+    /**
+     * Creates an unmodifiable map of the specified event channels.
+     *
+     * @param eventChannels
+     *            the event channels.
+     * @return an unmodifiable map of the event channels, mapped by event
+     *         channel name.
+     */
+    private Map&lt;String, EventChannel&gt; initializeEventChannels(EventChannel[] eventChannels) {
+        Map&lt;String, EventChannel&gt; map;
+
+<span class="nc bnc" id="L155" title="All 4 branches missed.">        if (eventChannels != null &amp;&amp; eventChannels.length &gt; 0) {</span>
+<span class="nc" id="L156">            Argument.assertElementNotNull(eventChannels, &quot;eventChannels&quot;);</span>
+<span class="nc" id="L157">            map = new HashMap&lt;String, EventChannel&gt;(eventChannels.length);</span>
+
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            for (int i = 0; i &lt; eventChannels.length; i++) {</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                if (map.put(eventChannels[i].getECD().getEventChannelName(), eventChannels[i]) != null) {</span>
+<span class="nc" id="L161">                    throw new IllegalArgumentException(</span>
+<span class="nc" id="L162">                            &quot;Multiple event channels detected with name '&quot; + eventChannels[i].getECD() + &quot;'&quot;);</span>
+                }
+            }
+
+<span class="nc" id="L166">            map = Collections.unmodifiableMap(map);</span>
+        } else {
+<span class="nc" id="L168">            map = EMPTY_EVENTCHANNEL_MAP;</span>
+        }
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (eventChannels != null) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            for (int i = 0; i &lt; eventChannels.length; i++) {</span>
+<span class="nc" id="L173">                eventChannels[i].setTreeComponent(this);</span>
+            }
+        }
+
+<span class="nc" id="L177">        return map;</span>
+    }
+
+    /**
+     * Returns the name of the component.
+     *
+     * @return the name of the component.
+     */
+    public final String getName() {
+<span class="nc" id="L186">        return name;</span>
+    }
+
+    public final String getFullyQualifiedName() {
+<span class="nc" id="L190">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (parent != null) {</span>
+<span class="nc" id="L193">            parent.getName(sb);</span>
+<span class="nc" id="L194">            sb.append('.');</span>
+        }
+
+<span class="nc" id="L197">        sb.append(name);</span>
+
+<span class="nc" id="L199">        return sb.toString();</span>
+    }
+
+    private void getName(StringBuilder sb) {
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (parent != null) {</span>
+<span class="nc" id="L204">            parent.getName(sb);</span>
+<span class="nc" id="L205">            sb.append('.');</span>
+        }
+
+<span class="nc" id="L208">        sb.append(name);</span>
+<span class="nc" id="L209">    }</span>
+
+    /**
+     * Returns the component's parent.
+     *
+     * @return the component's parent.
+     */
+    final TreeComponent getParent() {
+<span class="nc" id="L217">        return parent;</span>
+    }
+
+    /**
+     * Sets this components parent.
+     *
+     * @param parent
+     *            the parent component.
+     */
+    void setParent(TreeComponent parent) {
+<span class="nc" id="L227">        this.parent = parent;</span>
+<span class="nc" id="L228">    }</span>
+
+    /**
+     * Returns an unmodifiable map of the sinks, mapped by event channel name.
+     *
+     * @return an unmodifiable map of the sinks, mapped by event channel name.
+     */
+    final Map&lt;EventChannelDescription, Sink&gt; getSinks() {
+<span class="nc" id="L236">        return sinks;</span>
+    }
+
+    /**
+     * Returns an unmodifiable map of the sources, mapped by event channel name.
+     *
+     * @return an unmodifiable map of the sources, mapped by event channel name.
+     */
+    public final List&lt;Source&gt; getSources() {
+<span class="nc" id="L245">        return sources;</span>
+    }
+
+    /**
+     * Returns the source for the specified event channel.
+     *
+     * @param eventChannelName
+     *            the name of the event channel whose source is to be returned.
+     * @return the source for the specified event channel.
+     */
+    final Source getSource(String eventChannelName) {
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.size(); i++) {</span>
+<span class="nc" id="L257">            Source source = sources.get(i);</span>
+
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (source.ecd.getEventChannelName().equals(eventChannelName)) {</span>
+<span class="nc" id="L260">                return source;</span>
+            }
+        }
+
+<span class="nc" id="L264">        return null;</span>
+    }
+
+    /**
+     * Returns the sink for the specified event channel.
+     *
+     * @param eventChannelName
+     *            the name of the event channel whose sink is to be returned.
+     * @return the sink for the specified event channel.
+     */
+    final Sink getSink(EventChannelDescription eventChannelName) {
+        // checkSink(eventChannelName);
+<span class="nc" id="L276">        return sinks.get(eventChannelName);</span>
+    }
+
+    final void checkSink(EventChannelDescription eventChannelName) {
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (!sinks.containsKey(eventChannelName)) {</span>
+<span class="nc" id="L281">            throw new IllegalArgumentException(eventChannelName + &quot; is invalid sink in Leaf[&quot; + getName() + &quot;]&quot;);</span>
+        }
+<span class="nc" id="L283">    }</span>
+
+    /**
+     * Returns the names of the sinks for the leaves.
+     *
+     * @return the names of the sinks for the leaves.
+     */
+    public String[] getEventChannelNames() {
+<span class="nc" id="L291">        Set&lt;String&gt; kset = eventChannels.keySet();</span>
+
+<span class="nc" id="L293">        return kset.toArray(new String[kset.size()]);</span>
+    }
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if all of this components sinks event
+     * channels are non-null, otherwise returns &lt;code&gt;false&lt;/code&gt;.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if all of this components sinks event
+     *         channels are non-null, otherwise returns &lt;code&gt;false&lt;/code&gt;.
+     */
+    final boolean isStateNonNull() {
+<span class="nc" id="L304">        return isStateNonNull(sinksECDList);</span>
+    }
+
+<span class="nc" id="L307">    private int eventChannelArraySize = 0;</span>
+
+<span class="nc" id="L309">    private EventChannelDescription[] eventChannelArray = new EventChannelDescription[eventChannelArraySize];</span>
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if the specified set of event channels are non-null, otherwise returns &lt;code&gt;false&lt;/code&gt;.
+     *
+     * @param eventSet the set of event channels
+     * @return &lt;code&gt;true&lt;/code&gt; if the specified set of event channels are non-null, otherwise returns &lt;code&gt;false&lt;/code&gt;.
+     */
+    final boolean isStateNonNull(List&lt;? extends EventChannelDescription&gt; eventSet) {
+<span class="nc" id="L318">        eventChannelArraySize = eventSet.size();</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (eventChannelArray.length &lt; eventChannelArraySize) {</span>
+<span class="nc" id="L320">            eventChannelArray = new EventChannelDescription[eventChannelArraySize];</span>
+        }
+<span class="nc" id="L322">        eventSet.toArray(eventChannelArray);</span>
+
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        for (int i = 0; i &lt; eventChannelArraySize; i++) {</span>
+<span class="nc" id="L325">            checkSink(eventChannelArray[i]);</span>
+
+<span class="nc" id="L327">            Sink sink = sinks.get(eventChannelArray[i]);</span>
+
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            if (sink.eventChannel == null) {</span>
+<span class="nc" id="L330">                throw new IllegalStateException(eventChannelArray[i] + &quot; is not connected to an event channel&quot;);</span>
+            }
+
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (!(sink.ecd.getPredicate() instanceof StatelessTriggerPredicate)) {</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">                if (sink.eventChannel.getState() == null) {</span>
+<span class="nc" id="L335">                    return false;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L340">        return true;</span>
+    }
+
+    /**
+     * Returns true if the component is a root, or is connected to a root
+     * component, otherwise returns false.
+     *
+     * @return true if the component is a root, or is connected to a root
+     *         component, otherwise returns false.
+     */
+    public boolean isRooted() {
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L352">            return false;</span>
+        }
+
+<span class="nc" id="L355">        return parent.isRooted();</span>
+    }
+
+    /**
+     * Returns the transaction manager for this component tree.
+     *
+     * @return the transaction manager for this component tree.
+     */
+    TransactionMgr getTransactionManager() {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        if (transactionMgr != null) {</span>
+<span class="nc" id="L365">            return transactionMgr;</span>
+        }
+
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        if (!isRooted()) {</span>
+<span class="nc" id="L369">            throw new IllegalStateException(&quot;'&quot;</span>
+<span class="nc" id="L370">                    + getName()</span>
+                    + &quot;' is not rooted. &quot;
+                    + &quot;The transaction manager is only available when the component is rooted.&quot;);
+        }
+
+<span class="nc" id="L375">        this.transactionMgr = getParent().getTransactionManager();</span>
+
+<span class="nc" id="L377">        return this.transactionMgr;</span>
+    }
+
+    /**
+     * Terminates the specified ports locally and then recursively passes the
+     * unterminated ports up to the parent component.
+     *
+     * @param connections
+     *            The set of ports to be terminated.
+     */
+    void terminateParentAndLocalConnections(Set&lt;Port&gt; connections) {
+<span class="nc" id="L388">        Argument.assertNotNull(connections, &quot;connections&quot;);</span>
+
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (connections.size() == 0) {</span>
+<span class="nc" id="L391">            return;</span>
+        }
+
+<span class="nc" id="L394">        connections = terminateLocally(connections);</span>
+
+<span class="nc bnc" id="L396" title="All 2 branches missed.">        if (connections.size() == 0) {</span>
+<span class="nc" id="L397">            return;</span>
+        }
+
+<span class="nc bnc" id="L400" title="All 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L401">            throw new IllegalStateException(&quot;Event channels left unterminated:\n&quot; + connections);</span>
+        }
+
+<span class="nc" id="L404">        parent.terminateParentAndLocalConnections(connections);</span>
+<span class="nc" id="L405">    }</span>
+
+    /**
+     * For each port for which this component has a terminator, terminate the
+     * port.
+     *
+     * @param connections
+     *            the set of unterminated ports.
+     * @return the set of unterminated ports.
+     */
+    Set&lt;Port&gt; terminateLocally(Set&lt;Port&gt; connections) {
+<span class="nc" id="L416">        Port[] ports = connections.toArray(new Port[connections.size()]);</span>
+
+<span class="nc bnc" id="L418" title="All 2 branches missed.">        for (int i = 0; i &lt; ports.length; i++) {</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">            if (eventChannels.containsKey(ports[i].ecd.getEventChannelName())) {</span>
+<span class="nc" id="L420">                EventChannel t = eventChannels.get(ports[i].ecd.getEventChannelName());</span>
+<span class="nc" id="L421">                t.add(ports[i]);</span>
+<span class="nc" id="L422">                connections.remove(ports[i]);</span>
+            }
+        }
+
+<span class="nc" id="L426">        connections.addAll(sinks.values());</span>
+<span class="nc" id="L427">        connections.addAll(sources);</span>
+
+<span class="nc" id="L429">        return connections;</span>
+    }
+
+    /**
+     * Disconnects this component's sinks and sources from the event channels.
+     */
+    final void disconnectPorts() {
+<span class="nc bnc" id="L436" title="All 2 branches missed.">        for (Sink sink : sinks.values()) {</span>
+<span class="nc" id="L437">            sink.eventChannel.remove(sink);</span>
+<span class="nc" id="L438">        }</span>
+
+<span class="nc bnc" id="L440" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.size(); i++) {</span>
+<span class="nc" id="L441">            Source source = sources.get(i);</span>
+
+<span class="nc" id="L443">            source.eventChannel.remove(source);</span>
+        }
+<span class="nc" id="L445">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

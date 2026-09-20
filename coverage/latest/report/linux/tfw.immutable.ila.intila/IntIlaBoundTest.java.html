@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntIlaBoundTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.intila</a> &gt; <span class="el_source">IntIlaBoundTest.java</span></div><h1>IntIlaBoundTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.intila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L11">final class IntIlaBoundTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L14">        final int low = 5;</span>
+<span class="nc" id="L15">        final int high = 10;</span>
+<span class="nc" id="L16">        final IntIla ila = IntIlaFromArray.create(new int[10]);</span>
+
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; IntIlaBound.create(null, low, high))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;ila == null not allowed!&quot;);</span>
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; IntIlaBound.create(ila, high, low))</span>
+<span class="nc" id="L22">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L23">                .hasMessage(&quot;minimum (=&quot; + high + &quot;) &gt; maximum (=&quot; + low + &quot;) not allowed!&quot;);</span>
+<span class="nc" id="L24">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L28">        final Random random = new Random(0);</span>
+<span class="nc" id="L29">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L30">        final int[] array = new int[length];</span>
+<span class="nc" id="L31">        final int[] target = new int[length];</span>
+<span class="nc" id="L32">        int minimum = random.nextInt();</span>
+<span class="nc" id="L33">        int maximum = random.nextInt();</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (minimum &gt; maximum) {</span>
+<span class="nc" id="L35">            int tmp = minimum;</span>
+<span class="nc" id="L36">            minimum = maximum;</span>
+<span class="nc" id="L37">            maximum = tmp;</span>
+        }
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L40">            array[ii] = random.nextInt();</span>
+<span class="nc" id="L41">            target[ii] = array[ii];</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            if (target[ii] &lt; minimum) {</span>
+<span class="nc" id="L43">                target[ii] = minimum;</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            } else if (target[ii] &gt; maximum) {</span>
+<span class="nc" id="L45">                target[ii] = maximum;</span>
+            }
+        }
+<span class="nc" id="L48">        IntIla ila = IntIlaFromArray.create(array);</span>
+<span class="nc" id="L49">        IntIla targetIla = IntIlaFromArray.create(target);</span>
+<span class="nc" id="L50">        IntIla actualIla = IntIlaBound.create(ila, minimum, maximum);</span>
+
+<span class="nc" id="L52">        IntIlaCheck.check(targetIla, actualIla);</span>
+<span class="nc" id="L53">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L57">        final Random random = new Random(0);</span>
+<span class="nc" id="L58">        final TestCloseIntIla testIla = new TestCloseIntIla();</span>
+<span class="nc" id="L59">        int minimum = random.nextInt();</span>
+<span class="nc" id="L60">        int maximum = random.nextInt();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (minimum &gt; maximum) {</span>
+<span class="nc" id="L62">            int tmp = minimum;</span>
+<span class="nc" id="L63">            minimum = maximum;</span>
+<span class="nc" id="L64">            maximum = tmp;</span>
+        }
+
+<span class="nc" id="L67">        try (IntIla ila = IntIlaBound.create(testIla, minimum, maximum)) {</span>
+<span class="nc" id="L68">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L71">        assertThat(testIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L72">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

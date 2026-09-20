@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectIlaMultiplexerStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ObjectIlaMultiplexerStrategy.java</span></div><h1>ObjectIlaMultiplexerStrategy.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.io.IOException;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.immutable.ila.objectila.ObjectIlaFromArray;
+
+/**
+ * A strategy for multiplexing/de-multiplexing an {@link ObjectIla} event
+ * channel.
+ */
+<span class="nc" id="L11">public class ObjectIlaMultiplexerStrategy implements MultiplexerStrategy {</span>
+    /**
+     * @see tfw.tsm.MultiplexerStrategy#toMultiStateAccessor(java.lang.Object)
+     */
+    @Override
+    public MultiStateAccessor toMultiStateAccessor(Object multiState) {
+<span class="nc" id="L17">        return new MultiStateAccessorImpl(</span>
+<span class="nc bnc" id="L18" title="All 2 branches missed.">                (multiState == null) ? ObjectIlaFromArray.create(new Object[0]) : (ObjectIla) multiState);</span>
+    }
+
+    @Override
+    public Object getDefaultSlotState() {
+<span class="nc" id="L23">        return null;</span>
+    }
+
+    private static class MultiStateAccessorImpl implements MultiStateAccessor {
+
+        private final Object[] objs;
+
+<span class="nc" id="L30">        private MultiStateAccessorImpl(ObjectIla ila) {</span>
+            try {
+<span class="nc" id="L32">                this.objs = new Object[(int) ila.length()];</span>
+
+<span class="nc" id="L34">                ila.get(objs, 0, 0, objs.length);</span>
+<span class="nc" id="L35">            } catch (IOException e) {</span>
+<span class="nc" id="L36">                throw new RuntimeException(&quot;Exception occurred accessing multiplexed state:&quot; + e.getMessage(), e);</span>
+<span class="nc" id="L37">            }</span>
+<span class="nc" id="L38">        }</span>
+
+        /**
+         * @see tfw.tsm.MultiplexerStrategy.MultiStateAccessor#getState(java.lang.Object)
+         */
+        @Override
+        public Object getState(Object key) {
+<span class="nc" id="L45">            int index = ((Integer) key).intValue();</span>
+<span class="nc bnc" id="L46" title="All 4 branches missed.">            if (index &gt;= 0 &amp;&amp; index &lt; this.objs.length) {</span>
+<span class="nc" id="L47">                return objs[index];</span>
+            }
+<span class="nc" id="L49">            return null;</span>
+        }
+    }
+
+    @Override
+    public Object addToMultiState(
+            Object originalMultiState, Object[] keys, Object[] values, int numberOfKeyValuePairs) {
+<span class="nc" id="L56">        Object[] array = null;</span>
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (originalMultiState == null) {</span>
+<span class="nc" id="L59">            array = new Object[0];</span>
+        } else {
+            try {
+<span class="nc" id="L62">                ObjectIla objectIla = (ObjectIla) originalMultiState;</span>
+<span class="nc" id="L63">                array = new Object[(int) objectIla.length()];</span>
+
+<span class="nc" id="L65">                objectIla.get(array, 0, 0, array.length);</span>
+<span class="nc" id="L66">            } catch (IOException e) {</span>
+<span class="nc" id="L67">                throw new RuntimeException(&quot;Exception occurred accessing multiplexed state:&quot; + e.getMessage(), e);</span>
+<span class="nc" id="L68">            }</span>
+        }
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        for (int i = 0; i &lt; numberOfKeyValuePairs; i++) {</span>
+<span class="nc" id="L72">            int index = ((Integer) keys[i]).intValue();</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (array.length - 1 &lt; index) {</span>
+<span class="nc" id="L75">                Object[] newArray = new Object[index + 1];</span>
+<span class="nc" id="L76">                System.arraycopy(array, 0, newArray, 0, array.length);</span>
+<span class="nc" id="L77">                array = newArray;</span>
+            }
+
+<span class="nc" id="L80">            array[index] = values[i];</span>
+        }
+
+<span class="nc" id="L83">        return ObjectIlaFromArray.create(array);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

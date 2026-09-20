@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ALawByteIlaFromLinearShortIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio.byteila</a> &gt; <span class="el_source">ALawByteIlaFromLinearShortIla.java</span></div><h1>ALawByteIlaFromLinearShortIla.java</h1><pre class="source lang-java linenums">package tfw.audio.byteila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.AbstractByteIla;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.shortila.ShortIla;
+import tfw.immutable.ila.shortila.ShortIlaIterator;
+import tfw.immutable.ila.shortila.ShortIlaSegment;
+
+public final class ALawByteIlaFromLinearShortIla {
+    private static final int QUANT_MASK = 0xf;
+    private static final int SEG_SHIFT = 4;
+
+    private ALawByteIlaFromLinearShortIla() {}
+
+    public static ByteIla create(final ShortIla shortIla, final int bufferSize) {
+<span class="nc" id="L18">        Argument.assertNotNull(shortIla, &quot;shortIla&quot;);</span>
+
+<span class="nc" id="L20">        return new ByteIlaImpl(shortIla, bufferSize);</span>
+    }
+
+    private static class ByteIlaImpl extends AbstractByteIla {
+        private final ShortIla shortIla;
+        private final int bufferSize;
+
+<span class="nc" id="L27">        private ByteIlaImpl(final ShortIla shortIla, final int bufferSize) {</span>
+<span class="nc" id="L28">            this.shortIla = shortIla;</span>
+<span class="nc" id="L29">            this.bufferSize = bufferSize;</span>
+<span class="nc" id="L30">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L34">            return shortIla.length();</span>
+        }
+
+        @Override
+        protected void getImpl(byte[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L39">            ShortIlaIterator si =</span>
+<span class="nc" id="L40">                    new ShortIlaIterator(ShortIlaSegment.create(shortIla, start, length), new short[bufferSize]);</span>
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            for (int i = offset; si.hasNext(); i++) {</span>
+                /*
+                 * The following algorithm is from the file g711.c from
+                 * Sun Microsystems which has no use restrictions.  It is
+                 * available from the following location:
+                 * ftp://svr-ftp.eng.cam.ac.uk/pub/comp.speech/coding/G711_G721_G723.tar.gz
+                 */
+<span class="nc" id="L49">                short pcm_val = si.next();</span>
+                int mask;
+
+                /* Get the sign and the magnitude of the value. */
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                if (pcm_val &gt;= 0) {</span>
+<span class="nc" id="L54">                    mask = 0xD5; /* sign (7th) bit = 1 */</span>
+                } else {
+<span class="nc" id="L56">                    mask = 0x55; /* sign bit = 0 */</span>
+<span class="nc" id="L57">                    pcm_val = (short) (-pcm_val - 8);</span>
+                }
+
+                /* Convert the scaled magnitude to segment number. */
+<span class="nc" id="L61">                int seg = 8;</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                if (pcm_val &lt;= 0xFF) seg = 0;</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x1FF) seg = 1;</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x3FF) seg = 2;</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x7FF) seg = 3;</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                else if (pcm_val &lt;= 0xFFF) seg = 4;</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x1FFF) seg = 5;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x3FFF) seg = 6;</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                else if (pcm_val &lt;= 0x7FFF) seg = 7;</span>
+
+                /* Combine the sign, segment, and quantization bits. */
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                if (seg &gt;= 8) /* out of range, return maximum value. */ array[i] = (byte) (0x7F ^ mask);</span>
+                else {
+<span class="nc" id="L76">                    int aval = seg &lt;&lt; SEG_SHIFT;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    if (seg &lt; 2) aval |= (pcm_val &gt;&gt; 4) &amp; QUANT_MASK;</span>
+<span class="nc" id="L78">                    else aval |= (pcm_val &gt;&gt; (seg + 3)) &amp; QUANT_MASK;</span>
+<span class="nc" id="L79">                    array[i] = (byte) (aval ^ mask);</span>
+                }
+            }
+<span class="nc" id="L82">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L86">            shortIla.close();</span>
+<span class="nc" id="L87">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

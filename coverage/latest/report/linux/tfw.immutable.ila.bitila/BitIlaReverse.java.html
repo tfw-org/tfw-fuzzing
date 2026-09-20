@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaReverse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaReverse.java</span></div><h1>BitIlaReverse.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public final class BitIlaReverse {
+    private static final long REVERSE_MASK_32 = 0x00000000FFFFFFFFL;
+    private static final long REVERSE_MASK_16 = 0x0000FFFF0000FFFFL;
+    private static final long REVERSE_MASK_8 = 0x00FF00FF00FF00FFL;
+    private static final long REVERSE_MASK_4 = 0x0F0F0F0F0F0F0F0FL;
+    private static final long REVERSE_MASK_2 = 0x3333333333333333L;
+    private static final long REVERSE_MASK_1 = 0x5555555555555555L;
+    private static final long NOT_REVERSE_MASK_32 = ~REVERSE_MASK_32;
+    private static final long NOT_REVERSE_MASK_16 = ~REVERSE_MASK_16;
+    private static final long NOT_REVERSE_MASK_8 = ~REVERSE_MASK_8;
+    private static final long NOT_REVERSE_MASK_4 = ~REVERSE_MASK_4;
+    private static final long NOT_REVERSE_MASK_2 = ~REVERSE_MASK_2;
+    private static final long NOT_REVERSE_MASK_1 = ~REVERSE_MASK_1;
+
+    private BitIlaReverse() {}
+
+    public static void reverse(final long[] array, final long offset, final long length) {
+<span class="nc" id="L23">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L24">        Argument.assertNotLessThan(offset, 0, &quot;offset&quot;);</span>
+<span class="nc" id="L25">        Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
+
+<span class="nc" id="L27">        long leadPartial = 0;</span>
+<span class="nc" id="L28">        long leadPartialSize = 0;</span>
+<span class="nc" id="L29">        long offsetMod64 = offset % Long.SIZE;</span>
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (offsetMod64 != 0) {</span>
+<span class="nc" id="L32">            leadPartialSize = Long.SIZE - offsetMod64;</span>
+
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            if (leadPartialSize &gt; length) {</span>
+<span class="nc" id="L35">                leadPartialSize = length;</span>
+            }
+
+<span class="nc" id="L38">            leadPartial = BitIlaUtil.getPartialLong(array, offset, leadPartialSize);</span>
+        }
+
+<span class="nc" id="L41">        long revLeadPartial = reverseLong(leadPartial);</span>
+<span class="nc" id="L42">        int longsOffset = (int) ((offset + leadPartialSize) / Long.SIZE);</span>
+<span class="nc" id="L43">        int numLongs = (int) ((length - leadPartialSize) / Long.SIZE);</span>
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (numLongs &gt; 0) {</span>
+<span class="nc" id="L46">            reverseLongs(array, longsOffset, numLongs);</span>
+        }
+
+<span class="nc" id="L49">        long trailPartialSize = (length - leadPartialSize) % Long.SIZE;</span>
+<span class="nc" id="L50">        long trailOffset = offset + leadPartialSize + numLongs * (long) Long.SIZE;</span>
+<span class="nc" id="L51">        long trailPartial = BitIlaUtil.getPartialLong(array, trailOffset, trailPartialSize);</span>
+<span class="nc" id="L52">        long revTrailFrag = reverseLong(trailPartial);</span>
+
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        if (numLongs &gt; 0 &amp;&amp; leadPartialSize != trailPartialSize) {</span>
+<span class="nc" id="L55">            BitIlaUtil.copy(</span>
+                    array,
+                    longsOffset * (long) Long.SIZE + trailPartialSize - leadPartialSize,
+                    array,
+                    longsOffset * (long) Long.SIZE,
+                    numLongs * (long) Long.SIZE);
+        }
+
+<span class="nc" id="L63">        BitIlaUtil.setLeftJustifiedPartialLong(array, offset, revTrailFrag, trailPartialSize);</span>
+<span class="nc" id="L64">        BitIlaUtil.setLeftJustifiedPartialLong(</span>
+                array, offset + length - leadPartialSize, revLeadPartial, leadPartialSize);
+<span class="nc" id="L66">    }</span>
+
+    private static void reverseLongs(final long[] longs, int longsOffset, int numLongs) {
+<span class="nc" id="L69">        int leftIndex = longsOffset;</span>
+<span class="nc" id="L70">        int rightIndex = longsOffset + numLongs - 1;</span>
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        while (leftIndex &lt; rightIndex) {</span>
+<span class="nc" id="L73">            final long leftLongRev = reverseLong(longs[leftIndex]);</span>
+<span class="nc" id="L74">            final long rightLongRev = reverseLong(longs[rightIndex]);</span>
+
+<span class="nc" id="L76">            longs[leftIndex] = rightLongRev;</span>
+<span class="nc" id="L77">            longs[rightIndex] = leftLongRev;</span>
+
+<span class="nc" id="L79">            leftIndex++;</span>
+<span class="nc" id="L80">            rightIndex--;</span>
+<span class="nc" id="L81">        }</span>
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (leftIndex == rightIndex) {</span>
+<span class="nc" id="L84">            longs[leftIndex] = reverseLong(longs[leftIndex]);</span>
+        }
+<span class="nc" id="L86">    }</span>
+
+    private static long reverseLong(final long value) {
+<span class="nc" id="L89">        long reverseValue = (value &amp; REVERSE_MASK_32) &lt;&lt; 32 | (value &amp; NOT_REVERSE_MASK_32) &gt;&gt;&gt; 32;</span>
+
+<span class="nc" id="L91">        reverseValue = (reverseValue &amp; REVERSE_MASK_16) &lt;&lt; 16 | (reverseValue &amp; NOT_REVERSE_MASK_16) &gt;&gt;&gt; 16;</span>
+<span class="nc" id="L92">        reverseValue = (reverseValue &amp; REVERSE_MASK_8) &lt;&lt; 8 | (reverseValue &amp; NOT_REVERSE_MASK_8) &gt;&gt;&gt; 8;</span>
+<span class="nc" id="L93">        reverseValue = (reverseValue &amp; REVERSE_MASK_4) &lt;&lt; 4 | (reverseValue &amp; NOT_REVERSE_MASK_4) &gt;&gt;&gt; 4;</span>
+<span class="nc" id="L94">        reverseValue = (reverseValue &amp; REVERSE_MASK_2) &lt;&lt; 2 | (reverseValue &amp; NOT_REVERSE_MASK_2) &gt;&gt;&gt; 2;</span>
+<span class="nc" id="L95">        reverseValue = (reverseValue &amp; REVERSE_MASK_1) &lt;&lt; 1 | (reverseValue &amp; NOT_REVERSE_MASK_1) &gt;&gt;&gt; 1;</span>
+
+<span class="nc" id="L97">        return reverseValue;</span>
+    }
+
+    public static BitIla create(final BitIla bitIla) {
+<span class="nc" id="L101">        return new BitIlaImpl(bitIla);</span>
+    }
+
+    private static class BitIlaImpl extends AbstractBitIla {
+        private final BitIla bitIla;
+
+<span class="nc" id="L107">        private BitIlaImpl(final BitIla bitIla) {</span>
+<span class="nc" id="L108">            Argument.assertNotNull(bitIla, &quot;bitIla&quot;);</span>
+
+<span class="nc" id="L110">            this.bitIla = bitIla;</span>
+<span class="nc" id="L111">        }</span>
+
+        @Override
+        protected void getImpl(long[] array, long arrayOffsetInBits, long ilaStartInBits, long lengthInBits)
+                throws IOException {
+<span class="nc" id="L116">            bitIla.get(array, arrayOffsetInBits, bitIla.lengthInBits() - ilaStartInBits - lengthInBits, lengthInBits);</span>
+
+<span class="nc" id="L118">            reverse(array, arrayOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L119">        }</span>
+
+        @Override
+        protected long lengthInBitsImpl() throws IOException {
+<span class="nc" id="L123">            return bitIla.lengthInBits();</span>
+        }
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L128">            bitIla.close();</span>
+<span class="nc" id="L129">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

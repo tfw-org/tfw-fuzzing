@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ColorButtonNB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.demo</a> &gt; <span class="el_source">ColorButtonNB.java</span></div><h1>ColorButtonNB.java</h1><pre class="source lang-java linenums">package tfw.demo;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JColorChooser;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import tfw.awt.ecd.ColorECD;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Commit;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public class ColorButtonNB extends JButton implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+<span class="nc" id="L30">    private Color color = null;</span>
+<span class="nc" id="L31">    private Color originalColor = null;</span>
+<span class="nc" id="L32">    private JDialog dialog = null;</span>
+<span class="nc" id="L33">    private JColorChooser colorChooser = null;</span>
+
+    public ColorButtonNB(
+            String name,
+            final ColorECD colorECD,
+            BooleanECD enableECD,
+            final String titleText,
+<span class="nc" id="L40">            final Component component) {</span>
+<span class="nc" id="L41">        String fullName = &quot;ColorButtonNB[&quot; + name + &quot;]&quot;;</span>
+<span class="nc" id="L42">        branch = new Branch(fullName);</span>
+
+<span class="nc" id="L44">        final Initiator initiator = new Initiator(fullName + &quot;Initiator&quot;, new ObjectECD[] {colorECD});</span>
+
+<span class="nc" id="L46">        branch.add(new ColorButtonCommit(fullName, colorECD, enableECD));</span>
+<span class="nc" id="L47">        branch.add(initiator);</span>
+
+<span class="nc" id="L49">        addActionListener(new ActionListener() {</span>
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                if (dialog == null) {</span>
+<span class="nc" id="L53">                    colorChooser = new JColorChooser();</span>
+<span class="nc" id="L54">                    colorChooser.addChooserPanel(new GrayScalePanel());</span>
+<span class="nc" id="L55">                    colorChooser.setColor(color);</span>
+<span class="nc" id="L56">                    colorChooser.getSelectionModel().addChangeListener(new ChangeListener() {</span>
+                        @Override
+                        public void stateChanged(ChangeEvent e) {
+<span class="nc" id="L59">                            initiator.set(colorECD, colorChooser.getColor());</span>
+<span class="nc" id="L60">                        }</span>
+                    });
+<span class="nc" id="L62">                    dialog = JColorChooser.createDialog(</span>
+                            component,
+                            titleText,
+                            true,
+                            colorChooser,
+                            new ActionListener() // OK action listener.
+<span class="nc" id="L68">                            {</span>
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L71">                                    System.out.println(colorChooser.getColor());</span>
+<span class="nc" id="L72">                                    initiator.set(colorECD, colorChooser.getColor());</span>
+<span class="nc" id="L73">                                }</span>
+                            },
+                            new ActionListener() // Cancel action listener
+<span class="nc" id="L76">                            {</span>
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L79">                                    initiator.set(colorECD, originalColor);</span>
+<span class="nc" id="L80">                                }</span>
+                            });
+                }
+
+<span class="nc" id="L84">                originalColor = color;</span>
+<span class="nc" id="L85">                dialog.setVisible(true);</span>
+<span class="nc" id="L86">            }</span>
+        });
+<span class="nc" id="L88">        setIcon(new ColorIcon(40, 8));</span>
+<span class="nc" id="L89">        setToolTipText(&quot;Color Chooser&quot;);</span>
+<span class="nc" id="L90">        setEnabled(false);</span>
+<span class="nc" id="L91">    }</span>
+
+    @Override
+    public Branch getBranch() {
+<span class="nc" id="L95">        return branch;</span>
+    }
+
+    private class ColorButtonCommit extends Commit {
+        private final ColorECD colorName;
+        private final BooleanECD enableName;
+
+<span class="nc" id="L102">        private ColorButtonCommit(String name, ColorECD colorName, BooleanECD enableName) {</span>
+<span class="nc" id="L103">            super(name + &quot;Commit&quot;, new ObjectECD[] {colorName, enableName});</span>
+<span class="nc" id="L104">            this.colorName = colorName;</span>
+<span class="nc" id="L105">            this.enableName = enableName;</span>
+<span class="nc" id="L106">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L110">            color = (Color) get(colorName);</span>
+<span class="nc" id="L111">            setEnabled(((Boolean) get(enableName)).booleanValue());</span>
+<span class="nc" id="L112">            ColorButtonNB.this.repaint();</span>
+<span class="nc" id="L113">        }</span>
+    }
+
+    private static class GrayScalePanel extends AbstractColorChooserPanel {
+        private static final long serialVersionUID = 1L;
+<span class="nc" id="L118">        static final Color[] grays = new Color[256];</span>
+
+        static {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            for (int i = 0; i &lt; 256; i++) {</span>
+<span class="nc" id="L122">                grays[i] = new Color(i, i, i);</span>
+            }
+<span class="nc" id="L124">        }</span>
+
+<span class="nc" id="L126">        private final JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 255, 128);</span>
+
+<span class="nc" id="L128">        public GrayScalePanel() {</span>
+<span class="nc" id="L129">            slider.addChangeListener(new ChangeListener() {</span>
+                @Override
+                public void stateChanged(ChangeEvent e) {
+<span class="nc" id="L132">                    getColorSelectionModel().setSelectedColor(grays[slider.getValue()]);</span>
+<span class="nc" id="L133">                }</span>
+            });
+
+<span class="nc" id="L136">            setLayout(new GridLayout(0, 1));</span>
+<span class="nc" id="L137">            add(new JLabel(&quot;Pick Your Shade of Gray:&quot;, JLabel.CENTER));</span>
+
+<span class="nc" id="L139">            JPanel jp = new JPanel();</span>
+<span class="nc" id="L140">            jp.add(new JLabel(&quot;Black&quot;));</span>
+<span class="nc" id="L141">            jp.add(slider);</span>
+<span class="nc" id="L142">            jp.add(new JLabel(&quot;White&quot;));</span>
+<span class="nc" id="L143">            add(jp);</span>
+<span class="nc" id="L144">        }</span>
+
+        @Override
+<span class="nc" id="L147">        protected void buildChooser() {}</span>
+
+        @Override
+        public void updateChooser() {
+<span class="nc" id="L151">            slider.setValue(getColorSelectionModel().getSelectedColor().getRed());</span>
+<span class="nc" id="L152">        }</span>
+
+        @Override
+        public String getDisplayName() {
+<span class="nc" id="L156">            return &quot;Gray Scale&quot;;</span>
+        }
+
+        @Override
+        public Icon getSmallDisplayIcon() {
+<span class="nc" id="L161">            return null;</span>
+        }
+
+        @Override
+        public Icon getLargeDisplayIcon() {
+<span class="nc" id="L166">            return null;</span>
+        }
+    }
+
+    private class ColorIcon implements Icon {
+        private final int width;
+        private final int height;
+
+<span class="nc" id="L174">        public ColorIcon(int width, int height) {</span>
+<span class="nc" id="L175">            this.width = width;</span>
+<span class="nc" id="L176">            this.height = height;</span>
+<span class="nc" id="L177">        }</span>
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+<span class="nc" id="L181">            g.setColor(color);</span>
+<span class="nc" id="L182">            g.fill3DRect(x, y, width, height, true);</span>
+<span class="nc" id="L183">        }</span>
+
+        @Override
+        public int getIconWidth() {
+<span class="nc" id="L187">            return width;</span>
+        }
+
+        @Override
+        public int getIconHeight() {
+<span class="nc" id="L192">            return height;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

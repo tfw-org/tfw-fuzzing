@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SetForegroundFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.event</a> &gt; <span class="el_source">SetForegroundFactory.java</span></div><h1>SetForegroundFactory.java</h1><pre class="source lang-java linenums">package tfw.swing.event;
+
+import java.awt.Color;
+import java.awt.EventQueue;
+import javax.swing.JComponent;
+import tfw.awt.ecd.ColorECD;
+import tfw.check.Argument;
+import tfw.tsm.Commit;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.ObjectECD;
+
+public class SetForegroundFactory {
+    private SetForegroundFactory() {}
+
+    public static Commit create(String name, ColorECD colorECD, JComponent jComponent, Initiator[] initiators) {
+<span class="nc" id="L16">        Argument.assertNotNull(name, &quot;name&quot;);</span>
+<span class="nc" id="L17">        Argument.assertNotNull(colorECD, &quot;colorECD&quot;);</span>
+<span class="nc" id="L18">        Argument.assertNotNull(jComponent, &quot;jComponent&quot;);</span>
+
+<span class="nc" id="L20">        return new JComponentSetForegroundCommit(name, colorECD, jComponent, initiators);</span>
+    }
+
+    private static class JComponentSetForegroundCommit extends Commit {
+        private final ColorECD colorECD;
+        private final JComponent jComponent;
+
+        public JComponentSetForegroundCommit(
+                String name, ColorECD colorECD, JComponent jComponent, Initiator[] initiators) {
+<span class="nc" id="L29">            super(&quot;SetForegroundCommit[&quot; + name + &quot;]&quot;, new ObjectECD[] {colorECD}, null, initiators);</span>
+
+<span class="nc" id="L31">            this.colorECD = colorECD;</span>
+<span class="nc" id="L32">            this.jComponent = jComponent;</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L37">            final Color color = (Color) get(colorECD);</span>
+
+<span class="nc" id="L39">            EventQueue.invokeLater(() -&gt; jComponent.setForeground(color));</span>
+<span class="nc" id="L40">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

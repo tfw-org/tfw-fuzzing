@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportExportTreeStateTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ImportExportTreeStateTest.java</span></div><h1>ImportExportTreeStateTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L10">final class ImportExportTreeStateTest {</span>
+    @Test
+    void defaultExportTreeStateTest() throws Exception {
+<span class="nc" id="L13">        String rootName = &quot;Root&quot;;</span>
+<span class="nc" id="L14">        String childName = &quot;Child Tree&quot;;</span>
+<span class="nc" id="L15">        StringECD stringECD = new StringECD(&quot;ecd1&quot;);</span>
+<span class="nc" id="L16">        StringECD stringECDNullState = new StringECD(&quot;stringNullState&quot;);</span>
+<span class="nc" id="L17">        EventChannelState state = new EventChannelState(stringECD, &quot;Hello&quot;);</span>
+<span class="nc" id="L18">        BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+
+<span class="nc" id="L20">        final Root root = Root.builder()</span>
+<span class="nc" id="L21">                .setName(rootName)</span>
+<span class="nc" id="L22">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L23">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L24">                .addObjectECD(stringECD, state.getState())</span>
+<span class="nc" id="L25">                .addObjectECD(stringECDNullState, null)</span>
+<span class="nc" id="L26">                .build();</span>
+
+<span class="nc" id="L28">        assertThatThrownBy(root::getTreeState)</span>
+<span class="nc" id="L29">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L30">                .hasMessage(&quot;This method can not be called from outside the transaction queue thread&quot;);</span>
+
+<span class="nc" id="L32">        GetTreeStateRunnable getStateRunnable = new GetTreeStateRunnable(root);</span>
+
+<span class="nc" id="L34">        queue.invokeLater(getStateRunnable);</span>
+<span class="nc" id="L35">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L37">        assertThat(getStateRunnable.treeState).isNotNull();</span>
+<span class="nc" id="L38">        assertThat(rootName).isEqualTo(getStateRunnable.treeState.getName());</span>
+
+<span class="nc" id="L40">        EventChannelState[] ecds = getStateRunnable.treeState.getState();</span>
+<span class="nc" id="L41">        assertThat(ecds).isNotNull();</span>
+        /*
+         * We should only get the state from stringECD because the other two
+         * have no state.
+         */
+<span class="nc" id="L46">        assertThat(1).isEqualTo(ecds.length);</span>
+<span class="nc" id="L47">        assertThat(state).isEqualTo(ecds[0]);</span>
+
+<span class="nc" id="L49">        TreeState[] children = getStateRunnable.treeState.getChildren();</span>
+<span class="nc" id="L50">        assertThat(children).isNotNull();</span>
+<span class="nc" id="L51">        assertThat(0).isEqualTo(children.length);</span>
+
+<span class="nc" id="L53">        IntegerECD integerECD = new IntegerECD(&quot;integer&quot;);</span>
+<span class="nc" id="L54">        Integer integerState = 123456;</span>
+<span class="nc" id="L55">        BranchFactory bf = new BranchFactory();</span>
+<span class="nc" id="L56">        bf.addEventChannel(integerECD, integerState);</span>
+
+<span class="nc" id="L58">        Branch branch = bf.create(&quot;Child Tree&quot;);</span>
+<span class="nc" id="L59">        root.add(branch);</span>
+<span class="nc" id="L60">        queue.invokeLater(getStateRunnable);</span>
+<span class="nc" id="L61">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L63">        children = getStateRunnable.treeState.getChildren();</span>
+<span class="nc" id="L64">        assertThat(children).isNotNull();</span>
+<span class="nc" id="L65">        assertThat(children.length).isEqualTo(1);</span>
+
+<span class="nc" id="L67">        SetTreeStateRunnable setStateRunnable = new SetTreeStateRunnable(root, null);</span>
+<span class="nc" id="L68">        queue.invokeLater(setStateRunnable);</span>
+<span class="nc" id="L69">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L71">        setStateRunnable = new SetTreeStateRunnable(root, new TreeState(&quot;wrongname&quot;, null, null));</span>
+<span class="nc" id="L72">        queue.invokeLater(setStateRunnable);</span>
+<span class="nc" id="L73">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L75">        EventChannelStateBuffer buff = new EventChannelStateBuffer();</span>
+<span class="nc" id="L76">        buff.put(integerECD, 654321);</span>
+
+<span class="nc" id="L78">        TreeState childTS = new TreeState(&quot;wrongname&quot;, buff.toArray(), null);</span>
+<span class="nc" id="L79">        buff.clear();</span>
+<span class="nc" id="L80">        buff.put(stringECD, &quot;Goodbye&quot;);</span>
+
+<span class="nc" id="L82">        TreeState rootTS = new TreeState(rootName, buff.toArray(), new TreeState[] {childTS});</span>
+
+<span class="nc" id="L84">        setStateRunnable = new SetTreeStateRunnable(root, rootTS);</span>
+<span class="nc" id="L85">        queue.invokeLater(setStateRunnable);</span>
+<span class="nc" id="L86">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L88">        buff.clear();</span>
+<span class="nc" id="L89">        buff.put(integerECD, 654321);</span>
+
+<span class="nc" id="L91">        childTS = new TreeState(childName, buff.toArray(), null);</span>
+<span class="nc" id="L92">        buff.clear();</span>
+<span class="nc" id="L93">        buff.put(stringECD, &quot;Goodbye&quot;);</span>
+
+<span class="nc" id="L95">        rootTS = new TreeState(rootName, buff.toArray(), new TreeState[] {childTS});</span>
+
+<span class="nc" id="L97">        setStateRunnable = new SetTreeStateRunnable(root, rootTS);</span>
+<span class="nc" id="L98">        queue.invokeLater(setStateRunnable);</span>
+<span class="nc" id="L99">        queue.waitTilEmpty();</span>
+<span class="nc" id="L100">        queue.invokeLater(getStateRunnable);</span>
+<span class="nc" id="L101">        queue.waitTilEmpty();</span>
+<span class="nc" id="L102">        assertThat(rootTS).isEqualTo(getStateRunnable.treeState);</span>
+<span class="nc" id="L103">    }</span>
+
+    @Test
+    void customTagExportImportTreeStateTest() throws InterruptedException {
+<span class="nc" id="L107">        String tag1 = &quot;tag1&quot;;</span>
+<span class="nc" id="L108">        String tag2 = &quot;tag2&quot;;</span>
+<span class="nc" id="L109">        StringECD ecd1 = new StringECD(&quot;str_ecd_1&quot;);</span>
+<span class="nc" id="L110">        IntegerECD ecd2 = new IntegerECD(&quot;int_ecd_1&quot;);</span>
+<span class="nc" id="L111">        EventChannelState state1 = new EventChannelState(ecd1, &quot;hello&quot;);</span>
+<span class="nc" id="L112">        EventChannelState state2 = new EventChannelState(ecd2, 123);</span>
+<span class="nc" id="L113">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L114">        final Root root = Root.builder()</span>
+<span class="nc" id="L115">                .setName(&quot;TestRoot&quot;)</span>
+<span class="nc" id="L116">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L117">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L118">                .addEventChannel(ecd1, DotEqualsRule.RULE, state1.getState(), new String[] {tag1, tag2})</span>
+<span class="nc" id="L119">                .addEventChannel(ecd2, DotEqualsRule.RULE, state2.getState(), new String[] {tag2})</span>
+<span class="nc" id="L120">                .build();</span>
+
+<span class="nc" id="L122">        GetTreeStateRunnable tsr = new GetTreeStateRunnable(root, null);</span>
+<span class="nc" id="L123">        queue.invokeLater(tsr);</span>
+<span class="nc" id="L124">        queue.waitTilEmpty();</span>
+<span class="nc" id="L125">        assertThat(tsr.exception).isNotNull();</span>
+
+<span class="nc" id="L127">        tsr = new GetTreeStateRunnable(root, tag1);</span>
+<span class="nc" id="L128">        queue.invokeLater(tsr);</span>
+<span class="nc" id="L129">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L131">        assertThat(tsr.treeState).isNotNull();</span>
+<span class="nc" id="L132">        EventChannelState[] ecs = tsr.treeState.getState();</span>
+<span class="nc" id="L133">        assertThat(ecs.length).isEqualTo(1);</span>
+<span class="nc" id="L134">        assertThat(state1.getEventChannelName()).isEqualTo(ecs[0].getEventChannelName());</span>
+<span class="nc" id="L135">        assertThat(state1.getState()).isEqualTo(ecs[0].getState());</span>
+
+<span class="nc" id="L137">        tsr = new GetTreeStateRunnable(root, tag2);</span>
+<span class="nc" id="L138">        queue.invokeLater(tsr);</span>
+<span class="nc" id="L139">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L141">        assertThat(tsr.treeState).isNotNull();</span>
+<span class="nc" id="L142">        ecs = tsr.treeState.getState();</span>
+<span class="nc" id="L143">        assertThat(ecs.length).isEqualTo(2);</span>
+<span class="nc" id="L144">    }</span>
+
+    private static class GetTreeStateRunnable implements Runnable {
+<span class="nc" id="L147">        public TreeState treeState = null;</span>
+
+<span class="nc" id="L149">        public RuntimeException exception = null;</span>
+
+        private final BranchComponent component;
+
+        private final String exportTag;
+
+        public GetTreeStateRunnable(BranchComponent component) {
+<span class="nc" id="L156">            this(component, BranchComponent.DEFAULT_EXPORT_TAG);</span>
+<span class="nc" id="L157">        }</span>
+
+<span class="nc" id="L159">        public GetTreeStateRunnable(BranchComponent component, String tag) {</span>
+<span class="nc" id="L160">            this.component = component;</span>
+<span class="nc" id="L161">            this.exportTag = tag;</span>
+<span class="nc" id="L162">        }</span>
+
+        @Override
+        public void run() {
+            try {
+<span class="nc" id="L167">                treeState = component.getTreeState(this.exportTag);</span>
+<span class="nc" id="L168">            } catch (RuntimeException e) {</span>
+<span class="nc" id="L169">                this.exception = e;</span>
+<span class="nc" id="L170">            }</span>
+<span class="nc" id="L171">        }</span>
+    }
+
+    private static class SetTreeStateRunnable implements Runnable {
+<span class="nc" id="L175">        public TreeState treeState = null;</span>
+
+<span class="nc" id="L177">        public RuntimeException exception = null;</span>
+
+        private final BranchComponent component;
+
+<span class="nc" id="L181">        public SetTreeStateRunnable(BranchComponent component, TreeState treeState) {</span>
+<span class="nc" id="L182">            this.component = component;</span>
+<span class="nc" id="L183">            this.treeState = treeState;</span>
+<span class="nc" id="L184">        }</span>
+
+        @Override
+        public void run() {
+            try {
+<span class="nc" id="L189">                component.setTreeState(this.treeState, false, false);</span>
+<span class="nc" id="L190">            } catch (RuntimeException e) {</span>
+<span class="nc" id="L191">                this.exception = e;</span>
+<span class="nc" id="L192">            }</span>
+<span class="nc" id="L193">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

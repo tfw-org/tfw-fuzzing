@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommitTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">CommitTest.java</span></div><h1>CommitTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L10">final class CommitTest {</span>
+<span class="nc" id="L11">    private final ObjectECD portA = new StringECD(&quot;A&quot;);</span>
+<span class="nc" id="L12">    private final ObjectECD portB = new StringECD(&quot;B&quot;);</span>
+<span class="nc" id="L13">    private final ObjectECD portC = new StringECD(&quot;C&quot;);</span>
+<span class="nc" id="L14">    private final ObjectECD portD = new StringECD(&quot;D&quot;);</span>
+<span class="nc" id="L15">    private final Initiator initA = new Initiator(&quot;initiator a&quot;, new ObjectECD[] {portA});</span>
+<span class="nc" id="L16">    private final Initiator initB = new Initiator(&quot;initiator b&quot;, new ObjectECD[] {portB});</span>
+<span class="nc" id="L17">    private final Initiator initC = new Initiator(&quot;initiator c&quot;, new ObjectECD[] {portC});</span>
+<span class="nc" id="L18">    private final Initiator initD = new Initiator(&quot;initiator d&quot;, new ObjectECD[] {portD});</span>
+<span class="nc" id="L19">    private final TestCommit testCommit = new TestCommit(</span>
+            &quot;Test Commit&quot;, new ObjectECD[] {portA, portB}, new ObjectECD[] {portC, portD}, new Initiator[] {initA, initB
+            });
+
+    public void constructorTest() {
+<span class="nc" id="L24">        assertThatThrownBy(() -&gt; new TestCommit(null, new ObjectECD[] {portA}, null, null))</span>
+<span class="nc" id="L25">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L26">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+
+<span class="nc" id="L28">        assertThatThrownBy(() -&gt; new TestCommit(&quot;TestCommit&quot;, null, new ObjectECD[] {portA}, null))</span>
+<span class="nc" id="L29">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L30">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+
+<span class="nc" id="L32">        assertThatThrownBy(() -&gt; new TestCommit(&quot;TestCommit&quot;, new ObjectECD[] {}, new ObjectECD[] {portA}, null))</span>
+<span class="nc" id="L33">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L34">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+
+<span class="nc" id="L36">        assertThatThrownBy(() -&gt; new TestCommit(&quot;TestCommit&quot;, new ObjectECD[] {portA, null}, null, null))</span>
+<span class="nc" id="L37">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L38">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+
+<span class="nc" id="L40">        assertThatThrownBy(() -&gt; new TestCommit(&quot;TestCommit&quot;, new ObjectECD[] {portA}, new ObjectECD[] {null}, null))</span>
+<span class="nc" id="L41">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L42">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+
+<span class="nc" id="L44">        assertThatThrownBy(() -&gt; new TestCommit(&quot;TestCommit&quot;, new ObjectECD[] {portA}, null, new Initiator[] {null}))</span>
+<span class="nc" id="L45">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L46">                .hasMessage(&quot;runnable == null not allowed!&quot;);</span>
+<span class="nc" id="L47">    }</span>
+
+    @Test
+    void triggerBehaviorTest() throws InterruptedException {
+
+<span class="nc" id="L52">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L53">        final Root root = Root.builder()</span>
+<span class="nc" id="L54">                .setName(&quot;TestBranch&quot;)</span>
+<span class="nc" id="L55">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L56">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L57">                .addObjectECD(portA, &quot;avalue&quot;)</span>
+<span class="nc" id="L58">                .addObjectECD(portB, &quot;bvalue&quot;)</span>
+<span class="nc" id="L59">                .addObjectECD(portC, &quot;cvalue&quot;)</span>
+<span class="nc" id="L60">                .addObjectECD(portD, &quot;dvalue&quot;)</span>
+<span class="nc" id="L61">                .build();</span>
+
+<span class="nc" id="L63">        root.add(initA);</span>
+<span class="nc" id="L64">        root.add(initB);</span>
+<span class="nc" id="L65">        root.add(initC);</span>
+<span class="nc" id="L66">        root.add(initD);</span>
+<span class="nc" id="L67">        root.add(testCommit);</span>
+<span class="nc" id="L68">        testCommit.clear();</span>
+<span class="nc" id="L69">        initC.set(portC, &quot;cvalue&quot;);</span>
+<span class="nc" id="L70">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L72">        assertThat(testCommit.commitFired).isFalse();</span>
+<span class="nc" id="L73">        assertThat(testCommit.debugCommitFired).isFalse();</span>
+
+<span class="nc" id="L75">        initA.set(portA, &quot;avalue&quot;);</span>
+<span class="nc" id="L76">        queue.waitTilEmpty();</span>
+<span class="nc" id="L77">        assertThat(testCommit.commitFired).isFalse();</span>
+<span class="nc" id="L78">        assertThat(testCommit.debugCommitFired).isFalse();</span>
+
+<span class="nc" id="L80">        testCommit.clear();</span>
+<span class="nc" id="L81">        root.add(new SetAOnA(&quot;SetAOnA&quot;, portA));</span>
+<span class="nc" id="L82">        initA.set(portA, &quot;avalue&quot;);</span>
+<span class="nc" id="L83">        queue.waitTilEmpty();</span>
+<span class="nc" id="L84">        assertThat(testCommit.commitFired).isTrue();</span>
+<span class="nc" id="L85">        assertThat(testCommit.portAState).isEqualTo(&quot;true&quot;);</span>
+
+<span class="nc" id="L87">        testCommit.clear();</span>
+<span class="nc" id="L88">        root.add(new SetAOnC(&quot;SetAOnC&quot;, portC, portA));</span>
+
+<span class="nc" id="L90">        initC.set(portC, &quot;anything&quot;);</span>
+<span class="nc" id="L91">        queue.waitTilEmpty();</span>
+<span class="nc" id="L92">        assertThat(testCommit.commitFired).isTrue();</span>
+<span class="nc" id="L93">        assertThat(testCommit.portAState).isEqualTo(&quot;false&quot;);</span>
+<span class="nc" id="L94">    }</span>
+
+    private static class SetAOnA extends Converter {
+        private final ObjectECD portA;
+
+        public SetAOnA(String name, ObjectECD portA) {
+<span class="nc" id="L100">            super(name, new ObjectECD[] {portA}, new ObjectECD[] {portA});</span>
+<span class="nc" id="L101">            this.portA = portA;</span>
+<span class="nc" id="L102">        }</span>
+
+        @Override
+        public void convert() {
+<span class="nc" id="L106">            String value = (String) get(portA);</span>
+
+<span class="nc bnc" id="L108" title="All 4 branches missed.">            if (!value.equals(&quot;true&quot;) &amp;&amp; !value.equals(&quot;false&quot;)) {</span>
+<span class="nc" id="L109">                set(portA, &quot;true&quot;);</span>
+            }
+<span class="nc" id="L111">        }</span>
+    }
+
+    private static class SetAOnC extends Converter {
+        private final ObjectECD portA;
+
+        public SetAOnC(String name, ObjectECD portC, ObjectECD portA) {
+<span class="nc" id="L118">            super(name, new ObjectECD[] {portC}, new ObjectECD[] {portA});</span>
+<span class="nc" id="L119">            this.portA = portA;</span>
+<span class="nc" id="L120">        }</span>
+
+        @Override
+        public void convert() {
+<span class="nc" id="L124">            set(portA, &quot;false&quot;);</span>
+<span class="nc" id="L125">        }</span>
+    }
+
+    private class TestCommit extends Commit {
+<span class="nc" id="L129">        public boolean commitFired = false;</span>
+<span class="nc" id="L130">        public boolean debugCommitFired = false;</span>
+<span class="nc" id="L131">        public String portAState = null;</span>
+
+<span class="nc" id="L133">        public TestCommit(String name, ObjectECD[] triggerSinks, ObjectECD[] nonTriggerSinks, Initiator[] initiators) {</span>
+<span class="nc" id="L134">            super(name, triggerSinks, nonTriggerSinks, initiators);</span>
+<span class="nc" id="L135">        }</span>
+
+        private void setState() {
+<span class="nc" id="L138">            portAState = (String) get(portA);</span>
+<span class="nc" id="L139">        }</span>
+
+        public void clear() {
+<span class="nc" id="L142">            commitFired = false;</span>
+<span class="nc" id="L143">            debugCommitFired = false;</span>
+<span class="nc" id="L144">            portAState = null;</span>
+<span class="nc" id="L145">        }</span>
+
+        @Override
+        public void commit() {
+<span class="nc" id="L149">            commitFired = true;</span>
+<span class="nc" id="L150">            setState();</span>
+<span class="nc" id="L151">        }</span>
+
+        @Override
+        public void debugCommit() {
+<span class="nc" id="L155">            debugCommitFired = true;</span>
+<span class="nc" id="L156">            setState();</span>
+<span class="nc" id="L157">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectECD.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm.ecd</a> &gt; <span class="el_source">ObjectECD.java</span></div><h1>ObjectECD.java</h1><pre class="source lang-java linenums">package tfw.tsm.ecd;
+
+import java.util.function.Predicate;
+
+/**
+ * A &lt;code&gt;java.lang.Object&lt;/code&gt; event channel descritpion. This is the base
+ * class for all stateful event channel descriptions.
+ */
+public class ObjectECD extends EventChannelDescription {
+    /**
+     * Creates an event channel description with the specified name.
+     *
+     * @param name
+     *            the name of the event channel.
+     */
+    public ObjectECD(String name) {
+<span class="nc" id="L17">        super(name, new IsAssignableFromPredicate(Object.class));</span>
+<span class="nc" id="L18">    }</span>
+
+    /**
+     * Creates an event channel description with the specified attributes. This
+     * constructor is made available to sub-classing purposes only.
+     *
+     * @param eventChannelName
+     *            the name of the event channel.
+     * @param predicate
+     *            the value predicate for the event channel.
+     */
+    protected ObjectECD(String eventChannelName, Predicate&lt;Object&gt; predicate) {
+<span class="nc" id="L30">        super(eventChannelName, predicate, true, true);</span>
+<span class="nc" id="L31">    }</span>
+
+    /**
+     * Creates an event channel description with the specified attributes. This
+     * constructor is intentionally package private.
+     *
+     * @param eventChannelName
+     *            the name of the event channel.
+     * @param predicate
+     *            the value predicate for the evnet channel.
+     * @param fireOnConnect
+     *            flag indicating whether the event channel fires state when a
+     *            new sink is connected.
+     * @param rollbackParticipant
+     *            flag indicating whether the event channel participates in
+     *            transaction rollbacks.
+     */
+    ObjectECD(
+            String eventChannelName, Predicate&lt;Object&gt; predicate, boolean fireOnConnect, boolean rollbackParticipant) {
+<span class="nc" id="L50">        super(eventChannelName, predicate, fireOnConnect, rollbackParticipant);</span>
+<span class="nc" id="L51">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

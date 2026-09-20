@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NormalizedDoubleIlaFromAuAudioData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio.au</a> &gt; <span class="el_source">NormalizedDoubleIlaFromAuAudioData.java</span></div><h1>NormalizedDoubleIlaFromAuAudioData.java</h1><pre class="source lang-java linenums">package tfw.audio.au;
+
+import tfw.audio.shortila.LinearShortIlaFromALawByteIla;
+import tfw.audio.shortila.LinearShortIlaFromMuLawByteIla;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaSwap;
+import tfw.immutable.ila.doubleila.DoubleIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromCastByteIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromCastFloatIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromCastIntIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromCastShortIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromLongIla;
+import tfw.immutable.ila.doubleila.DoubleIlaScalarMultiply;
+import tfw.immutable.ila.floatila.FloatIlaFromIntIla;
+import tfw.immutable.ila.intila.IntIlaFromByteIla;
+import tfw.immutable.ila.longila.LongIlaFromByteIla;
+import tfw.immutable.ila.shortila.ShortIlaFromByteIla;
+
+public class NormalizedDoubleIlaFromAuAudioData {
+    private NormalizedDoubleIlaFromAuAudioData() {}
+
+    public static DoubleIla create(ByteIla auAudioData, long auMagicNumber, long auEncoding, final int bufferSize) {
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        if (auEncoding == Au.ISDN_U_LAW_8_BIT) {</span>
+<span class="nc" id="L24">            return DoubleIlaScalarMultiply.create(</span>
+<span class="nc" id="L25">                    DoubleIlaFromCastShortIla.create(</span>
+<span class="nc" id="L26">                            LinearShortIlaFromMuLawByteIla.create(auAudioData, bufferSize), bufferSize),</span>
+<span class="nc" id="L27">                    1.0 / (Math.pow(2.0, 15.0) - 1.0));</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        } else if (auEncoding == Au.LINEAR_8_BIT) {</span>
+<span class="nc" id="L29">            return DoubleIlaScalarMultiply.create(</span>
+<span class="nc" id="L30">                    DoubleIlaFromCastByteIla.create(auAudioData, bufferSize), 1.0 / (Math.pow(2.0, 7.0) - 1.0));</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        } else if (auEncoding == Au.LINEAR_16_BIT) {</span>
+<span class="nc bnc" id="L32" title="All 4 branches missed.">            if (auMagicNumber == Au.REV_SUN_MAGIC_NUMBER || auMagicNumber == Au.REV_DEC_MAGIC_NUMBER) {</span>
+<span class="nc" id="L33">                auAudioData = ByteIlaSwap.create(auAudioData, 2, bufferSize);</span>
+            }
+
+<span class="nc" id="L36">            return DoubleIlaScalarMultiply.create(</span>
+<span class="nc" id="L37">                    DoubleIlaFromCastShortIla.create(ShortIlaFromByteIla.create(auAudioData, bufferSize), bufferSize),</span>
+<span class="nc" id="L38">                    1.0 / (Math.pow(2.0, 15.0) - 1.0));</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        } else if (auEncoding == Au.LINEAR_32_BIT) {</span>
+<span class="nc bnc" id="L40" title="All 4 branches missed.">            if (auMagicNumber == Au.REV_SUN_MAGIC_NUMBER || auMagicNumber == Au.REV_DEC_MAGIC_NUMBER) {</span>
+<span class="nc" id="L41">                auAudioData = ByteIlaSwap.create(auAudioData, 4, bufferSize);</span>
+            }
+
+<span class="nc" id="L44">            return DoubleIlaScalarMultiply.create(</span>
+<span class="nc" id="L45">                    DoubleIlaFromCastIntIla.create(IntIlaFromByteIla.create(auAudioData, bufferSize), bufferSize),</span>
+<span class="nc" id="L46">                    1.0 / (Math.pow(2.0, 31.0) - 1.0));</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        } else if (auEncoding == Au.IEEE_FLOATING_POINT_32_BIT) {</span>
+<span class="nc bnc" id="L48" title="All 4 branches missed.">            if (auMagicNumber == Au.REV_SUN_MAGIC_NUMBER || auMagicNumber == Au.REV_DEC_MAGIC_NUMBER) {</span>
+<span class="nc" id="L49">                auAudioData = ByteIlaSwap.create(auAudioData, 4, bufferSize);</span>
+            }
+
+<span class="nc" id="L52">            return DoubleIlaFromCastFloatIla.create(</span>
+<span class="nc" id="L53">                    FloatIlaFromIntIla.create(IntIlaFromByteIla.create(auAudioData, bufferSize), bufferSize),</span>
+                    bufferSize);
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        } else if (auEncoding == Au.IEEE_FLOATING_POINT_64_BIT) {</span>
+<span class="nc bnc" id="L56" title="All 4 branches missed.">            if (auMagicNumber == Au.REV_SUN_MAGIC_NUMBER || auMagicNumber == Au.REV_DEC_MAGIC_NUMBER) {</span>
+<span class="nc" id="L57">                auAudioData = ByteIlaSwap.create(auAudioData, 8, bufferSize);</span>
+            }
+
+<span class="nc" id="L60">            return DoubleIlaFromLongIla.create(LongIlaFromByteIla.create(auAudioData, bufferSize), bufferSize);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        } else if (auEncoding == Au.ISDN_A_LAW_8_BIT) {</span>
+<span class="nc" id="L62">            return DoubleIlaScalarMultiply.create(</span>
+<span class="nc" id="L63">                    DoubleIlaFromCastShortIla.create(</span>
+<span class="nc" id="L64">                            LinearShortIlaFromALawByteIla.create(auAudioData, bufferSize), bufferSize),</span>
+<span class="nc" id="L65">                    1.0 / (Math.pow(2.0, 15.0) - 1.0));</span>
+        }
+
+<span class="nc" id="L68">        throw new IllegalArgumentException(&quot;Unsupported Au encoding type: &quot; + auEncoding);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

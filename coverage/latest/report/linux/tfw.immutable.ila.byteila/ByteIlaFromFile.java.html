@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlaFromFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.byteila</a> &gt; <span class="el_source">ByteIlaFromFile.java</span></div><h1>ByteIlaFromFile.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.byteila;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import tfw.check.Argument;
+
+public final class ByteIlaFromFile {
+    private ByteIlaFromFile() {}
+
+    public static ByteIla create(File file) {
+<span class="nc" id="L12">        return new ByteIlaImpl(file);</span>
+    }
+
+    private static class ByteIlaImpl extends AbstractByteIla {
+        private final File file;
+
+<span class="nc" id="L18">        private RandomAccessFile raf = null;</span>
+
+<span class="nc" id="L20">        private ByteIlaImpl(File file) {</span>
+<span class="nc" id="L21">            Argument.assertNotNull(file, &quot;file&quot;);</span>
+
+<span class="nc bnc" id="L23" title="All 2 branches missed.">            if (!file.exists()) throw new IllegalArgumentException(&quot;file does not exist!&quot;);</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">            if (!file.canRead()) throw new IllegalArgumentException(&quot;file cannot be read!&quot;);</span>
+
+<span class="nc" id="L26">            this.file = file;</span>
+<span class="nc" id="L27">        }</span>
+
+        @Override
+        protected long lengthImpl() {
+<span class="nc" id="L31">            return file.length();</span>
+        }
+
+        @Override
+        protected void getImpl(byte[] array, int offset, long start, int length) throws IOException {
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            if (raf == null) {</span>
+<span class="nc" id="L37">                raf = new RandomAccessFile(file, &quot;r&quot;);</span>
+            }
+
+<span class="nc" id="L40">            raf.seek(start);</span>
+<span class="nc" id="L41">            raf.readFully(array, offset, length);</span>
+<span class="nc" id="L42">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L46">            raf.close();</span>
+<span class="nc" id="L47">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

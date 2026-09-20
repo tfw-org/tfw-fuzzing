@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlmCoreCircularCache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.byteilm</a> &gt; <span class="el_source">ByteIlmCoreCircularCache.java</span></div><h1>ByteIlmCoreCircularCache.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.byteilm;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public class ByteIlmCoreCircularCache {
+    private ByteIlmCoreCircularCache() {}
+
+    public static ByteIlm create(ByteIlm byteIlm, int numRows, ByteIlm byteIlmCoreCircularCache) throws IOException {
+<span class="nc" id="L10">        Argument.assertNotNull(byteIlm, &quot;byteIlm&quot;);</span>
+<span class="nc" id="L11">        Argument.assertGreaterThan(numRows, 0, &quot;numRows&quot;);</span>
+
+<span class="nc" id="L13">        return new ByteIlmImpl(byteIlm, numRows, byteIlmCoreCircularCache);</span>
+    }
+
+    private static class ByteIlmImpl extends AbstractByteIlm {
+        private final ByteIlm byteIlm;
+        private final Core core;
+
+<span class="nc" id="L20">        private ByteIlmImpl(ByteIlm byteIlm, int numRows, ByteIlm byteIlmCoreCircularCache) throws IOException {</span>
+<span class="nc" id="L21">            this.byteIlm = byteIlm;</span>
+
+<span class="nc bnc" id="L23" title="All 2 branches missed.">            if (byteIlmCoreCircularCache instanceof ByteIlmImpl) {</span>
+<span class="nc" id="L24">                core = ((ByteIlmImpl) byteIlmCoreCircularCache).core;</span>
+<span class="nc" id="L25">                core.setByteIlm(byteIlm);</span>
+            } else {
+<span class="nc" id="L27">                core = new Core(byteIlm, numRows);</span>
+            }
+<span class="nc" id="L29">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L33">            return byteIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L38">            return byteIlm.height();</span>
+        }
+
+        @Override
+        protected void getImpl(byte[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc" id="L44">            core.getImpl(array, offset, rowStart, colStart, rowCount, colCount);</span>
+<span class="nc" id="L45">        }</span>
+    }
+
+    private static class Core {
+<span class="nc" id="L49">        private final Object lock = new Object();</span>
+        private ByteIlm byteIlm;
+        private final int cacheLength;
+<span class="nc" id="L52">        private byte[] buffer = new byte[0];</span>
+<span class="nc" id="L53">        private long cacheStart = 0;</span>
+<span class="nc" id="L54">        private long cacheEnd = 0;</span>
+        private final int maxRows;
+
+<span class="nc" id="L57">        public Core(ByteIlm byteIlm, int numRows) throws IOException {</span>
+<span class="nc" id="L58">            this.byteIlm = byteIlm;</span>
+<span class="nc" id="L59">            this.maxRows = numRows;</span>
+
+<span class="nc" id="L61">            cacheLength = (int) byteIlm.width() * maxRows;</span>
+<span class="nc" id="L62">        }</span>
+
+        public void setByteIlm(ByteIlm byteIlm) {
+<span class="nc" id="L65">            synchronized (lock) {</span>
+<span class="nc" id="L66">                this.byteIlm = byteIlm;</span>
+<span class="nc" id="L67">            }</span>
+<span class="nc" id="L68">        }</span>
+
+        public void getImpl(byte[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc" id="L72">            synchronized (lock) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                if (buffer.length == 0) {</span>
+<span class="nc" id="L74">                    buffer = new byte[cacheLength];</span>
+                }
+<span class="nc bnc" id="L76" title="All 8 branches missed.">                if ((cacheStart == 0 &amp;&amp; cacheEnd == 0) || rowStart &gt; cacheEnd || (rowStart + rowCount) &lt; cacheStart) {</span>
+<span class="nc" id="L77">                    int rowStartOffset = (int) (rowStart % maxRows);</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                    if (rowStart % maxRows == 0) {</span>
+<span class="nc" id="L80">                        byteIlm.get(buffer, rowStartOffset * colCount, rowStart, colStart, rowCount, colCount);</span>
+                    } else {
+<span class="nc" id="L82">                        int first = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L83">                        int firstLength = maxRows - first;</span>
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                        if (firstLength &gt; rowCount) {</span>
+<span class="nc" id="L86">                            firstLength = rowCount;</span>
+                        }
+
+<span class="nc" id="L89">                        byteIlm.get(buffer, first * colCount, rowStart, colStart, firstLength, colCount);</span>
+
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                        if (firstLength + first &gt; rowCount) {</span>
+<span class="nc" id="L92">                            first = rowCount - firstLength;</span>
+                        }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                        if (first &gt; 0) {</span>
+<span class="nc" id="L95">                            byteIlm.get(buffer, 0, rowStart + firstLength, colStart, first, colCount);</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                    for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                        for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L101">                            array[offset + i * colCount + j] = buffer[(i + rowStartOffset) % maxRows * colCount + j];</span>
+                        }
+                    }
+
+<span class="nc" id="L105">                    cacheStart = rowStart;</span>
+<span class="nc" id="L106">                    cacheEnd = rowStart + rowCount;</span>
+
+<span class="nc" id="L108">                    return;</span>
+                }
+
+<span class="nc bnc" id="L111" title="All 4 branches missed.">                if (cacheStart &lt;= rowStart &amp;&amp; rowStart + rowCount &lt;= cacheEnd) {</span>
+<span class="nc" id="L112">                    int rowStartOffset = (int) (rowStart % maxRows);</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                        for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L116">                            array[offset + i * colCount + j] = buffer[(i + rowStartOffset) % maxRows * colCount + j];</span>
+                        }
+                    }
+                }
+
+<span class="nc bnc" id="L121" title="All 4 branches missed.">                if (cacheStart &lt;= rowStart &amp;&amp; rowStart &lt;= cacheEnd) {</span>
+<span class="nc" id="L122">                    int newRowCount = (int) (rowStart + rowCount - cacheEnd);</span>
+<span class="nc" id="L123">                    int rowStartOffset = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L124">                    int newRowStartOffset = (int) (cacheEnd % maxRows);</span>
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                    newRowCount = cacheEnd + newRowCount &lt; byteIlm.height()</span>
+<span class="nc" id="L127">                            ? newRowCount</span>
+<span class="nc" id="L128">                            : (int) (byteIlm.height() - cacheEnd);</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                    if (newRowStartOffset + newRowCount &lt;= maxRows) {</span>
+<span class="nc" id="L131">                        byteIlm.get(buffer, newRowStartOffset * colCount, cacheEnd, colStart, newRowCount, colCount);</span>
+                    } else {
+<span class="nc" id="L133">                        int countA = maxRows - newRowStartOffset;</span>
+<span class="nc" id="L134">                        int countB = newRowCount - countA;</span>
+
+<span class="nc" id="L136">                        byteIlm.get(buffer, newRowStartOffset * colCount, cacheEnd, colStart, countA, colCount);</span>
+<span class="nc" id="L137">                        byteIlm.get(buffer, 0, cacheEnd + countA, colStart, countB, colCount);</span>
+                    }
+
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                    for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                        for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L142">                            array[offset + i * colCount + j] = buffer[(i + rowStartOffset) % maxRows * colCount + j];</span>
+                        }
+                    }
+
+<span class="nc" id="L146">                    cacheEnd = rowStart + rowCount;</span>
+<span class="nc" id="L147">                    cacheStart = rowStart;</span>
+
+<span class="nc" id="L149">                    return;</span>
+                }
+
+<span class="nc bnc" id="L152" title="All 4 branches missed.">                if (cacheStart &lt;= rowStart + rowCount &amp;&amp; rowStart + rowCount &lt;= cacheEnd) {</span>
+<span class="nc" id="L153">                    int newRowCount = (int) (cacheStart - rowStart);</span>
+<span class="nc" id="L154">                    int rowStartOffset = (int) (rowStart % maxRows);</span>
+<span class="nc" id="L155">                    int newRowEndOffset = (int) (cacheStart % maxRows);</span>
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                    if (rowStartOffset + newRowCount &lt;= maxRows) {</span>
+<span class="nc" id="L158">                        byteIlm.get(</span>
+                                buffer,
+                                rowStartOffset * colCount,
+                                cacheStart - newRowCount,
+                                colStart,
+                                newRowCount,
+                                colCount);
+                    } else {
+<span class="nc" id="L166">                        int end = newRowEndOffset - newRowCount + maxRows;</span>
+<span class="nc" id="L167">                        int countA = maxRows - end;</span>
+<span class="nc" id="L168">                        int countB = newRowCount - countA;</span>
+
+<span class="nc" id="L170">                        byteIlm.get(buffer, end * colCount, rowStart, colStart, countA, colCount);</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                        if (countB &gt; 0) {</span>
+<span class="nc" id="L173">                            byteIlm.get(buffer, 0, rowStart + countA, colStart, countB, colCount);</span>
+                        } else {
+<span class="nc" id="L175">                            System.out.println(&quot;maxRows = &quot; + maxRows);</span>
+<span class="nc" id="L176">                            System.out.println(&quot;countA = &quot; + countA);</span>
+<span class="nc" id="L177">                            System.out.println(&quot;countB = &quot; + countB);</span>
+<span class="nc" id="L178">                            System.out.println(&quot;newRowCount = &quot; + newRowCount);</span>
+<span class="nc" id="L179">                            System.out.println(&quot;newRowEndOffset = &quot; + newRowEndOffset);</span>
+<span class="nc" id="L180">                            System.out.println(&quot;rowStartOffset = &quot; + rowStartOffset);</span>
+                        }
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                        for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                            for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L185">                                array[offset + i * colCount + j] =</span>
+                                        buffer[(i + rowStartOffset) % maxRows * colCount + j];
+                            }
+                        }
+
+<span class="nc" id="L190">                        cacheEnd = rowStart + rowCount;</span>
+<span class="nc" id="L191">                        cacheStart = rowStart;</span>
+                    }
+                }
+<span class="nc" id="L194">            }</span>
+<span class="nc" id="L195">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

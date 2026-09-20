@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">EventHandler.java</span></div><h1>EventHandler.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * The base class for event handling leaf components.
+ */
+abstract class EventHandler extends TreeComponent {
+    /**
+     * Creates an event handler with the specified attributes.
+     *
+     * @param name the name of the event handler.
+     * @param triggeringSinks the set of triggering input event channels.
+     * @param nonTriggeringSinks the set of non-triggering input event channels.
+     * @param sources the set of output event channels.
+     */
+    EventHandler(
+            String name,
+            EventChannelDescription[] triggeringSinks,
+            EventChannelDescription[] nonTriggeringSinks,
+            EventChannelDescription[] sources) {
+<span class="nc" id="L31">        super(name, createSinks(name, triggeringSinks, nonTriggeringSinks), createSources(name, sources), null);</span>
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        int portCount = (sources == null) ? 0 : sources.length;</span>
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        portCount += nonTriggeringSinks == null ? 0 : nonTriggeringSinks.length;</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        portCount += triggeringSinks == null ? 0 : triggeringSinks.length;</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (portCount == 0) {</span>
+<span class="nc" id="L39">            throw new IllegalArgumentException(&quot;(nonTriggeringSinks.length + nonTriggeringSinks.length&quot;</span>
+                    + &quot; + triggeringSinks.length)&quot;
+                    + &quot; == 0 not allowed&quot;);
+        }
+
+<span class="nc" id="L44">        Iterator&lt;Sink&gt; sinks = getSinks().values().iterator();</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        while (sinks.hasNext()) {</span>
+<span class="nc" id="L47">            ((EventHandlerSink) sinks.next()).setHandler(this);</span>
+        }
+<span class="nc" id="L49">    }</span>
+
+    private static Sink[] createSinks(
+            String name, EventChannelDescription[] triggeringSinks, EventChannelDescription[] nonTriggeringSinks) {
+<span class="nc" id="L53">        ArrayList&lt;EventHandlerSink&gt; list = new ArrayList&lt;EventHandlerSink&gt;();</span>
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (nonTriggeringSinks != null) {</span>
+<span class="nc" id="L56">            Argument.assertElementNotNull(nonTriggeringSinks, &quot;nonTriggeringSinks&quot;);</span>
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            for (int i = 0; i &lt; nonTriggeringSinks.length; i++) {</span>
+<span class="nc" id="L59">                list.add(new EventHandlerSink(name, nonTriggeringSinks[i], false));</span>
+            }
+        }
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (triggeringSinks != null) {</span>
+<span class="nc" id="L64">            Argument.assertElementNotNull(triggeringSinks, &quot;triggeringSinks&quot;);</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            for (int i = 0; i &lt; triggeringSinks.length; i++) {</span>
+<span class="nc" id="L67">                list.add(new EventHandlerSink(name, triggeringSinks[i], true));</span>
+            }
+        }
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (list.size() &gt; 0) {</span>
+<span class="nc" id="L72">            return list.toArray(new Sink[list.size()]);</span>
+        } else {
+<span class="nc" id="L74">            return null;</span>
+        }
+    }
+
+    private static Source[] createSources(String name, EventChannelDescription[] sources) {
+<span class="nc" id="L79">        List&lt;Source&gt; list = new ArrayList&lt;Source&gt;();</span>
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (sources != null) {</span>
+<span class="nc" id="L82">            Argument.assertElementNotNull(sources, &quot;sources&quot;);</span>
+
+<span class="nc" id="L84">            StateQueueFactory factory = new DefaultStateQueueFactory();</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (sources[i] instanceof RollbackECD) {</span>
+<span class="nc" id="L88">                    list.add(new InitiatorSource(name, sources[i], factory.create()));</span>
+                } else {
+<span class="nc" id="L90">                    list.add(new ProcessorSource(name, sources[i]));</span>
+                }
+            }
+        }
+
+<span class="nc" id="L95">        return list.toArray(new Source[list.size()]);</span>
+    }
+
+    static void assertNotStateless(EventChannelDescription ecd) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (ecd instanceof StatelessTriggerECD) {</span>
+<span class="nc" id="L100">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L101">                    &quot;The event channel '&quot; + ecd.getEventChannelName() + &quot;' is stateless, no state available.&quot;);</span>
+        }
+<span class="nc" id="L103">    }</span>
+
+    protected final long getTransactionId() {
+<span class="nc" id="L106">        return getTransactionManager().getCurrentlyExecutingTransactionId();</span>
+    }
+
+    /**
+     * Returns the state of the specified event channel at the conclusion of
+     * transaction prior to the current transaction.
+     *
+     * @param sinkEventChannel
+     *            the sink event channel whose state is to be returned.
+     * @return The stat of the event channel prior to the current transaction.
+     */
+    protected final Object getPreviousTransactionState(EventChannelDescription sinkEventChannel) {
+<span class="nc" id="L118">        Argument.assertNotNull(sinkEventChannel, &quot;sinkEventChannel&quot;);</span>
+<span class="nc" id="L119">        assertNotStateless(sinkEventChannel);</span>
+<span class="nc" id="L120">        Sink sink = getSink(sinkEventChannel);</span>
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (sink == null) {</span>
+<span class="nc" id="L123">            throw new IllegalArgumentException(sinkEventChannel.getEventChannelName() + &quot; not found&quot;);</span>
+        }
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (sink.eventChannel == null) {</span>
+<span class="nc" id="L127">            throw new IllegalStateException(sinkEventChannel + &quot; is not connected to an event channel&quot;);</span>
+        }
+
+<span class="nc" id="L130">        return sink.eventChannel.getPreviousTransactionState();</span>
+    }
+
+    /**
+     * Returns the current state for the specified event channel.
+     *
+     * @param sinkEventChannel
+     *            the event channel whose state is to be returned.
+     * @return the current state for the specified event channel.
+     */
+    protected final Object get(ObjectECD sinkEventChannel) {
+<span class="nc" id="L141">        Argument.assertNotNull(sinkEventChannel, &quot;sinkEventChannel&quot;);</span>
+<span class="nc" id="L142">        assertNotStateless(sinkEventChannel);</span>
+
+<span class="nc" id="L144">        Sink sink = getSink(sinkEventChannel);</span>
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (sink == null) {</span>
+<span class="nc" id="L147">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L148">                    &quot;The component, '&quot; + this.getName() + &quot;', does not subscribe to the requested event channel, '&quot;</span>
+<span class="nc" id="L149">                            + sinkEventChannel.getEventChannelName() + &quot;'.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (sink.eventChannel == null) {</span>
+<span class="nc" id="L153">            throw new IllegalStateException(&quot;The requested sink, '&quot;</span>
+<span class="nc" id="L154">                    + sinkEventChannel.getEventChannelName()</span>
+                    + &quot;', is not connected to an event channel&quot;);
+        }
+
+<span class="nc" id="L158">        return sink.eventChannel.getState();</span>
+    }
+
+    /**
+     * Returns the state of all of the sink event channels for this component.
+     *
+     * @return the state of all of the sink event channels for this component.
+     */
+    protected final Map&lt;ObjectECD, Object&gt; get() {
+<span class="nc" id="L167">        Map&lt;EventChannelDescription, Sink&gt; map = getSinks();</span>
+<span class="nc" id="L168">        Map&lt;ObjectECD, Object&gt; stateMap = new HashMap&lt;ObjectECD, Object&gt;(map.size());</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        for (EventChannelDescription sinkEventChannel : map.keySet()) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            if (sinkEventChannel instanceof ObjectECD) {</span>
+<span class="nc" id="L172">                stateMap.put((ObjectECD) sinkEventChannel, get((ObjectECD) sinkEventChannel));</span>
+            }
+<span class="nc" id="L174">        }</span>
+
+<span class="nc" id="L176">        return stateMap;</span>
+    }
+
+    /**
+     * Set the state of the specified event channel in a new transaction.
+     *
+     * @param initiateECD
+     *            the event channel.
+     * @param state
+     *            the new state for the event channel.
+     */
+    final void initiatorSet(RollbackECD initiateECD, Object state) {
+<span class="nc" id="L188">        Argument.assertNotNull(initiateECD, &quot;initiateECD&quot;);</span>
+<span class="nc" id="L189">        Argument.assertNotNull(state, &quot;state&quot;);</span>
+
+<span class="nc" id="L191">        InitiatorSource source = (InitiatorSource) getSource(initiateECD.getEventChannelName());</span>
+
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L194">            throw new IllegalArgumentException(&quot;initiateECD.getEventChannelName() == &quot;</span>
+<span class="nc" id="L195">                    + initiateECD.getEventChannelName()</span>
+                    + &quot; is not a known event channel.&quot;);
+        }
+
+<span class="nc" id="L199">        newTransaction(new InitiatorSource[] {source}, new Object[] {state});</span>
+<span class="nc" id="L200">    }</span>
+
+    final void initiatorSet(EventChannelState[] eventChannelState) {
+<span class="nc" id="L203">        Argument.assertNotNull(eventChannelState, &quot;eventChannelState&quot;);</span>
+<span class="nc" id="L204">        Argument.assertElementNotNull(eventChannelState, &quot;eventChannelState&quot;);</span>
+
+<span class="nc" id="L206">        InitiatorSource[] sources = new InitiatorSource[eventChannelState.length];</span>
+<span class="nc" id="L207">        Object[] state = new Object[eventChannelState.length];</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        for (int i = 0; i &lt; eventChannelState.length; i++) {</span>
+<span class="nc" id="L210">            String ecName = eventChannelState[i].getEventChannelName();</span>
+<span class="nc" id="L211">            sources[i] = (InitiatorSource) getSource(ecName);</span>
+<span class="nc" id="L212">            state[i] = eventChannelState[i].getState();</span>
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            if (sources[i] == null) {</span>
+<span class="nc" id="L215">                throw new IllegalArgumentException(&quot;eventChannelState[&quot; + i</span>
+                        + &quot;].getECD().getEventChannelName() == &quot; + ecName
+                        + &quot; is not a known event channel&quot;);
+            }
+        }
+
+<span class="nc" id="L221">        newTransaction(sources, state);</span>
+<span class="nc" id="L222">    }</span>
+
+    private void newTransaction(InitiatorSource[] sources, Object[] objects) {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (!isRooted()) {</span>
+<span class="nc" id="L226">            throw new IllegalStateException(&quot;This component is not connected to a root&quot;);</span>
+        }
+
+<span class="nc" id="L229">        getTransactionManager().addStateChange(sources, objects);</span>
+<span class="nc" id="L230">    }</span>
+
+    /**
+     * Called when a sink event channels state changes. Must be implemented by
+     * sub-classes to receive state change notification.
+     *
+     * @param eventChannel
+     *            the event channel who's sate has changed.
+     */
+    abstract void stateChange(EventChannel eventChannel);
+
+    private static class EventHandlerSink extends Sink {
+<span class="nc" id="L242">        private EventHandler handler = null;</span>
+
+        EventHandlerSink(String name, EventChannelDescription description, boolean isTriggering) {
+<span class="nc" id="L245">            super(name, description, isTriggering);</span>
+<span class="nc" id="L246">        }</span>
+
+        @Override
+        void stateChange() {
+<span class="nc" id="L250">            Source source = handler.getSource(ecd.getEventChannelName());</span>
+
+<span class="nc bnc" id="L252" title="All 4 branches missed.">            if (source != null &amp;&amp; source.isStateSource()) {</span>
+<span class="nc" id="L253">                return;</span>
+            }
+
+<span class="nc" id="L256">            handler.stateChange(eventChannel);</span>
+<span class="nc" id="L257">        }</span>
+
+        void setHandler(EventHandler handler) {
+<span class="nc" id="L260">            this.handler = handler;</span>
+<span class="nc" id="L261">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

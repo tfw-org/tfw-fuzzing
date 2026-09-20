@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JMenuItemBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JMenuItemBB.java</span></div><h1>JMenuItemBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import javax.swing.JMenuItem;
+import tfw.awt.component.EnabledCommit;
+import tfw.awt.event.ActionInitiator;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+public class JMenuItemBB extends JMenuItem implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JMenuItemBB(String name, StatelessTriggerECD triggerECD, BooleanECD enabledECD) {
+<span class="nc" id="L16">        this(new Branch(&quot;JMenuItemBB[&quot; + name + &quot;]&quot;), triggerECD, enabledECD);</span>
+<span class="nc" id="L17">    }</span>
+
+<span class="nc" id="L19">    public JMenuItemBB(Branch branch, StatelessTriggerECD triggerECD, BooleanECD enabledECD) {</span>
+<span class="nc" id="L20">        this.branch = branch;</span>
+
+<span class="nc" id="L22">        ActionInitiator actionInitiator = new ActionInitiator(&quot;JMenuItemBB&quot;, triggerECD);</span>
+<span class="nc" id="L23">        addActionListener(actionInitiator);</span>
+<span class="nc" id="L24">        branch.add(actionInitiator);</span>
+
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (enabledECD != null) {</span>
+<span class="nc" id="L27">            EnabledCommit enabledCommit = new EnabledCommit(&quot;JMenuItemBB&quot;, enabledECD, this, null);</span>
+<span class="nc" id="L28">            branch.add(enabledCommit);</span>
+        }
+<span class="nc" id="L30">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L34">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

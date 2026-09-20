@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaFillTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaFillTest.java</span></div><h1>BitIlaFillTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L9">final class BitIlaFillTest {</span>
+    @Test
+    void fillArgumentsTest() {
+<span class="nc" id="L12">        assertThatThrownBy(() -&gt; BitIlaFill.fill(null, 0, 0, true)).isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L13">        assertThatThrownBy(() -&gt; BitIlaFill.fill(new long[1], -1, 0, true))</span>
+<span class="nc" id="L14">                .isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L15">        assertThatThrownBy(() -&gt; BitIlaFill.fill(new long[1], 0, -1, true))</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L17">    }</span>
+
+    @Test
+    void createArgumentsTest() {
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; BitIlaFill.create(true, -1)).isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L22">    }</span>
+
+    @Test
+    void lengthTest() throws IOException {
+<span class="nc" id="L26">        final long length = 64;</span>
+<span class="nc" id="L27">        final BitIla bitIla = BitIlaFill.create(true, length);</span>
+
+<span class="nc" id="L29">        assertThat(bitIla.lengthInBits()).isEqualTo(length);</span>
+<span class="nc" id="L30">    }</span>
+
+    @Test
+    void getArgumentsTest() throws IOException {
+<span class="nc" id="L34">        BitIlaCheck.checkGetArguments(BitIlaFill.create(true, 64));</span>
+<span class="nc" id="L35">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

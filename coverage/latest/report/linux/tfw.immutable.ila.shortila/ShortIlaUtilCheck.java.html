@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShortIlaUtilCheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.shortila</a> &gt; <span class="el_source">ShortIlaUtilCheck.java</span></div><h1>ShortIlaUtilCheck.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.shortila;
+
+import java.util.Random;
+
+public final class ShortIlaUtilCheck {
+    private ShortIlaUtilCheck() {
+        // non-instantiable class
+    }
+
+    public static void checkAll(final ShortIla actual, short epsilon) throws Exception {
+<span class="nc" id="L11">        checkZeroArgImmutability(actual);</span>
+<span class="nc" id="L12">        checkTwoArgImmutability(actual, epsilon);</span>
+<span class="nc" id="L13">        checkTwoFourEquivalence(actual, epsilon);</span>
+<span class="nc" id="L14">    }</span>
+
+    public static void checkZeroArgImmutability(ShortIla ila) throws Exception {
+<span class="nc" id="L17">        final long firstLength = ila.length();</span>
+<span class="nc" id="L18">        final short[] firstArray = ShortIlaUtil.toArray(ila);</span>
+<span class="nc" id="L19">        final long secondLength = ila.length();</span>
+<span class="nc" id="L20">        final short[] secondArray = ShortIlaUtil.toArray(ila);</span>
+<span class="nc" id="L21">        final long thirdLength = ila.length();</span>
+<span class="nc" id="L22">        final short[] thirdArray = ShortIlaUtil.toArray(ila);</span>
+<span class="nc" id="L23">        final long fourthLength = ila.length();</span>
+
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (firstArray.length != firstLength) throw new Exception(&quot;firstArray.length != firstLength&quot;);</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (secondArray.length != secondLength) throw new Exception(&quot;secondArray.length != secondLength&quot;);</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (thirdArray.length != thirdLength) throw new Exception(&quot;thirdArray.length != thirdLength&quot;);</span>
+
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (firstLength != secondLength) throw new Exception(&quot;firstLength != secondLength&quot;);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (secondLength != thirdLength) throw new Exception(&quot;secondLength != thirdLength&quot;);</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (thirdLength != fourthLength) throw new Exception(&quot;thirdLength != fourthLength&quot;);</span>
+
+<span class="nc" id="L33">        final Random random = new Random(0);</span>
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        for (int ii = 0; ii &lt; firstLength; ++ii) {</span>
+<span class="nc" id="L36">            secondArray[ii] = (short) random.nextInt();</span>
+        }
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        for (int ii = 0; ii &lt; firstLength; ++ii) {</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            if (firstArray[ii] != thirdArray[ii])</span>
+<span class="nc" id="L41">                throw new Exception(&quot;firstArray[&quot; + ii + &quot;] (&quot;</span>
+                        + firstArray[ii] + &quot;) != thirdArray[&quot;
+                        + ii + &quot;] (&quot; + thirdArray[ii] + &quot;)&quot;);
+        }
+<span class="nc" id="L45">    }</span>
+
+    // also performs zero-two equivalence
+    public static void checkTwoArgImmutability(ShortIla ila, short epsilon) throws Exception {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        final short eps = epsilon &lt; 0.0 ? (short) -epsilon : epsilon;</span>
+<span class="nc" id="L50">        final short neps = (short) -eps;</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        final int ilaLength = ila.length() &lt;= Integer.MAX_VALUE ? (int) ila.length() : Integer.MAX_VALUE;</span>
+<span class="nc" id="L52">        final short[] baseline = ShortIlaUtil.toArray(ila, 0, ilaLength);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (baseline.length != ilaLength) throw new Exception(&quot;baseline.length != ilaLength&quot;);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc" id="L56">                final short[] subset = ShortIlaUtil.toArray(ila, start, length);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                if (subset.length != length) throw new Exception(&quot;subset.length != length&quot;);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                for (int ii = 0; ii &lt; subset.length; ++ii) {</span>
+<span class="nc" id="L59">                    short delta = (short) (baseline[ii + (int) start] - subset[ii]);</span>
+<span class="nc bnc" id="L60" title="All 4 branches missed.">                    if (!(neps &lt;= delta &amp;&amp; delta &lt;= eps))</span>
+<span class="nc" id="L61">                        throw new Exception(&quot;subset[&quot; + ii + &quot;] (&quot;</span>
+                                + subset[ii] + &quot;) !~ baseline[&quot;
+                                + (ii + start) + &quot;] (&quot;
+                                + baseline[ii + (int) start]
+                                + &quot;) {length=&quot; + length
+                                + &quot;,start=&quot; + start + &quot;}&quot;);
+                }
+            }
+        }
+<span class="nc" id="L70">    }</span>
+
+    public static void checkTwoFourEquivalence(ShortIla ila, short epsilon) throws Exception {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        final short eps = epsilon &lt; 0.0 ? (short) -epsilon : epsilon;</span>
+<span class="nc" id="L74">        final short neps = (short) -eps;</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        final int ilaLength = ila.length() &lt;= Integer.MAX_VALUE ? (int) ila.length() : Integer.MAX_VALUE;</span>
+<span class="nc" id="L76">        final short[] four = new short[ilaLength];</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc" id="L79">                final short[] two = ShortIlaUtil.toArray(ila, start, length);</span>
+<span class="nc" id="L80">                ila.get(four, 0, start, length);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                for (int ii = 0; ii &lt; length; ++ii) {</span>
+<span class="nc" id="L82">                    short delta = (short) (four[ii] - two[ii]);</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                    if (!(neps &lt;= delta &amp;&amp; delta &lt;= eps))</span>
+<span class="nc" id="L84">                        throw new Exception(&quot;four[&quot; + ii + &quot;] (&quot;</span>
+                                + four[ii] + &quot;) !~ two[&quot;
+                                + ii + &quot;] (&quot;
+                                + two[ii]
+                                + &quot;) {length=&quot; + length
+                                + &quot;,start=&quot; + start + &quot;}&quot;);
+                }
+            }
+        }
+<span class="nc" id="L93">    }</span>
+
+    public static void dump(String msg, short[] array) {
+<span class="nc" id="L96">        System.out.println(msg + &quot;:&quot;);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L98">            System.out.print(&quot; &quot; + array[ii]);</span>
+        }
+<span class="nc" id="L100">        System.out.println();</span>
+<span class="nc" id="L101">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

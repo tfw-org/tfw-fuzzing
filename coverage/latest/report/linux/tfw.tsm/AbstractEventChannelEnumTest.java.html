@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractEventChannelEnumTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">AbstractEventChannelEnumTest.java</span></div><h1>AbstractEventChannelEnumTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+<span class="nc" id="L11">class AbstractEventChannelEnumTest {</span>
+    @Test
+    void testValues() {
+<span class="nc" id="L14">        List&lt;EventChannelEnum&lt;?&gt;&gt; channels = TestEventChannelEnum.values();</span>
+
+<span class="nc" id="L16">        assertThat(channels).hasSize(2);</span>
+<span class="nc" id="L17">        assertThat(channels.get(0)).isEqualTo(TestEventChannelEnum.TRIGGER);</span>
+<span class="nc" id="L18">        assertThat(channels.get(1)).isEqualTo(TestEventChannelEnum.OBJECT);</span>
+<span class="nc" id="L19">    }</span>
+
+    static class TestEventChannelEnum&lt;T extends EventChannelDescription&gt; extends AbstractEventChannelEnum&lt;T&gt; {
+<span class="nc" id="L22">        public static final TestEventChannelEnum&lt;StatelessTriggerECD&gt; TRIGGER =</span>
+                new TestEventChannelEnum&lt;&gt;(new StatelessTriggerECD(&quot;trigger&quot;), AlwaysChangeRule.RULE, null, null);
+<span class="nc" id="L24">        public static final TestEventChannelEnum&lt;ObjectECD&gt; OBJECT =</span>
+                new TestEventChannelEnum&lt;&gt;(new ObjectECD(&quot;object&quot;), DotEqualsRule.RULE, null, null);
+
+        public TestEventChannelEnum(T ecd, StateChangeRule rule, Object state, String[] tags) {
+<span class="nc" id="L28">            super(ecd, rule, state, tags);</span>
+<span class="nc" id="L29">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;EventChannelEnum&lt;?&gt;&gt; values() {
+<span class="nc" id="L33">            return valuesFromClass(TestEventChannelEnum.class);</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Test
+    void testValuesFromClassWhenNoInstances() {
+        // Call valuesFromClass on a class that has no instances registered
+<span class="nc" id="L41">        List&lt;UnregisteredEventChannelEnum&lt;?&gt;&gt; result =</span>
+<span class="nc" id="L42">                AbstractEventChannelEnum.valuesFromClass(UnregisteredEventChannelEnum.class);</span>
+
+<span class="nc" id="L44">        assertThat(result).isEmpty();</span>
+<span class="nc" id="L45">    }</span>
+
+    static class UnregisteredEventChannelEnum&lt;T extends EventChannelDescription&gt; extends AbstractEventChannelEnum&lt;T&gt; {
+        public UnregisteredEventChannelEnum(T ecd) {
+<span class="nc" id="L49">            super(ecd, DotEqualsRule.RULE, null, null);</span>
+<span class="nc" id="L50">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;EventChannelEnum&lt;?&gt;&gt; values() {
+<span class="nc" id="L54">            return valuesFromClass(UnregisteredEventChannelEnum.class);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

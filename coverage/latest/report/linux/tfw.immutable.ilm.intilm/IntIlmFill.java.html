@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntIlmFill.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.intilm</a> &gt; <span class="el_source">IntIlmFill.java</span></div><h1>IntIlmFill.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.intilm;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public class IntIlmFill {
+    private IntIlmFill() {}
+
+    public static IntIlm create(int value, long width, long height) {
+<span class="nc" id="L10">        Argument.assertNotLessThan(width, 0, &quot;width&quot;);</span>
+<span class="nc" id="L11">        Argument.assertNotLessThan(height, 0, &quot;height&quot;);</span>
+
+<span class="nc" id="L13">        return new IntIlmImpl(value, width, height);</span>
+    }
+
+    private static class IntIlmImpl extends AbstractIntIlm {
+        private final int value;
+        private final long ilmWidth;
+        private final long ilmHeight;
+
+<span class="nc" id="L21">        private IntIlmImpl(int value, long ilmWidth, long ilmHeight) {</span>
+<span class="nc" id="L22">            this.value = value;</span>
+<span class="nc" id="L23">            this.ilmWidth = ilmWidth;</span>
+<span class="nc" id="L24">            this.ilmHeight = ilmHeight;</span>
+<span class="nc" id="L25">        }</span>
+
+        @Override
+        protected long widthImpl() {
+<span class="nc" id="L29">            return ilmWidth;</span>
+        }
+
+        @Override
+        protected long heightImpl() {
+<span class="nc" id="L34">            return ilmHeight;</span>
+        }
+
+        @Override
+        protected void getImpl(int[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L42">                    array[offset + (i * colCount) + j] = value;</span>
+                }
+            }
+<span class="nc" id="L45">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

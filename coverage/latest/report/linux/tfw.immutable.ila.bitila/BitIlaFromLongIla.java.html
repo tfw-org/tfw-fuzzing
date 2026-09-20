@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaFromLongIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaFromLongIla.java</span></div><h1>BitIlaFromLongIla.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.longila.LongIla;
+
+public final class BitIlaFromLongIla {
+    private BitIlaFromLongIla() {}
+
+    public static BitIla create(final LongIla longIla, final int firstLongOffsetInBits, final long lengthInBits) {
+<span class="nc" id="L11">        Argument.assertNotNull(longIla, &quot;longIla&quot;);</span>
+<span class="nc" id="L12">        Argument.assertNotLessThan(firstLongOffsetInBits, 0, &quot;firstLongOffsetInBits&quot;);</span>
+<span class="nc" id="L13">        Argument.assertNotGreaterThan(firstLongOffsetInBits, 63, &quot;firstLongOffsetInBits&quot;);</span>
+<span class="nc" id="L14">        Argument.assertNotLessThan(lengthInBits, 0, &quot;lengthInBits&quot;);</span>
+
+<span class="nc" id="L16">        return new BitIlaImpl(longIla, firstLongOffsetInBits, lengthInBits);</span>
+    }
+
+    private static class BitIlaImpl extends AbstractBitIla {
+        private final LongIla longIla;
+        private final int firstLongOffsetInBits;
+        private final long lengthInBits;
+
+<span class="nc" id="L24">        public BitIlaImpl(final LongIla longIla, final int firstLongOffsetInBits, final long lengthInBits) {</span>
+<span class="nc" id="L25">            this.longIla = longIla;</span>
+<span class="nc" id="L26">            this.firstLongOffsetInBits = firstLongOffsetInBits;</span>
+<span class="nc" id="L27">            this.lengthInBits = lengthInBits;</span>
+<span class="nc" id="L28">        }</span>
+
+        @Override
+        protected long lengthInBitsImpl() throws IOException {
+<span class="nc" id="L32">            return lengthInBits;</span>
+        }
+
+        @Override
+        protected void getImpl(
+                final long[] array, final long arrayOffsetInBits, final long ilaStartInBits, final long lengthInBits)
+                throws IOException {
+<span class="nc" id="L39">            final long ilaStartInLongs = ilaStartInBits / Long.SIZE;</span>
+<span class="nc" id="L40">            final long ilaEndInLongs = (ilaStartInBits + lengthInBits) / Long.SIZE;</span>
+<span class="nc" id="L41">            final int lengthInLongs = (int) (ilaEndInLongs - ilaStartInLongs) + 1;</span>
+<span class="nc" id="L42">            final long[] tempArray = new long[lengthInLongs];</span>
+
+<span class="nc" id="L44">            longIla.get(tempArray, 0, ilaStartInLongs, lengthInLongs);</span>
+
+<span class="nc" id="L46">            BitIlaUtil.copy(array, arrayOffsetInBits, tempArray, firstLongOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L47">        }</span>
+
+        @Override
+        public void closeImpl() throws IOException {
+<span class="nc" id="L51">            longIla.close();</span>
+<span class="nc" id="L52">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

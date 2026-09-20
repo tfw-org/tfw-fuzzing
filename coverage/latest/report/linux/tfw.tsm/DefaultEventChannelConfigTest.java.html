@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultEventChannelConfigTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">DefaultEventChannelConfigTest.java</span></div><h1>DefaultEventChannelConfigTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+<span class="nc" id="L10">class DefaultEventChannelConfigTest {</span>
+    @Test
+    void testDefaultEventChannelConfig() {
+<span class="nc" id="L13">        ObjectECD ecd = new ObjectECD(&quot;ecd&quot;);</span>
+<span class="nc" id="L14">        StatelessTriggerECD triggerEcd = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L15">        StateChangeRule rule = AlwaysChangeRule.RULE;</span>
+<span class="nc" id="L16">        Object initialState = &quot;initialState&quot;;</span>
+<span class="nc" id="L17">        String[] tags = {&quot;tag1&quot;, &quot;tag2&quot;};</span>
+
+<span class="nc" id="L19">        DefaultEventChannelConfig&lt;ObjectECD&gt; config = new DefaultEventChannelConfig&lt;&gt;(ecd, rule, initialState, tags);</span>
+
+<span class="nc" id="L21">        assertThat(ecd).isEqualTo(config.getEventChannelDescription());</span>
+<span class="nc" id="L22">        assertThat(rule).isEqualTo(config.getStateChangeRule());</span>
+<span class="nc" id="L23">        assertThat(initialState).isEqualTo(config.getInitialState());</span>
+<span class="nc" id="L24">        assertThat(tags).containsExactlyInAnyOrder(config.getExportTags());</span>
+
+<span class="nc" id="L26">        DefaultEventChannelConfig&lt;StatelessTriggerECD&gt; triggerConfig =</span>
+                new DefaultEventChannelConfig&lt;&gt;(triggerEcd, rule, null, null);
+<span class="nc" id="L28">        assertThat(triggerEcd).isEqualTo(triggerConfig.getEventChannelDescription());</span>
+<span class="nc" id="L29">        assertThat(triggerConfig.getStateChangeRule()).isEqualTo(rule);</span>
+<span class="nc" id="L30">        assertThat(triggerConfig.getInitialState()).isNull();</span>
+<span class="nc" id="L31">        assertThat(triggerConfig.getExportTags()).isNull();</span>
+<span class="nc" id="L32">    }</span>
+
+    @Test
+    void testValidation() {
+<span class="nc" id="L36">        ObjectECD objectEcd = new ObjectECD(&quot;ecd&quot;);</span>
+<span class="nc" id="L37">        StatelessTriggerECD triggerEcd = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L38">        StateChangeRule rule = AlwaysChangeRule.RULE;</span>
+<span class="nc" id="L39">        Object initialState = &quot;initialState&quot;;</span>
+<span class="nc" id="L40">        String[] tags = {&quot;tag1&quot;, &quot;tag2&quot;};</span>
+
+<span class="nc" id="L42">        assertThatThrownBy(() -&gt; new DefaultEventChannelConfig&lt;&gt;(null, rule, initialState, tags))</span>
+<span class="nc" id="L43">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L44">                .hasMessageContaining(&quot;ecd&quot;);</span>
+<span class="nc" id="L45">        assertThatThrownBy(() -&gt; new DefaultEventChannelConfig&lt;&gt;(triggerEcd, null, initialState, tags))</span>
+<span class="nc" id="L46">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L47">                .hasMessageContaining(&quot;rule&quot;);</span>
+<span class="nc" id="L48">        assertThatThrownBy(() -&gt; new DefaultEventChannelConfig&lt;&gt;(objectEcd, null, initialState, tags))</span>
+<span class="nc" id="L49">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L50">                .hasMessageContaining(&quot;rule&quot;);</span>
+<span class="nc" id="L51">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

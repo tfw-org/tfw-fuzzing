@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImmutableLongArrayUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila</a> &gt; <span class="el_source">ImmutableLongArrayUtil.java</span></div><h1>ImmutableLongArrayUtil.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila;
+
+import tfw.check.Argument;
+
+public final class ImmutableLongArrayUtil {
+    private static final String ILA_LENGTH_LABEL = &quot;ila.length()&quot;;
+    private static final String ARRAY_LENGTH_LABEL = &quot;array.length&quot;;
+    private static final String OFFSET_LABEL = &quot;offset&quot;;
+    private static final String START_LABEL = &quot;start&quot;;
+    private static final String LENGTH_LABEL = &quot;length&quot;;
+    private static final String OFFSET_PLUS_LENGTH_LABEL = OFFSET_LABEL + &quot;+&quot; + LENGTH_LABEL;
+    private static final String START_PLUS_LENGTH_LABEL = START_LABEL + &quot;+&quot; + LENGTH_LABEL;
+
+    private ImmutableLongArrayUtil() {}
+
+    public static void boundsCheck(long ilaLength, int arrayLength, int offset, long start, int length) {
+<span class="fc" id="L17">        Argument.assertNotLessThan(ilaLength, 0, ILA_LENGTH_LABEL);</span>
+<span class="fc" id="L18">        Argument.assertNotLessThan(arrayLength, 0, ARRAY_LENGTH_LABEL);</span>
+<span class="fc" id="L19">        Argument.assertNotLessThan(offset, 0, OFFSET_LABEL);</span>
+<span class="fc" id="L20">        Argument.assertNotLessThan(start, 0, START_LABEL);</span>
+<span class="fc" id="L21">        Argument.assertNotLessThan(length, 0, LENGTH_LABEL);</span>
+<span class="fc" id="L22">        Argument.assertLessThan(offset, arrayLength, OFFSET_LABEL, ARRAY_LENGTH_LABEL);</span>
+<span class="fc" id="L23">        Argument.assertLessThan(start, ilaLength, START_LABEL, ILA_LENGTH_LABEL);</span>
+<span class="fc" id="L24">        Argument.assertNotGreaterThan(</span>
+                (long) offset + length, arrayLength, OFFSET_PLUS_LENGTH_LABEL, ARRAY_LENGTH_LABEL);
+<span class="fc" id="L26">        Argument.assertNotGreaterThan(start + length, ilaLength, START_PLUS_LENGTH_LABEL, ILA_LENGTH_LABEL);</span>
+<span class="fc" id="L27">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

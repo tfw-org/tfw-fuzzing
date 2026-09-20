@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TakeSkipDoubleIlm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.doubleilm</a> &gt; <span class="el_source">TakeSkipDoubleIlm.java</span></div><h1>TakeSkipDoubleIlm.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.doubleilm;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.doubleila.DoubleIla;
+
+public class TakeSkipDoubleIlm {
+    private TakeSkipDoubleIlm() {}
+
+    public static DoubleIlm create(DoubleIla doubleIla, long take, long skip) {
+<span class="nc" id="L11">        Argument.assertNotNull(doubleIla, &quot;doubleIla&quot;);</span>
+<span class="nc" id="L12">        Argument.assertNotLessThan(take, 1, &quot;take&quot;);</span>
+<span class="nc" id="L13">        Argument.assertNotLessThan(skip, 1, &quot;skip&quot;);</span>
+
+<span class="nc" id="L15">        return new DoubleIlmImpl(doubleIla, take, skip);</span>
+    }
+
+    private static class DoubleIlmImpl extends AbstractDoubleIlm {
+        private final DoubleIla doubleIla;
+        private final long take;
+        private final long skip;
+
+<span class="nc" id="L23">        private DoubleIlmImpl(DoubleIla doubleIla, long take, long skip) {</span>
+<span class="nc" id="L24">            this.doubleIla = doubleIla;</span>
+<span class="nc" id="L25">            this.take = take;</span>
+<span class="nc" id="L26">            this.skip = skip;</span>
+<span class="nc" id="L27">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L31">            return take;</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L36">            return (doubleIla.length() - take) / skip + 1;</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc" id="L43">                doubleIla.get(array, offset + i * colCount, (rowStart + i) * skip + colStart, colCount);</span>
+            }
+<span class="nc" id="L45">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShortIisFactoryFromShortIlaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iisf.shortiisf</a> &gt; <span class="el_source">ShortIisFactoryFromShortIlaTest.java</span></div><h1>ShortIisFactoryFromShortIlaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.iisf.shortiisf;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.iis.shortiis.ShortIis;
+import tfw.immutable.ila.shortila.ShortIla;
+import tfw.immutable.ila.shortila.ShortIlaFromArray;
+
+<span class="nc" id="L12">final class ShortIisFactoryFromShortIlaTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L15">        assertThatThrownBy(() -&gt; ShortIisFactoryFromShortIla.create(null))</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L17">                .hasMessage(&quot;ila == null not allowed!&quot;);</span>
+<span class="nc" id="L18">    }</span>
+
+    @Test
+    void factoryTest() throws IOException {
+<span class="nc" id="L22">        final short[] expectedArray = new short[11];</span>
+<span class="nc" id="L23">        final ShortIla ila = ShortIlaFromArray.create(expectedArray);</span>
+<span class="nc" id="L24">        final ShortIisFactory iisf = ShortIisFactoryFromShortIla.create(ila);</span>
+<span class="nc" id="L25">        final ShortIis iis = iisf.create();</span>
+<span class="nc" id="L26">        final short[] actualArray = new short[expectedArray.length];</span>
+
+<span class="nc" id="L28">        assertThat(iis.read(actualArray, 0, actualArray.length)).isEqualTo(actualArray.length);</span>
+<span class="nc" id="L29">        assertThat(actualArray).isEqualTo(expectedArray);</span>
+<span class="nc" id="L30">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

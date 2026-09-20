@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JLabelBBDemo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.demo</a> &gt; <span class="el_source">JLabelBBDemo.java</span></div><h1>JLabelBBDemo.java</h1><pre class="source lang-java linenums">package tfw.swing.demo;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import tfw.swing.JLabelBB;
+import tfw.tsm.AWTTransactionQueue;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Initiator;
+import tfw.tsm.Root;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+public class JLabelBBDemo {
+<span class="nc" id="L21">    private static final StringECD TEXT_ECD = new StringECD(&quot;text&quot;);</span>
+
+    private JLabelBBDemo() {}
+
+    public static final void main(String[] args) {
+<span class="nc" id="L26">        final Initiator initiator = new Initiator(&quot;JButtonBBTest&quot;, new ObjectECD[] {TEXT_ECD});</span>
+
+<span class="nc" id="L28">        JLabelBB l = new JLabelBB(&quot;JButtonBBTest&quot;, TEXT_ECD);</span>
+<span class="nc" id="L29">        l.setText(&quot;Set Label Value&quot;);</span>
+<span class="nc" id="L30">        final JTextField tf = new JTextField(16);</span>
+<span class="nc" id="L31">        JButton b = new JButton(&quot;Set Label&quot;);</span>
+
+<span class="nc" id="L33">        ActionListener al = new ActionListener() {</span>
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L36">                initiator.set(TEXT_ECD, tf.getText());</span>
+<span class="nc" id="L37">            }</span>
+        };
+<span class="nc" id="L39">        tf.addActionListener(al);</span>
+<span class="nc" id="L40">        b.addActionListener(al);</span>
+
+<span class="nc" id="L42">        JPanel c = new JPanel();</span>
+<span class="nc" id="L43">        c.setLayout(new BorderLayout());</span>
+<span class="nc" id="L44">        c.add(tf, BorderLayout.CENTER);</span>
+<span class="nc" id="L45">        c.add(b, BorderLayout.EAST);</span>
+
+<span class="nc" id="L47">        final JPanel p = new JPanel();</span>
+<span class="nc" id="L48">        p.setLayout(new BorderLayout());</span>
+<span class="nc" id="L49">        p.add(l, BorderLayout.NORTH);</span>
+<span class="nc" id="L50">        p.add(c, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L52">        final Root r = Root.builder()</span>
+<span class="nc" id="L53">                .setName(&quot;JButtonBBTest&quot;)</span>
+<span class="nc" id="L54">                .setTransactionQueue(new AWTTransactionQueue())</span>
+<span class="nc" id="L55">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L56">                .addObjectECD(TEXT_ECD, null)</span>
+<span class="nc" id="L57">                .build();</span>
+
+<span class="nc" id="L59">        r.add(initiator);</span>
+<span class="nc" id="L60">        r.add(l);</span>
+
+<span class="nc" id="L62">        final JFrame f = new JFrame();</span>
+<span class="nc" id="L63">        f.getContentPane().add(p, BorderLayout.CENTER);</span>
+<span class="nc" id="L64">        f.addWindowListener(new WindowAdapter() {</span>
+            @Override
+            public void windowClosing(WindowEvent e) {
+<span class="nc" id="L67">                System.exit(0);</span>
+<span class="nc" id="L68">            }</span>
+        });
+<span class="nc" id="L70">        f.pack();</span>
+<span class="nc" id="L71">        f.setVisible(true);</span>
+
+<span class="nc" id="L73">        initiator.set(TEXT_ECD, &quot;Initial Label Value&quot;);</span>
+<span class="nc" id="L74">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

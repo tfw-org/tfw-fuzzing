@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TriggeredConverterTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">TriggeredConverterTest.java</span></div><h1>TriggeredConverterTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L11">final class TriggeredConverterTest {</span>
+<span class="nc" id="L12">    private final String answer = &quot;Hello World&quot;;</span>
+<span class="nc" id="L13">    private String triggerA = null;</span>
+<span class="nc" id="L14">    private String triggerB = null;</span>
+<span class="nc" id="L15">    private String debugTriggerA = null;</span>
+<span class="nc" id="L16">    private String debugTriggerB = null;</span>
+<span class="nc" id="L17">    private StringECD channel1 = new StringECD(&quot;1&quot;);</span>
+<span class="nc" id="L18">    private StringECD channel2 = new StringECD(&quot;2&quot;);</span>
+<span class="nc" id="L19">    private StatelessTriggerECD trigger = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L20">    private ObjectECD[] sinks = new ObjectECD[] {channel1, channel2};</span>
+<span class="nc" id="L21">    private EventChannelDescription[] sources = new EventChannelDescription[] {channel1, channel2, trigger};</span>
+<span class="nc" id="L22">    private Initiator initiator = new Initiator(&quot;Initiator&quot;, sources);</span>
+<span class="nc" id="L23">    private TriggeredConverter triggeredConverter =</span>
+<span class="nc" id="L24">            new TriggeredConverter(&quot;TriggeredConverter&quot;, trigger, sinks, sources) {</span>
+                @Override
+                protected void convert() {
+<span class="nc" id="L27">                    triggerA = (String) get(channel1);</span>
+<span class="nc" id="L28">                    triggerB = (String) get(channel2);</span>
+<span class="nc" id="L29">                }</span>
+
+                @Override
+                protected void debugConvert() {
+<span class="nc" id="L33">                    debugTriggerA = (String) get(channel1);</span>
+<span class="nc" id="L34">                    debugTriggerB = (String) get(channel2);</span>
+<span class="nc" id="L35">                }</span>
+            };
+
+    @Test
+    void converterTest() throws InterruptedException {
+<span class="nc" id="L40">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L41">        final Root root = Root.builder()</span>
+<span class="nc" id="L42">                .setName(&quot;Test branch&quot;)</span>
+<span class="nc" id="L43">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L44">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L45">                .addObjectECD(channel1, null)</span>
+<span class="nc" id="L46">                .addObjectECD(channel2, null)</span>
+<span class="nc" id="L47">                .addStatelessTriggerECD(trigger)</span>
+<span class="nc" id="L48">                .build();</span>
+
+<span class="nc" id="L50">        root.add(initiator);</span>
+<span class="nc" id="L51">        root.add(triggeredConverter);</span>
+
+<span class="nc" id="L53">        initiator.set(channel1, answer);</span>
+<span class="nc" id="L54">        queue.waitTilEmpty();</span>
+<span class="nc" id="L55">        assertThat(triggerA).isNull();</span>
+<span class="nc" id="L56">        assertThat(triggerB).isNull();</span>
+<span class="nc" id="L57">        assertThat(debugTriggerA).isNull();</span>
+<span class="nc" id="L58">        assertThat(debugTriggerB).isNull();</span>
+
+<span class="nc" id="L60">        initiator.trigger(trigger);</span>
+<span class="nc" id="L61">        queue.waitTilEmpty();</span>
+<span class="nc" id="L62">        assertThat(triggerA).isNull();</span>
+<span class="nc" id="L63">        assertThat(triggerB).isNull();</span>
+<span class="nc" id="L64">        assertThat(debugTriggerA).isEqualTo(answer);</span>
+<span class="nc" id="L65">        assertThat(debugTriggerB).isNull();</span>
+
+<span class="nc" id="L67">        debugTriggerA = null;</span>
+<span class="nc" id="L68">        initiator.set(channel2, answer);</span>
+<span class="nc" id="L69">        queue.waitTilEmpty();</span>
+<span class="nc" id="L70">        assertThat(triggerA).isNull();</span>
+<span class="nc" id="L71">        assertThat(triggerB).isNull();</span>
+<span class="nc" id="L72">        assertThat(debugTriggerA).isNull();</span>
+<span class="nc" id="L73">        assertThat(debugTriggerB).isNull();</span>
+
+<span class="nc" id="L75">        initiator.trigger(trigger);</span>
+<span class="nc" id="L76">        queue.waitTilEmpty();</span>
+<span class="nc" id="L77">        assertThat(triggerA).isEqualTo(answer);</span>
+<span class="nc" id="L78">        assertThat(triggerB).isEqualTo(answer);</span>
+<span class="nc" id="L79">        assertThat(debugTriggerA).isNull();</span>
+<span class="nc" id="L80">        assertThat(debugTriggerB).isNull();</span>
+<span class="nc" id="L81">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

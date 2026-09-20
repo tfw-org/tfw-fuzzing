@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BranchFactoryTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">BranchFactoryTest.java</span></div><h1>BranchFactoryTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L10">final class BranchFactoryTest {</span>
+    @Test
+    void factoryTest() {
+<span class="nc" id="L13">        BranchFactory bf = new BranchFactory();</span>
+
+<span class="nc" id="L15">        assertThatThrownBy(() -&gt; bf.addEventChannel(null))</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L17">                .hasMessage(&quot;eventChannelDescription == null not allowed!&quot;);</span>
+
+<span class="nc" id="L19">        StringECD stringECD = new StringECD(&quot;myString&quot;);</span>
+<span class="nc" id="L20">        Object object = new Object();</span>
+
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; bf.addEventChannel(null, object))</span>
+<span class="nc" id="L23">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L24">                .hasMessage(&quot;eventChannelDescription == null not allowed!&quot;);</span>
+<span class="nc" id="L25">        assertThatThrownBy(() -&gt; bf.addEventChannel(stringECD, &quot;myString&quot;, null, null))</span>
+<span class="nc" id="L26">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L27">                .hasMessage(&quot;rule == null not allowed!&quot;);</span>
+
+<span class="nc" id="L29">        bf.addEventChannel(stringECD);</span>
+
+<span class="nc" id="L31">        StatelessTriggerECD memoryLessECD = new StatelessTriggerECD(&quot;memoryLess&quot;);</span>
+
+<span class="nc" id="L33">        assertThatThrownBy(() -&gt; bf.addEventChannel(memoryLessECD, &quot;non-null state&quot;))</span>
+<span class="nc" id="L34">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L35">                .hasMessage(</span>
+                        &quot;Non-null 'initialState' is not permitted given eventChannelDescription.isFireOnConnect() == false&quot;);
+<span class="nc" id="L37">        assertThatThrownBy(() -&gt; bf.addEventChannel(stringECD))</span>
+<span class="nc" id="L38">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L39">                .hasMessage(&quot;The event channel 'myString' is already exists&quot;);</span>
+
+<span class="nc" id="L41">        StringECD childECD = new StringECD(&quot;child&quot;);</span>
+<span class="nc" id="L42">        StringECD parentECD = new StringECD(&quot;parent&quot;);</span>
+
+<span class="nc" id="L44">        assertThatThrownBy(() -&gt; bf.addTranslation(null, parentECD))</span>
+<span class="nc" id="L45">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L46">                .hasMessage(&quot;childEventChannel == null not allowed!&quot;);</span>
+<span class="nc" id="L47">        assertThatThrownBy(() -&gt; bf.addTranslation(childECD, null))</span>
+<span class="nc" id="L48">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L49">                .hasMessage(&quot;parentEventChannel == null not allowed!&quot;);</span>
+<span class="nc" id="L50">        assertThatThrownBy(() -&gt; bf.addTranslation(stringECD, parentECD))</span>
+<span class="nc" id="L51">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L52">                .hasMessage(&quot;Attempt to translate the event channel 'myString' which is already terminated.&quot;);</span>
+
+<span class="nc" id="L54">        bf.addTranslation(childECD, parentECD);</span>
+
+<span class="nc" id="L56">        assertThatThrownBy(() -&gt; bf.addTranslation(childECD, parentECD))</span>
+<span class="nc" id="L57">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L58">                .hasMessage(&quot;Attempt to translate the event channel 'child' which is already translated.&quot;);</span>
+<span class="nc" id="L59">        assertThatThrownBy(() -&gt; bf.addEventChannel(childECD))</span>
+<span class="nc" id="L60">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L61">                .hasMessage(&quot;Attemp to terminate an event channel, 'child', which is already transalated.&quot;);</span>
+<span class="nc" id="L62">        assertThatThrownBy(() -&gt; bf.create(null))</span>
+<span class="nc" id="L63">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L64">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+
+<span class="nc" id="L66">        bf.clear();</span>
+
+<span class="nc" id="L68">        IntegerECD integerECD = new IntegerECD(&quot;Full Range Integer&quot;);</span>
+<span class="nc" id="L69">        IntegerECD constrainedIntECD = new IntegerECD(&quot;constrained integer&quot;, 0, 1);</span>
+
+<span class="nc" id="L71">        assertThatThrownBy(() -&gt; bf.addTranslation(integerECD, constrainedIntECD))</span>
+<span class="nc" id="L72">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L73">                .hasMessage(</span>
+                        &quot;Incompatible event channels, values from the parent event channel 'constrained integer' are not assignable to the child event channel 'Full Range Integer'&quot;);
+<span class="nc" id="L75">        assertThatThrownBy(() -&gt; bf.addTranslation(constrainedIntECD, integerECD))</span>
+<span class="nc" id="L76">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L77">                .hasMessage(</span>
+                        &quot;Incompatible event channels, values from the parent event channel 'Full Range Integer' are not assignable to the child event channel 'constrained integer'&quot;);
+<span class="nc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

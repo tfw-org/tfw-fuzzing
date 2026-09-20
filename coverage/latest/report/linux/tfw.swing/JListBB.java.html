@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JListBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JListBB.java</span></div><h1>JListBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import javax.swing.JList;
+import tfw.swing.list.SelectionAndListCommit;
+import tfw.swing.list.SelectionInitiator;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ila.IntIlaECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+public class JListBB extends JList&lt;Object&gt; implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JListBB(
+            String name,
+            ObjectIlaECD listECD,
+            ObjectIlaECD selectedItemsECD,
+            IntIlaECD selectedIndexesECD,
+            BooleanECD enabledECD) {
+<span class="nc" id="L23">        this(new Branch(name), listECD, selectedItemsECD, selectedIndexesECD, enabledECD);</span>
+<span class="nc" id="L24">    }</span>
+
+    public JListBB(
+            Branch branch,
+            ObjectIlaECD listECD,
+            ObjectIlaECD selectedItemsECD,
+            IntIlaECD selectedIndexesECD,
+<span class="nc" id="L31">            BooleanECD enabledECD) {</span>
+<span class="nc" id="L32">        this.branch = branch;</span>
+
+<span class="nc" id="L34">        SelectionInitiator selectionInitiator =</span>
+                new SelectionInitiator(&quot;JListBB&quot;, selectedItemsECD, selectedIndexesECD, this);
+
+<span class="nc" id="L37">        addListSelectionListener(selectionInitiator);</span>
+<span class="nc" id="L38">        branch.add(selectionInitiator);</span>
+
+<span class="nc" id="L40">        SelectionAndListCommit selectionAndListCommit = new SelectionAndListCommit(</span>
+                &quot;JListBB&quot;, listECD, selectedItemsECD, selectedIndexesECD, new Initiator[] {selectionInitiator}, this);
+
+<span class="nc" id="L43">        branch.add(selectionAndListCommit);</span>
+<span class="nc" id="L44">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L48">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

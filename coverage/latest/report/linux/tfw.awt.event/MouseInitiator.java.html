@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MouseInitiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.awt.event</a> &gt; <span class="el_source">MouseInitiator.java</span></div><h1>MouseInitiator.java</h1><pre class="source lang-java linenums">package tfw.awt.event;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import tfw.tsm.EventChannelStateBuffer;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.EventChannelDescriptionUtil;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public class MouseInitiator extends Initiator implements MouseListener, MouseMotionListener {
+    private final IntegerECD xECD;
+    private final IntegerECD yECD;
+    private final BooleanECD button1PressedECD;
+    private final BooleanECD button2PressedECD;
+    private final BooleanECD button3PressedECD;
+    private final BooleanECD altPressedECD;
+    private final BooleanECD controlPressedECD;
+    private final BooleanECD shiftPressedECD;
+    private final IntegerECD clickCountECD;
+
+    public MouseInitiator(
+            String name,
+            IntegerECD xECD,
+            IntegerECD yECD,
+            BooleanECD button1PressedECD,
+            BooleanECD button2PressedECD,
+            BooleanECD button3PressedECD,
+            BooleanECD altPressedECD,
+            BooleanECD controlPressedECD,
+            BooleanECD shiftPressedECD,
+            IntegerECD clickCountECD) {
+<span class="nc" id="L35">        super(&quot;MouseInitiator[&quot; + name + &quot;]&quot;, EventChannelDescriptionUtil.create(new ObjectECD[] {</span>
+            xECD,
+            yECD,
+            button1PressedECD,
+            button2PressedECD,
+            button3PressedECD,
+            altPressedECD,
+            controlPressedECD,
+            shiftPressedECD,
+            clickCountECD
+        }));
+
+<span class="nc" id="L47">        this.xECD = xECD;</span>
+<span class="nc" id="L48">        this.yECD = yECD;</span>
+<span class="nc" id="L49">        this.button1PressedECD = button1PressedECD;</span>
+<span class="nc" id="L50">        this.button2PressedECD = button2PressedECD;</span>
+<span class="nc" id="L51">        this.button3PressedECD = button3PressedECD;</span>
+<span class="nc" id="L52">        this.altPressedECD = altPressedECD;</span>
+<span class="nc" id="L53">        this.controlPressedECD = controlPressedECD;</span>
+<span class="nc" id="L54">        this.shiftPressedECD = shiftPressedECD;</span>
+<span class="nc" id="L55">        this.clickCountECD = clickCountECD;</span>
+<span class="nc" id="L56">    }</span>
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+<span class="nc" id="L60">        send(e);</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        // Do Nothing...
+<span class="nc" id="L66">    }</span>
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+        // Do Nothing...
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+<span class="nc" id="L75">        send(e);</span>
+<span class="nc" id="L76">    }</span>
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+<span class="nc" id="L80">        send(e);</span>
+<span class="nc" id="L81">    }</span>
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+<span class="nc" id="L85">        send(e);</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+<span class="nc" id="L90">        send(e);</span>
+<span class="nc" id="L91">    }</span>
+
+    private void send(MouseEvent e) {
+<span class="nc" id="L94">        EventChannelStateBuffer ecsb = new EventChannelStateBuffer();</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (xECD != null) {</span>
+<span class="nc" id="L97">            ecsb.put(xECD, e.getX());</span>
+        }
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (yECD != null) {</span>
+<span class="nc" id="L100">            ecsb.put(yECD, e.getY());</span>
+        }
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (button1PressedECD != null) {</span>
+<span class="nc" id="L103">            ecsb.put(</span>
+                    button1PressedECD,
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                    (e.getModifiersEx() &amp; MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK);</span>
+        }
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (button2PressedECD != null) {</span>
+<span class="nc" id="L108">            ecsb.put(</span>
+                    button2PressedECD,
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                    (e.getModifiersEx() &amp; MouseEvent.BUTTON2_DOWN_MASK) == MouseEvent.BUTTON2_DOWN_MASK);</span>
+        }
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (button3PressedECD != null) {</span>
+<span class="nc" id="L113">            ecsb.put(</span>
+                    button3PressedECD,
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    (e.getModifiersEx() &amp; MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK);</span>
+        }
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (altPressedECD != null) {</span>
+<span class="nc" id="L118">            ecsb.put(altPressedECD, e.isAltDown());</span>
+        }
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (controlPressedECD != null) {</span>
+<span class="nc" id="L121">            ecsb.put(controlPressedECD, e.isControlDown());</span>
+        }
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (shiftPressedECD != null) {</span>
+<span class="nc" id="L124">            ecsb.put(shiftPressedECD, e.isShiftDown());</span>
+        }
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (clickCountECD != null) {</span>
+<span class="nc" id="L127">            ecsb.put(clickCountECD, e.getClickCount());</span>
+        }
+
+<span class="nc" id="L130">        set(ecsb.toArray());</span>
+<span class="nc" id="L131">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

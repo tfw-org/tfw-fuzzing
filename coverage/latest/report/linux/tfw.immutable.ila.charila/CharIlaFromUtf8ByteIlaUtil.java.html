@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharIlaFromUtf8ByteIlaUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.charila</a> &gt; <span class="el_source">CharIlaFromUtf8ByteIlaUtil.java</span></div><h1>CharIlaFromUtf8ByteIlaUtil.java</h1><pre class="source lang-java linenums">/**
+ * This is based on the web page http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
+ *
+ * Copyright (c) 2008-2009 Bjoern Hoehrmann &lt;bjoern@hoehrmann.de&gt;
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the &quot;Software&quot;), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+package tfw.immutable.ila.charila;
+
+import java.io.IOException;
+import tfw.immutable.ila.byteila.ByteIla;
+
+public final class CharIlaFromUtf8ByteIlaUtil {
+    private CharIlaFromUtf8ByteIlaUtil() {}
+
+    public static final int DEFAULT_BYTE_BUFFER_LENGTH = 1000;
+    public static final int DEFAULT_MIN_CHAR_DELTA = 100;
+    public static final int DEFAULT_MAX_INDEX_TABLE_LENGTH = 100000;
+
+    static final int HOEHRMANN_UTF8_ACCEPT = 0;
+<span class="nc" id="L25">    static final int[] HOEHRMANN_LOOKUP_TABLE = new int[] {</span>
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 9, 9, 9,
+        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 10, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 11, 6, 6, 6, 5, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
+    };
+<span class="nc" id="L34">    static final int[] HOEHRMANN_LOOKUP_TABLE2 = new int[] {</span>
+        0, 12, 24, 36, 60, 96, 84, 12, 12, 12, 48, 72, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 0, 12, 12,
+        12, 12, 12, 0, 12, 0, 12, 12, 12, 24, 12, 12, 12, 12, 12, 24, 12, 24, 12, 12, 12, 12, 12, 12, 12, 12, 12, 24,
+        12, 12, 12, 12, 12, 24, 12, 12, 12, 12, 12, 12, 12, 24, 12, 12, 12, 12, 12, 12, 12, 12, 12, 36, 12, 36, 12, 12,
+        12, 36, 12, 12, 12, 12, 12, 36, 12, 36, 12, 12, 12, 36, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12
+    };
+
+    public static int calculateByteBufferLength(final int byteBufferLength) {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        return byteBufferLength &gt; 0 ? byteBufferLength : DEFAULT_BYTE_BUFFER_LENGTH;</span>
+    }
+
+    public static long calculateCharDelta(final int indexTableLength, final long utf8ByteIlaLength) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (indexTableLength &gt; 0) {</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            return utf8ByteIlaLength / indexTableLength + ((utf8ByteIlaLength % indexTableLength == 0) ? 0 : 1);</span>
+        } else {
+<span class="nc" id="L49">            final long minDeltaTableLength = utf8ByteIlaLength / DEFAULT_MIN_CHAR_DELTA;</span>
+
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (minDeltaTableLength &lt;= DEFAULT_MAX_INDEX_TABLE_LENGTH) {</span>
+<span class="nc" id="L52">                return DEFAULT_MIN_CHAR_DELTA;</span>
+            } else {
+<span class="nc" id="L54">                return utf8ByteIlaLength / DEFAULT_MAX_INDEX_TABLE_LENGTH</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">                        + ((utf8ByteIlaLength % DEFAULT_MAX_INDEX_TABLE_LENGTH == 0) ? 0 : 1);</span>
+            }
+        }
+    }
+
+    public static int calculateByteIndexTableLength(
+            final int indexTableLength, final long utf8ByteIlaLength, final long charDelta) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (indexTableLength &gt; 0) {</span>
+<span class="nc" id="L63">            return indexTableLength;</span>
+        } else {
+<span class="nc" id="L65">            final long minDeltaTableLength = utf8ByteIlaLength / DEFAULT_MIN_CHAR_DELTA</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                    + ((utf8ByteIlaLength % DEFAULT_MIN_CHAR_DELTA == 0) ? 0 : 1);</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (minDeltaTableLength &lt;= DEFAULT_MAX_INDEX_TABLE_LENGTH) {</span>
+<span class="nc" id="L69">                return (int) minDeltaTableLength;</span>
+            } else {
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                return (int) (utf8ByteIlaLength / charDelta + ((utf8ByteIlaLength % charDelta == 0) ? 0 : 1));</span>
+            }
+        }
+    }
+
+    public static long calculateCharLengthAndFillByteIndexTable(
+            final ByteIla utf8ByteIla, final byte[] byteBuffer, final long charDelta, final long[] byteIndexTable)
+            throws IOException {
+<span class="nc" id="L79">        final long utf8ByteIlaLength = utf8ByteIla.length();</span>
+
+<span class="nc" id="L81">        long charLength = 0;</span>
+<span class="nc" id="L82">        int utf8State = 0;</span>
+<span class="nc" id="L83">        int utf8Character = 0;</span>
+<span class="nc" id="L84">        long firstByteIndex = 0;</span>
+<span class="nc" id="L85">        long charDeltaIndex = charDelta;</span>
+<span class="nc" id="L86">        int byteIndexTableIndex = 0;</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        for (long byteIndex = 0; byteIndex &lt; utf8ByteIlaLength; ) {</span>
+<span class="nc" id="L89">            final long remainingBytes = utf8ByteIlaLength - byteIndex;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            final int bytesToGet = (int) (byteBuffer.length &lt;= remainingBytes ? byteBuffer.length : remainingBytes);</span>
+
+<span class="nc" id="L92">            utf8ByteIla.get(byteBuffer, 0, byteIndex, bytesToGet);</span>
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            for (int byteBufferIndex = 0; byteBufferIndex &lt; bytesToGet; byteBufferIndex++, byteIndex++) {</span>
+<span class="nc" id="L95">                final byte b = byteBuffer[byteBufferIndex];</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                if (b &gt; 0) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                    if (charDeltaIndex == charDelta) {</span>
+<span class="nc" id="L99">                        byteIndexTable[byteIndexTableIndex++] = firstByteIndex;</span>
+<span class="nc" id="L100">                        charDeltaIndex = 0;</span>
+                    }
+
+<span class="nc" id="L103">                    charDeltaIndex++;</span>
+<span class="nc" id="L104">                    charLength++;</span>
+<span class="nc" id="L105">                    firstByteIndex = byteIndex + 1;</span>
+                } else {
+<span class="nc" id="L107">                    final int ub = b + 256;</span>
+<span class="nc" id="L108">                    final int type = HOEHRMANN_LOOKUP_TABLE[ub];</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                    utf8Character = (utf8State != HOEHRMANN_UTF8_ACCEPT)</span>
+<span class="nc" id="L111">                            ? (ub &amp; 0x3F) | (utf8Character &lt;&lt; 6)</span>
+<span class="nc" id="L112">                            : (0xFF &gt;&gt; type) &amp; ub;</span>
+<span class="nc" id="L113">                    utf8State = HOEHRMANN_LOOKUP_TABLE2[utf8State + type];</span>
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    if (utf8State == HOEHRMANN_UTF8_ACCEPT) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                        if (charDeltaIndex == charDelta) {</span>
+<span class="nc" id="L117">                            byteIndexTable[byteIndexTableIndex++] = firstByteIndex;</span>
+<span class="nc" id="L118">                            charDeltaIndex = 0;</span>
+                        }
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                        if (utf8Character &gt; 0xFFFF) {</span>
+<span class="nc" id="L121">                            charDeltaIndex++;</span>
+<span class="nc" id="L122">                            charLength++;</span>
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                            if (charDeltaIndex == charDelta) {</span>
+<span class="nc" id="L125">                                byteIndexTable[byteIndexTableIndex++] = firstByteIndex;</span>
+<span class="nc" id="L126">                                charDeltaIndex = 0;</span>
+                            }
+                        }
+
+<span class="nc" id="L130">                        charDeltaIndex++;</span>
+<span class="nc" id="L131">                        charLength++;</span>
+<span class="nc" id="L132">                        firstByteIndex = byteIndex + 1;</span>
+                    }
+                }
+            }
+<span class="nc" id="L136">        }</span>
+
+<span class="nc" id="L138">        return charLength;</span>
+    }
+
+    public static long seekForward(
+            final ByteIla utf8ByteIla,
+            final byte[] byteBuffer,
+            final long startCharIndex,
+            final long startByteIndex,
+            final long targetCharIndex)
+            throws IOException {
+<span class="nc" id="L148">        final long utf8ByteIlaLength = utf8ByteIla.length();</span>
+
+<span class="nc" id="L150">        long charIndex = startCharIndex;</span>
+<span class="nc" id="L151">        int utf8State = 0;</span>
+<span class="nc" id="L152">        int utf8Character = 0;</span>
+<span class="nc" id="L153">        long firstByteIndex = startByteIndex;</span>
+
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        for (long byteIndex = startByteIndex; byteIndex &lt; utf8ByteIlaLength; ) {</span>
+<span class="nc" id="L156">            final long remainingBytes = utf8ByteIlaLength - byteIndex;</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            final int bytesToGet = (int) (byteBuffer.length &lt;= remainingBytes ? byteBuffer.length : remainingBytes);</span>
+
+<span class="nc" id="L159">            utf8ByteIla.get(byteBuffer, 0, byteIndex, bytesToGet);</span>
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            for (int byteBufferIndex = 0; byteBufferIndex &lt; bytesToGet; byteBufferIndex++, byteIndex++) {</span>
+<span class="nc" id="L162">                final byte b = byteBuffer[byteBufferIndex];</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (b &gt; 0) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                    if (charIndex == targetCharIndex) {</span>
+<span class="nc" id="L166">                        return firstByteIndex;</span>
+                    }
+
+<span class="nc" id="L169">                    charIndex++;</span>
+<span class="nc" id="L170">                    firstByteIndex = byteIndex + 1;</span>
+                } else {
+<span class="nc" id="L172">                    final int ub = b + 256;</span>
+<span class="nc" id="L173">                    final int type = HOEHRMANN_LOOKUP_TABLE[ub];</span>
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                    utf8Character = (utf8State != HOEHRMANN_UTF8_ACCEPT)</span>
+<span class="nc" id="L176">                            ? (ub &amp; 0x3F) | (utf8Character &lt;&lt; 6)</span>
+<span class="nc" id="L177">                            : (0xFF &gt;&gt; type) &amp; ub;</span>
+<span class="nc" id="L178">                    utf8State = HOEHRMANN_LOOKUP_TABLE2[utf8State + type];</span>
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                    if (utf8State == HOEHRMANN_UTF8_ACCEPT) {</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                        if (charIndex == targetCharIndex) {</span>
+<span class="nc" id="L182">                            return firstByteIndex;</span>
+                        }
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                        if (utf8Character &gt; 0xFFFF) {</span>
+<span class="nc" id="L185">                            charIndex++;</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                            if (charIndex == targetCharIndex) {</span>
+<span class="nc" id="L187">                                return firstByteIndex;</span>
+                            }
+                        }
+<span class="nc" id="L190">                        charIndex++;</span>
+<span class="nc" id="L191">                        firstByteIndex = byteIndex + 1;</span>
+                    }
+                }
+            }
+<span class="nc" id="L195">        }</span>
+
+<span class="nc" id="L197">        return -1;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

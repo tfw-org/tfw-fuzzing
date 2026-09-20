@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrayUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.array</a> &gt; <span class="el_source">ArrayUtil.java</span></div><h1>ArrayUtil.java</h1><pre class="source lang-java linenums">package tfw.array;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Utility for manipulating arrays.
+ */
+public final class ArrayUtil {
+    private ArrayUtil() {}
+    /**
+     * Returns true if both arrays contain the same elements without regard
+     * to order.
+     * &lt;P&gt; WARNING: This can be a very expensive operation. Becareful about
+     * using this method.&lt;/P&gt;
+     * @param array1 Array one.
+     * @param array2 Array two.
+     * @return true if both arrays contain the same elements without regard to order.
+     */
+    public static boolean unorderedEquals(Object[] array1, Object[] array2) {
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (array1 == array2) {</span>
+<span class="nc" id="L25">            return true;</span>
+        }
+
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (array1 == null) {</span>
+<span class="nc" id="L29">            return false;</span>
+        }
+
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (array2 == null) {</span>
+<span class="nc" id="L33">            return false;</span>
+        }
+
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (array1.length != array2.length) {</span>
+<span class="nc" id="L37">            return false;</span>
+        }
+
+<span class="nc" id="L40">        Map&lt;Object, Count&gt; array1Map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L41">        Map&lt;Object, Count&gt; array2Map = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L43">        mapArray(array1, array1Map);</span>
+<span class="nc" id="L44">        mapArray(array2, array2Map);</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (array1Map.size() != array2Map.size()) {</span>
+<span class="nc" id="L47">            return false;</span>
+        }
+
+<span class="nc" id="L50">        Set&lt;Object&gt; set = new HashSet&lt;&gt;(array1Map.keySet());</span>
+<span class="nc" id="L51">        set.addAll(array2Map.keySet());</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (set.size() != array1Map.size()) {</span>
+<span class="nc" id="L54">            return false;</span>
+        }
+
+<span class="nc" id="L57">        Iterator&lt;Object&gt; itr = array1Map.keySet().iterator();</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        while (itr.hasNext()) {</span>
+<span class="nc" id="L60">            Object key = itr.next();</span>
+<span class="nc" id="L61">            Count a1 = array1Map.get(key);</span>
+<span class="nc" id="L62">            Count a2 = array2Map.get(key);</span>
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (a1.count != a2.count) {</span>
+<span class="nc" id="L65">                return false;</span>
+            }
+<span class="nc" id="L67">        }</span>
+
+<span class="nc" id="L69">        return true;</span>
+    }
+
+    private static void mapArray(Object[] array, Map&lt;Object, Count&gt; map) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc" id="L74">            Count c = map.get(array[i]);</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (c == null) {</span>
+<span class="nc" id="L77">                c = new Count();</span>
+<span class="nc" id="L78">                map.put(array[i], c);</span>
+            }
+
+<span class="nc" id="L81">            c.count++;</span>
+        }
+<span class="nc" id="L83">    }</span>
+
+    private static class Count {
+        private int count;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

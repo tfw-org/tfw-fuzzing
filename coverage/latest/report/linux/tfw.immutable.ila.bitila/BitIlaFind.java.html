@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaFind.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaFind.java</span></div><h1>BitIlaFind.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import tfw.check.Argument;
+
+public final class BitIlaFind {
+    private BitIlaFind() {}
+
+    public static long find(BitIla bitIla, long offset, long length, boolean[] pattern, long[] patternLocations) {
+<span class="nc" id="L9">        Argument.assertNotNull(bitIla, &quot;bitIla&quot;);</span>
+<span class="nc" id="L10">        Argument.assertNotLessThan(offset, 0, &quot;offset&quot;);</span>
+<span class="nc" id="L11">        Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
+<span class="nc" id="L12">        Argument.assertNotNull(pattern, &quot;pattern&quot;);</span>
+<span class="nc" id="L13">        Argument.assertNotLessThan(pattern.length, 1, &quot;pattern.length&quot;);</span>
+<span class="nc" id="L14">        Argument.assertNotNull(patternLocations, &quot;patternLocations&quot;);</span>
+<span class="nc" id="L15">        Argument.assertNotLessThan(patternLocations.length, 1, &quot;patternLocations.length&quot;);</span>
+
+<span class="nc" id="L17">        return -1;</span>
+    }
+
+    public static long find(long[] array, long offset, long length, boolean[] pattern, long[] patternLocations) {
+<span class="nc" id="L21">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L22">        Argument.assertNotLessThan(offset, 0, &quot;offset&quot;);</span>
+<span class="nc" id="L23">        Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
+<span class="nc" id="L24">        Argument.assertNotNull(pattern, &quot;pattern&quot;);</span>
+<span class="nc" id="L25">        Argument.assertNotLessThan(pattern.length, 1, &quot;pattern.length&quot;);</span>
+<span class="nc" id="L26">        Argument.assertNotNull(patternLocations, &quot;patternLocations&quot;);</span>
+<span class="nc" id="L27">        Argument.assertNotLessThan(patternLocations.length, 1, &quot;patternLocations.length&quot;);</span>
+
+<span class="nc" id="L29">        final int patLen = pattern.length;</span>
+<span class="nc" id="L30">        final long allOnes = -1L;</span>
+
+<span class="nc" id="L32">        long len = Long.SIZE;</span>
+<span class="nc" id="L33">        long newLen = 0;</span>
+<span class="nc" id="L34">        long position = -1;</span>
+
+<span class="nc bnc" id="L36" title="All 4 branches missed.">        if (length &gt; 0 &amp;&amp; length &gt;= patLen) {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            if (patLen &lt;= 0) {</span>
+<span class="nc" id="L38">                position = offset;</span>
+            } else {
+<span class="nc" id="L40">                long maxPos = 0;</span>
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                for (int i = 0; i &lt; patternLocations.length; i++) {</span>
+<span class="nc" id="L43">                    final long l = patternLocations[i];</span>
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                    if (l &lt; 0) {</span>
+<span class="nc" id="L46">                        throw new IllegalArgumentException();</span>
+                    }
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                    if (l &gt; maxPos) {</span>
+<span class="nc" id="L49">                        maxPos = l;</span>
+                    }
+                }
+
+<span class="nc" id="L53">                final long bufLen = maxPos + 1;</span>
+<span class="nc" id="L54">                final long numBits = length - bufLen + 1;</span>
+
+<span class="nc bnc" id="L56" title="All 4 branches missed.">                while (newLen &lt; numBits &amp;&amp; position &lt; 0) {</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                    if (newLen + len &gt; numBits) {</span>
+<span class="nc" id="L58">                        len = numBits - newLen;</span>
+                    }
+
+<span class="nc" id="L61">                    final long invLen = Long.SIZE - len;</span>
+
+<span class="nc" id="L63">                    long frag = allOnes &lt;&lt; invLen;</span>
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                    if (len &gt; 0) {</span>
+<span class="nc" id="L66">                        int i = 0;</span>
+
+<span class="nc bnc" id="L68" title="All 4 branches missed.">                        while (frag != 0 &amp;&amp; i &lt; patLen) {</span>
+<span class="nc" id="L69">                            final long off = offset + patternLocations[i];</span>
+<span class="nc" id="L70">                            final int idx = (int) (off / Long.SIZE);</span>
+<span class="nc" id="L71">                            final int offsetMod64 = (int) (off % Long.SIZE);</span>
+
+<span class="nc" id="L73">                            long temp = array[idx] &lt;&lt; offsetMod64;</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                            if (offsetMod64 + len &gt; Long.SIZE) {</span>
+<span class="nc" id="L76">                                temp |= array[idx + 1] &gt;&gt;&gt; (Long.SIZE - offsetMod64);</span>
+                            }
+<span class="nc" id="L78">                            temp = temp &gt;&gt;&gt; invLen;</span>
+<span class="nc" id="L79">                            temp = temp &lt;&lt; invLen;</span>
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                            if (!pattern[i]) {</span>
+<span class="nc" id="L82">                                temp = ~temp;</span>
+                            }
+<span class="nc" id="L84">                            frag &amp;= temp;</span>
+<span class="nc" id="L85">                            i++;</span>
+<span class="nc" id="L86">                        }</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                        if (frag != 0) {</span>
+<span class="nc" id="L88">                            int j = Long.SIZE - 1;</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                            while ((frag &gt;&gt; j &amp; 1L) == 0) {</span>
+<span class="nc" id="L90">                                j--;</span>
+                            }
+<span class="nc" id="L92">                            position = offset + Long.SIZE - 1 - j;</span>
+                        }
+<span class="nc" id="L94">                        offset += len;</span>
+<span class="nc" id="L95">                        newLen += len;</span>
+                    }
+<span class="nc" id="L97">                }</span>
+            }
+        }
+
+<span class="nc" id="L101">        return position;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

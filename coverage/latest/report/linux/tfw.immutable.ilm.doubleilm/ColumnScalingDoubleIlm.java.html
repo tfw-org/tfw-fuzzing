@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ColumnScalingDoubleIlm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.doubleilm</a> &gt; <span class="el_source">ColumnScalingDoubleIlm.java</span></div><h1>ColumnScalingDoubleIlm.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.doubleilm;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import tfw.check.Argument;
+
+public class ColumnScalingDoubleIlm {
+    private ColumnScalingDoubleIlm() {}
+
+    public static DoubleIlm create(DoubleIlm doubleIlm, long numerator, long denominator) {
+<span class="nc" id="L11">        Argument.assertNotNull(doubleIlm, &quot;doubleIlm&quot;);</span>
+<span class="nc" id="L12">        Argument.assertNotLessThan(numerator, 1, &quot;numerator&quot;);</span>
+<span class="nc" id="L13">        Argument.assertNotLessThan(denominator, 1, &quot;denominator&quot;);</span>
+
+<span class="nc bnc" id="L15" title="All 2 branches missed.">        if (numerator == denominator) {</span>
+<span class="nc" id="L16">            return doubleIlm;</span>
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        } else if (numerator &gt; denominator) {</span>
+<span class="nc" id="L18">            return new DoubleIlmImpl1(doubleIlm, numerator, denominator);</span>
+        } else {
+<span class="nc" id="L20">            return new DoubleIlmImpl2(doubleIlm, numerator, denominator);</span>
+        }
+    }
+
+    private static class DoubleIlmImpl1 extends AbstractDoubleIlm {
+        private final DoubleIlm doubleIlm;
+        private final BigInteger outputElements;
+        private final BigInteger inputElements;
+
+<span class="nc" id="L29">        private DoubleIlmImpl1(DoubleIlm doubleIlm, long outputElements, long inputElements) {</span>
+<span class="nc" id="L30">            this.doubleIlm = doubleIlm;</span>
+<span class="nc" id="L31">            this.outputElements = BigInteger.valueOf(outputElements);</span>
+<span class="nc" id="L32">            this.inputElements = BigInteger.valueOf(inputElements);</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L37">            return doubleIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L42">            return BigInteger.valueOf(doubleIlm.height())</span>
+<span class="nc" id="L43">                    .multiply(outputElements)</span>
+<span class="nc" id="L44">                    .divide(inputElements)</span>
+<span class="nc" id="L45">                    .longValue();</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc" id="L51">            long lastRowCopied = -1;</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc" id="L54">                long rowToCopy = BigInteger.valueOf(rowStart + i)</span>
+<span class="nc" id="L55">                        .multiply(inputElements)</span>
+<span class="nc" id="L56">                        .divide(outputElements)</span>
+<span class="nc" id="L57">                        .longValue();</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                if (rowToCopy == lastRowCopied) {</span>
+<span class="nc" id="L60">                    System.arraycopy(array, offset + (colCount * (i - 1)), array, offset + (colCount * i), colCount);</span>
+                } else {
+<span class="nc" id="L62">                    doubleIlm.get(array, offset + (colCount * i), rowToCopy, colStart, 1, colCount);</span>
+                }
+            }
+<span class="nc" id="L65">        }</span>
+    }
+
+    private static class DoubleIlmImpl2 extends AbstractDoubleIlm {
+        private final DoubleIlm doubleIlm;
+        private final long numerator;
+        private final long denominator;
+
+<span class="nc" id="L73">        private DoubleIlmImpl2(DoubleIlm doubleIlm, long numerator, long denominator) {</span>
+<span class="nc" id="L74">            this.doubleIlm = doubleIlm;</span>
+<span class="nc" id="L75">            this.numerator = numerator;</span>
+<span class="nc" id="L76">            this.denominator = denominator;</span>
+<span class="nc" id="L77">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L81">            return doubleIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L86">            return BigInteger.valueOf(doubleIlm.height())</span>
+<span class="nc" id="L87">                    .multiply(BigInteger.valueOf(numerator))</span>
+<span class="nc" id="L88">                    .divide(BigInteger.valueOf(denominator))</span>
+<span class="nc" id="L89">                    .longValue();</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+            // TODO Auto-generated method stub
+
+<span class="nc" id="L97">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

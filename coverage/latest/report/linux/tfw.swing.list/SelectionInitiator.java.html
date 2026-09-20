@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectionInitiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.list</a> &gt; <span class="el_source">SelectionInitiator.java</span></div><h1>SelectionInitiator.java</h1><pre class="source lang-java linenums">package tfw.swing.list;
+
+import javax.swing.JList;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import tfw.immutable.ila.intila.IntIlaFromArray;
+import tfw.immutable.ila.objectila.ObjectIlaFromArray;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.ila.IntIlaECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+public class SelectionInitiator extends Initiator implements ListSelectionListener {
+    private final ObjectIlaECD selectedItemsECD;
+    private final IntIlaECD selectedIndexesECD;
+    private final JList&lt;Object&gt; list;
+
+    public SelectionInitiator(
+            String name, ObjectIlaECD selectedItemsECD, IntIlaECD selectedIndexesECD, JList&lt;Object&gt; list) {
+<span class="nc" id="L20">        super(&quot;SelectionInitiator[&quot; + name + &quot;]&quot;, new ObjectECD[] {selectedItemsECD, selectedIndexesECD});</span>
+
+<span class="nc" id="L22">        this.selectedItemsECD = selectedItemsECD;</span>
+<span class="nc" id="L23">        this.selectedIndexesECD = selectedIndexesECD;</span>
+<span class="nc" id="L24">        this.list = list;</span>
+<span class="nc" id="L25">    }</span>
+
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (selectedItemsECD != null) {</span>
+<span class="nc" id="L30">            set(</span>
+                    selectedItemsECD,
+<span class="nc" id="L32">                    ObjectIlaFromArray.create(list.getSelectedValuesList().toArray()));</span>
+        }
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (selectedIndexesECD != null) {</span>
+<span class="nc" id="L35">            set(selectedIndexesECD, IntIlaFromArray.create(list.getSelectedIndices()));</span>
+        }
+<span class="nc" id="L37">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

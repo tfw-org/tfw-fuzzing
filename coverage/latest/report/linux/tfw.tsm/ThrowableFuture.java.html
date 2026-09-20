@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThrowableFuture.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ThrowableFuture.java</span></div><h1>ThrowableFuture.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+class ThrowableFuture implements Future&lt;Object&gt; {
+    private final Future&lt;Throwable&gt; baseFuture;
+
+<span class="nc" id="L11">    public ThrowableFuture(Future&lt;Throwable&gt; baseFuture) {</span>
+<span class="nc" id="L12">        this.baseFuture = baseFuture;</span>
+<span class="nc" id="L13">    }</span>
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+<span class="nc" id="L17">        return baseFuture.cancel(mayInterruptIfRunning);</span>
+    }
+
+    @Override
+    public Object get() throws InterruptedException, ExecutionException {
+<span class="nc" id="L22">        Throwable result = baseFuture.get();</span>
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (result != null) {</span>
+<span class="nc" id="L25">            throw new ExecutionException(result);</span>
+        }
+
+<span class="nc" id="L28">        return null;</span>
+    }
+
+    @Override
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+<span class="nc" id="L33">        Throwable result = baseFuture.get(timeout, unit);</span>
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (result != null) {</span>
+<span class="nc" id="L36">            throw new ExecutionException(result);</span>
+        }
+
+<span class="nc" id="L39">        return null;</span>
+    }
+
+    @Override
+    public boolean isCancelled() {
+<span class="nc" id="L44">        return baseFuture.isCancelled();</span>
+    }
+
+    @Override
+    public boolean isDone() {
+<span class="nc" id="L49">        return baseFuture.isDone();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RowConcatenateDoubleIlm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.doubleilm</a> &gt; <span class="el_source">RowConcatenateDoubleIlm.java</span></div><h1>RowConcatenateDoubleIlm.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.doubleilm;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public class RowConcatenateDoubleIlm {
+    private RowConcatenateDoubleIlm() {}
+
+    public static DoubleIlm create(DoubleIlm leftIlm, DoubleIlm rightIlm) throws IOException {
+<span class="nc" id="L10">        Argument.assertNotNull(leftIlm, &quot;leftIlm&quot;);</span>
+<span class="nc" id="L11">        Argument.assertNotNull(rightIlm, &quot;rightIlm&quot;);</span>
+<span class="nc" id="L12">        Argument.assertEquals(leftIlm.height(), rightIlm.height(), &quot;leftIlm.height()&quot;, &quot;rightIlm.height()&quot;);</span>
+
+<span class="nc" id="L14">        return new DoubleIlmImpl(leftIlm, rightIlm);</span>
+    }
+
+    private static class DoubleIlmImpl extends AbstractDoubleIlm {
+        private final StridedDoubleIlm stridedLeftIlm;
+        private final StridedDoubleIlm stridedRightIlm;
+
+<span class="nc" id="L21">        private DoubleIlmImpl(DoubleIlm leftIlm, DoubleIlm rightIlm) {</span>
+<span class="nc" id="L22">            this.stridedLeftIlm = StridedDoubleIlmFromDoubleIlm.create(leftIlm, new double[0]);</span>
+<span class="nc" id="L23">            this.stridedRightIlm = StridedDoubleIlmFromDoubleIlm.create(rightIlm, new double[0]);</span>
+<span class="nc" id="L24">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L28">            return stridedLeftIlm.width() + stridedRightIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L33">            return stridedLeftIlm.height();</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            if (colStart + colCount &lt;= stridedLeftIlm.width()) {</span>
+<span class="nc" id="L40">                stridedLeftIlm.get(array, offset, colCount, 1, rowStart, colStart, rowCount, colCount);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            } else if (colStart &gt;= stridedLeftIlm.width()) {</span>
+<span class="nc" id="L42">                stridedRightIlm.get(</span>
+<span class="nc" id="L43">                        array, offset, colCount, 1, rowStart, colStart - stridedLeftIlm.width(), rowCount, colCount);</span>
+            } else {
+<span class="nc" id="L45">                int firstAmount = (int) (stridedLeftIlm.width() - colStart);</span>
+
+<span class="nc" id="L47">                stridedLeftIlm.get(array, offset, colCount, 1, rowStart, colStart, rowCount, firstAmount);</span>
+<span class="nc" id="L48">                stridedRightIlm.get(</span>
+                        array, offset + firstAmount, colCount, 1, rowStart, 0, rowCount, colCount - firstAmount);
+            }
+<span class="nc" id="L51">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

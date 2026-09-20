@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractBitIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">AbstractBitIla.java</span></div><h1>AbstractBitIla.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.check.ClosedManager;
+
+<span class="nc" id="L7">public abstract class AbstractBitIla implements BitIla {</span>
+    protected abstract void closeImpl() throws IOException;
+
+    protected abstract void getImpl(
+            final long[] array, final long arrayOffsetInBits, final long ilaStartInBits, final long lengthInBits)
+            throws IOException;
+
+    protected abstract long lengthInBitsImpl() throws IOException;
+
+<span class="nc" id="L16">    private final ClosedManager closedManager = new ClosedManager();</span>
+
+    @Override
+    public final long lengthInBits() throws IOException {
+<span class="nc" id="L20">        checkClosed();</span>
+
+<span class="nc" id="L22">        return lengthInBitsImpl();</span>
+    }
+
+    @Override
+    public final void get(
+            final long[] array, final long arrayOffsetInBits, final long ilaStartInBits, final long lengthInBits)
+            throws IOException {
+<span class="nc" id="L29">        checkClosed();</span>
+
+<span class="nc" id="L31">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L32">        Argument.assertNotLessThan(arrayOffsetInBits, 0, &quot;offset&quot;);</span>
+<span class="nc" id="L33">        Argument.assertLessThan(arrayOffsetInBits, MAX_BITS_IN_ARRAY, &quot;arrayOffsetInBits&quot;, &quot;MAX_BITS_IN_ARRAY&quot;);</span>
+<span class="nc" id="L34">        Argument.assertLessThan(</span>
+                arrayOffsetInBits + lengthInBits, array.length * (long) Long.SIZE, &quot;offset&quot;, &quot;array.length&quot;);
+<span class="nc" id="L36">        Argument.assertNotLessThan(ilaStartInBits, 0, &quot;start&quot;);</span>
+<span class="nc" id="L37">        Argument.assertNotLessThan(lengthInBits, 0, &quot;length&quot;);</span>
+<span class="nc" id="L38">        Argument.assertLessThan(lengthInBits, MAX_BITS_IN_ARRAY, &quot;lengthInBits&quot;, &quot;MAX_BITS_IN_ARRAY&quot;);</span>
+<span class="nc" id="L39">        Argument.assertNotGreaterThan(</span>
+<span class="nc" id="L40">                ilaStartInBits + lengthInBits, lengthInBits(), &quot;start+length&quot;, &quot;Ila.lengthInBits()&quot;);</span>
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (lengthInBits == 0) {</span>
+<span class="nc" id="L43">            return;</span>
+        }
+
+<span class="nc" id="L46">        getImpl(array, arrayOffsetInBits, ilaStartInBits, lengthInBits);</span>
+<span class="nc" id="L47">    }</span>
+
+    @Override
+    public final void close() throws IOException {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (closedManager.close()) {</span>
+<span class="nc" id="L52">            closeImpl();</span>
+        }
+<span class="nc" id="L54">    }</span>
+
+    protected void checkClosed() {
+<span class="nc" id="L57">        closedManager.checkClosed();</span>
+<span class="nc" id="L58">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

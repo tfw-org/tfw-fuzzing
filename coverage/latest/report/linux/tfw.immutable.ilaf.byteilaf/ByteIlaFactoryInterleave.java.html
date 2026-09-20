@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlaFactoryInterleave.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilaf.byteilaf</a> &gt; <span class="el_source">ByteIlaFactoryInterleave.java</span></div><h1>ByteIlaFactoryInterleave.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilaf.byteilaf;
+
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaInterleave;
+import tfw.immutable.ilaf.ImmutableLongArrayFactoryUtil;
+
+public class ByteIlaFactoryInterleave {
+    private ByteIlaFactoryInterleave() {}
+
+    public static ByteIlaFactory create(final ByteIlaFactory[] ilaFactories, final byte[] buffers) {
+<span class="nc" id="L12">        return new ByteIlaFactoryImpl(ilaFactories, buffers);</span>
+    }
+
+    private static class ByteIlaFactoryImpl implements ByteIlaFactory {
+        private final ByteIlaFactory[] ilaFactories;
+        private final byte[] buffers;
+
+<span class="nc" id="L19">        public ByteIlaFactoryImpl(final ByteIlaFactory[] ilaFactories, final byte[] buffers) {</span>
+<span class="nc" id="L20">            Argument.assertNotNull(buffers, &quot;buffers&quot;);</span>
+
+<span class="nc" id="L22">            this.ilaFactories = ImmutableLongArrayFactoryUtil.assertNotNullAndClone(ilaFactories, &quot;ilaFactories&quot;);</span>
+<span class="nc" id="L23">            this.buffers = buffers;</span>
+<span class="nc" id="L24">        }</span>
+
+        @Override
+        public ByteIla create() {
+<span class="nc" id="L28">            final ByteIla[] ilas = new ByteIla[ilaFactories.length];</span>
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            for (int i = 0; i &lt; ilas.length; i++) {</span>
+<span class="nc" id="L31">                ilas[i] = ilaFactories[i].create();</span>
+            }
+
+<span class="nc" id="L34">            return ByteIlaInterleave.create(ilas, buffers);</span>
+        }
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

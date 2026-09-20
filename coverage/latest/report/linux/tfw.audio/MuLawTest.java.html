@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MuLawTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio</a> &gt; <span class="el_source">MuLawTest.java</span></div><h1>MuLawTest.java</h1><pre class="source lang-java linenums">package tfw.audio;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.audio.byteila.MuLawByteIlaFromLinearShortIla;
+import tfw.audio.shortila.LinearShortIlaFromMuLawByteIla;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaUtil;
+import tfw.immutable.ila.shortila.ShortIla;
+import tfw.immutable.ila.shortila.ShortIlaFromArray;
+
+<span class="nc" id="L13">final class MuLawTest {</span>
+    @Test
+    void muLawTest() throws Exception {
+<span class="nc" id="L16">        final short[] linearArray = new short[65536];</span>
+
+<span class="nc bnc" id="L18" title="All 2 branches missed.">        for (int i = 0; i &lt; linearArray.length; i++) {</span>
+<span class="nc" id="L19">            linearArray[i] = (short) (i + (int) Short.MIN_VALUE);</span>
+        }
+
+<span class="nc" id="L22">        final ShortIla firstLinearIla = ShortIlaFromArray.create(linearArray);</span>
+<span class="nc" id="L23">        final ByteIla firstMuLawIla = MuLawByteIlaFromLinearShortIla.create(firstLinearIla, 1024);</span>
+<span class="nc" id="L24">        final ShortIla secondLinearIla = LinearShortIlaFromMuLawByteIla.create(firstMuLawIla, 1024);</span>
+<span class="nc" id="L25">        final ByteIla secondMuLawIla = MuLawByteIlaFromLinearShortIla.create(secondLinearIla, 1024);</span>
+<span class="nc" id="L26">        final byte[] firstMuLawArray = ByteIlaUtil.toArray(firstMuLawIla);</span>
+<span class="nc" id="L27">        final byte[] secondMuLawArray = ByteIlaUtil.toArray(secondMuLawIla);</span>
+
+<span class="nc" id="L29">        assertThat(firstMuLawArray).isEqualTo(secondMuLawArray);</span>
+<span class="nc" id="L30">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

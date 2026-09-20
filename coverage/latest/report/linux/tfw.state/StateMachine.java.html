@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateMachine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.state</a> &gt; <span class="el_source">StateMachine.java</span></div><h1>StateMachine.java</h1><pre class="source lang-java linenums">package tfw.state;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.slf4j.LoggerFactory;
+import tfw.check.Argument;
+
+public class StateMachine {
+    public interface Guard {
+        boolean isTrue(Object event);
+    }
+
+    public interface Action {
+        void act(Object event);
+    }
+
+    public static class Transition {
+        public final Object trigger;
+        public final Object fromState;
+        public final Object toState;
+        public final Guard guard;
+        public final List&lt;Action&gt; actions;
+
+<span class="nc" id="L25">        public Transition(Object trigger, Object fromState, Object toState, Guard guard, List&lt;Action&gt; actions) {</span>
+<span class="nc" id="L26">            Argument.assertNotNull(trigger, &quot;trigger&quot;);</span>
+<span class="nc" id="L27">            Argument.assertNotNull(fromState, &quot;fromState&quot;);</span>
+<span class="nc" id="L28">            Argument.assertNotNull(toState, &quot;toState&quot;);</span>
+
+<span class="nc" id="L30">            this.trigger = trigger;</span>
+<span class="nc" id="L31">            this.fromState = fromState;</span>
+<span class="nc" id="L32">            this.toState = toState;</span>
+<span class="nc" id="L33">            this.guard = guard;</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            this.actions = (actions == null) ? null : Collections.unmodifiableList(new ArrayList&lt;Action&gt;(actions));</span>
+<span class="nc" id="L35">        }</span>
+    }
+
+<span class="nc" id="L38">    private final Object lock = new Object();</span>
+    private final List&lt;Transition&gt; transitions;
+
+<span class="nc" id="L41">    private Object state = null;</span>
+<span class="nc" id="L42">    private boolean processingEvent = false;</span>
+
+<span class="nc" id="L44">    public StateMachine(List&lt;Transition&gt; transitions, Object initialState) {</span>
+<span class="nc" id="L45">        Argument.assertNotNull(transitions, &quot;transitions&quot;);</span>
+<span class="nc" id="L46">        Argument.assertNotNull(initialState, &quot;initialState&quot;);</span>
+
+<span class="nc" id="L48">        this.transitions = Collections.unmodifiableList(new ArrayList&lt;Transition&gt;(transitions));</span>
+<span class="nc" id="L49">        this.state = initialState;</span>
+<span class="nc" id="L50">    }</span>
+
+    public void fireEvent(Object event) {
+<span class="nc" id="L53">        synchronized (lock) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (processingEvent) {</span>
+<span class="nc" id="L55">                throw new IllegalStateException(&quot;Already processing event!&quot;);</span>
+            }
+
+<span class="nc" id="L58">            processingEvent = true;</span>
+
+<span class="nc" id="L60">            int i = 0;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            for (; i &lt; transitions.size(); i++) {</span>
+<span class="nc" id="L62">                Transition t = transitions.get(i);</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                final boolean e = t.trigger == event</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                        || (t.trigger instanceof Class&lt;?&gt; &amp;&amp; ((Class&lt;?&gt;) t.trigger).isInstance(event));</span>
+<span class="nc bnc" id="L65" title="All 6 branches missed.">                final boolean g = t.guard == null || (t.guard != null &amp;&amp; t.guard.isTrue(event));</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                final boolean s = t.fromState == state;</span>
+
+<span class="nc bnc" id="L68" title="All 6 branches missed.">                if (e &amp;&amp; g &amp;&amp; s) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                    for (int j = 0; j &lt; t.actions.size(); j++) {</span>
+                        try {
+<span class="nc" id="L71">                            t.actions.get(j).act(event);</span>
+<span class="nc" id="L72">                        } catch (Exception exception) {</span>
+<span class="nc" id="L73">                            LoggerFactory.getLogger(StateMachine.class)</span>
+<span class="nc" id="L74">                                    .error(&quot;Exception thrown while executing action!&quot;, exception);</span>
+<span class="nc" id="L75">                        }</span>
+                    }
+
+<span class="nc" id="L78">                    state = t.toState;</span>
+
+<span class="nc" id="L80">                    break;</span>
+                }
+            }
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (i == transitions.size()) {</span>
+<span class="nc" id="L85">                throw new IllegalStateException(&quot;No transitions for event!&quot;);</span>
+            }
+
+<span class="nc" id="L88">            processingEvent = false;</span>
+<span class="nc" id="L89">        }</span>
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

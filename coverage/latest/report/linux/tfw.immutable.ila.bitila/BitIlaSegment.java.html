@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaSegment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaSegment.java</span></div><h1>BitIlaSegment.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public final class BitIlaSegment {
+    private BitIlaSegment() {}
+
+    public static BitIla create(final BitIla bitIla, final long ilaOffsetInBits, final long ilaLengthInBits) {
+<span class="nc" id="L10">        return new BitIlaImpl(bitIla, ilaOffsetInBits, ilaLengthInBits);</span>
+    }
+
+    private static class BitIlaImpl extends AbstractBitIla {
+        private final BitIla bitIla;
+        private final long ilaOffsetInBits;
+        private final long ilaLengthInBits;
+
+<span class="nc" id="L18">        public BitIlaImpl(final BitIla bitIla, final long ilaOffsetInBits, final long ilaLengthInBits) {</span>
+<span class="nc" id="L19">            Argument.assertNotNull(bitIla, &quot;bitIla&quot;);</span>
+<span class="nc" id="L20">            Argument.assertNotLessThan(ilaOffsetInBits, 0, &quot;ilaOffsetInBits&quot;);</span>
+<span class="nc" id="L21">            Argument.assertNotLessThan(ilaLengthInBits, 0, &quot;ilaLengthInBits&quot;);</span>
+
+<span class="nc" id="L23">            this.bitIla = bitIla;</span>
+<span class="nc" id="L24">            this.ilaOffsetInBits = ilaOffsetInBits;</span>
+<span class="nc" id="L25">            this.ilaLengthInBits = ilaLengthInBits;</span>
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        protected long lengthInBitsImpl() throws IOException {
+<span class="nc" id="L30">            return ilaLengthInBits;</span>
+        }
+
+        @Override
+        protected void getImpl(long[] array, long arrayOffsetInBits, long ilaStartInBits, long lengthInBits)
+                throws IOException {
+<span class="nc" id="L36">            bitIla.get(array, arrayOffsetInBits, ilaOffsetInBits + ilaStartInBits, lengthInBits);</span>
+<span class="nc" id="L37">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L41">            bitIla.close();</span>
+<span class="nc" id="L42">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractStridedIlmCheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm</a> &gt; <span class="el_source">AbstractStridedIlmCheck.java</span></div><h1>AbstractStridedIlmCheck.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm;
+
+import tfw.check.Argument;
+
+public final class AbstractStridedIlmCheck {
+    private AbstractStridedIlmCheck() {}
+
+    public static void boundsCheck(
+            long width,
+            long height,
+            int arrayLength,
+            int offset,
+            int rowStride,
+            int colStride,
+            long rowStart,
+            long colStart,
+            int rowCount,
+            int colCount) {
+<span class="nc" id="L19">        Argument.assertNotLessThan(arrayLength, 0, &quot;arrayLength&quot;);</span>
+
+<span class="nc bnc" id="L21" title="All 6 branches missed.">        if (width == 0 || height == 0 || arrayLength == 0) {</span>
+<span class="nc" id="L22">            return;</span>
+        }
+
+<span class="nc" id="L25">        Argument.assertNotLessThan(arrayLength, 0, &quot;arrayLength&quot;);</span>
+<span class="nc" id="L26">        Argument.assertNotLessThan(offset, 0, &quot;offset&quot;);</span>
+<span class="nc" id="L27">        Argument.assertLessThan(offset, arrayLength, &quot;offset&quot;, &quot;arrayLength&quot;);</span>
+<span class="nc" id="L28">        Argument.assertNotEquals(rowStride, 0, &quot;rowStride&quot;);</span>
+<span class="nc" id="L29">        Argument.assertNotEquals(colStride, 0, &quot;colStride&quot;);</span>
+<span class="nc" id="L30">        Argument.assertNotLessThan(rowStart, 0, &quot;rowStart&quot;);</span>
+<span class="nc" id="L31">        Argument.assertNotLessThan(colStart, 0, &quot;colStart&quot;);</span>
+<span class="nc" id="L32">        Argument.assertNotLessThan(rowCount, 0, &quot;rowCount&quot;);</span>
+<span class="nc" id="L33">        Argument.assertNotLessThan(colCount, 0, &quot;colCount&quot;);</span>
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (offset + (rowCount - 1) * rowStride + (colCount - 1) * colStride + 1 &gt; arrayLength) {</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;offset+(rowCount-1)*rowStride+(colCount-1)*colStride+1&quot; + &quot; (=&quot;</span>
+                    + (offset + (rowCount - 1) * rowStride + (colCount - 1) * colStride + 1)
+                    + &quot;) &gt; &quot; + &quot;arrayLength&quot;
+                    + &quot; (=&quot; + arrayLength + &quot;) not allowed!&quot;);
+        }
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (offset + (rowCount - 1) * rowStride + (colCount - 1) * colStride + 1 &lt; 0) {</span>
+<span class="nc" id="L42">            throw new IllegalArgumentException(&quot;offset+(rowCount-1)*rowStride+(colCount-1)*colStride+1&quot; + &quot; (=&quot;</span>
+                    + (offset + (rowCount - 1) * rowStride + (colCount - 1) * colStride + 1) + &quot;) &lt; 0 not allowed!&quot;);
+        }
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (rowStart + rowCount &gt; height) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            throw new IllegalArgumentException(&quot;rowStart + rowCount &gt; height&quot; + &quot; (=&quot; + (rowStart + rowCount &gt; height)</span>
+                    + &quot;) &gt; height not allowed!&quot;);
+        }
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (colStart + colCount &gt; width) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            throw new IllegalArgumentException(</span>
+                    &quot;colStart + colCount &gt; width&quot; + &quot; (=&quot; + (colStart + colCount &gt; width) + &quot;) &gt; width not allowed!&quot;);
+        }
+
+<span class="nc" id="L54">        Argument.assertNotGreaterThan(colStart + colCount, width, &quot;colStart+colCount&quot;, &quot;width&quot;);</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (overlaps(rowCount, colCount, rowStride, colStride)) {</span>
+<span class="nc" id="L57">            throw new IllegalArgumentException(&quot;Overlaps failed!&quot;);</span>
+        }
+<span class="nc" id="L59">    }</span>
+
+    private static boolean overlaps(int rowCount, int colCount, int rowStride, int colStride) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        final int absRowStride = rowStride &lt; 0 ? -rowStride : rowStride;</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        final int absColStride = colStride &lt; 0 ? -colStride : colStride;</span>
+<span class="nc" id="L64">        final int highestRowIndex = rowCount - 1;</span>
+<span class="nc" id="L65">        final int highestColIndex = colCount - 1;</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (absRowStride * highestRowIndex &lt; absColStride) {</span>
+<span class="nc" id="L68">            return false;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        } else if (absColStride * highestColIndex &lt; absRowStride) {</span>
+<span class="nc" id="L70">            return false;</span>
+        } else {
+<span class="nc" id="L72">            final int gcd = gcd(absRowStride, absColStride);</span>
+<span class="nc" id="L73">            final int rowConflictIndex = absColStride / gcd;</span>
+<span class="nc" id="L74">            final int colConflictIndex = absRowStride / gcd;</span>
+
+<span class="nc bnc" id="L76" title="All 4 branches missed.">            return rowConflictIndex &lt; rowCount &amp;&amp; colConflictIndex &lt; colCount;</span>
+        }
+    }
+
+    private static int gcd(int a, int b) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        while (b != 0) {</span>
+<span class="nc" id="L82">            int t = a % b;</span>
+<span class="nc" id="L83">            a = b;</span>
+<span class="nc" id="L84">            b = t;</span>
+<span class="nc" id="L85">        }</span>
+
+<span class="nc" id="L87">        return a;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

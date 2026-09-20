@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArgumentsTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.check</a> &gt; <span class="el_source">ArgumentsTest.java</span></div><h1>ArgumentsTest.java</h1><pre class="source lang-java linenums">package tfw.check;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.math.BigInteger;
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L8">final class ArgumentsTest {</span>
+    private static final String LEFT = &quot;left&quot;;
+    private static final String RIGHT = &quot;right&quot;;
+    private static final byte ZERO_BYTE = 0;
+    private static final byte ONE_BYTE = 1;
+    private static final char ZERO_CHAR = 0;
+    private static final char ONE_CHAR = 1;
+    private static final short ZERO_SHORT = 0;
+    private static final short ONE_SHORT = 1;
+    private static final int ZERO_INT = 0;
+    private static final int ONE_INT = 1;
+    private static final long ZERO_LONG = 0L;
+    private static final long ONE_LONG = 1L;
+    private static final float ZERO_FLOAT = 0.0F;
+    private static final float ONE_FLOAT = 1.0F;
+    private static final double ZERO_DOUBLE = 0.0;
+    private static final double ONE_DOUBLE = 1.0;
+<span class="nc" id="L25">    private static final Object ZERO_OBJECT = new Object();</span>
+<span class="nc" id="L26">    private static final Object ONE_OBJECT = new Object();</span>
+<span class="nc" id="L27">    private static final Object NULL_OBJECT = null;</span>
+
+    @Test
+    void booleanSuccessTest() {
+<span class="nc" id="L31">        Arguments.checkEquals(false, LEFT, false, RIGHT);</span>
+<span class="nc" id="L32">        Arguments.checkEquals(true, LEFT, true, RIGHT);</span>
+<span class="nc" id="L33">        Arguments.checkNotEquals(false, LEFT, true, RIGHT);</span>
+<span class="nc" id="L34">        Arguments.checkNotEquals(true, LEFT, false, RIGHT);</span>
+<span class="nc" id="L35">        Arguments.checkTrue(true, LEFT);</span>
+<span class="nc" id="L36">        Arguments.checkFalse(false, LEFT);</span>
+<span class="nc" id="L37">    }</span>
+
+    @Test
+    void booleanFailureTest() {
+<span class="nc" id="L41">        assertThatThrownBy(() -&gt; Arguments.checkEquals(false, LEFT, true, RIGHT))</span>
+<span class="nc" id="L42">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L43">                .hasMessage(&quot;left (=false) != right (=true) not allowed!&quot;);</span>
+<span class="nc" id="L44">        assertThatThrownBy(() -&gt; Arguments.checkEquals(true, LEFT, false, RIGHT))</span>
+<span class="nc" id="L45">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L46">                .hasMessage(&quot;left (=true) != right (=false) not allowed!&quot;);</span>
+<span class="nc" id="L47">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(false, LEFT, false, RIGHT))</span>
+<span class="nc" id="L48">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L49">                .hasMessage(&quot;left (=false) == right (=false) not allowed!&quot;);</span>
+<span class="nc" id="L50">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(true, LEFT, true, RIGHT))</span>
+<span class="nc" id="L51">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L52">                .hasMessage(&quot;left (=true) == right (=true) not allowed!&quot;);</span>
+<span class="nc" id="L53">        assertThatThrownBy(() -&gt; Arguments.checkTrue(false, LEFT))</span>
+<span class="nc" id="L54">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L55">                .hasMessage(&quot;left (=false) != true not allowed!&quot;);</span>
+<span class="nc" id="L56">        assertThatThrownBy(() -&gt; Arguments.checkFalse(true, LEFT))</span>
+<span class="nc" id="L57">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L58">                .hasMessage(&quot;left (=true) != false not allowed!&quot;);</span>
+<span class="nc" id="L59">    }</span>
+
+    @Test
+    void byteSuccessTest() {
+<span class="nc" id="L63">        Arguments.checkLessThan(ZERO_BYTE, LEFT, ONE_BYTE, RIGHT);</span>
+<span class="nc" id="L64">        Arguments.checkLessThanOrEqual(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT);</span>
+<span class="nc" id="L65">        Arguments.checkEquals(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT);</span>
+<span class="nc" id="L66">        Arguments.checkNotEquals(ZERO_BYTE, LEFT, ONE_BYTE, RIGHT);</span>
+<span class="nc" id="L67">        Arguments.checkGreaterThanOrEqual(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT);</span>
+<span class="nc" id="L68">        Arguments.checkGreaterThan(ONE_BYTE, LEFT, ZERO_BYTE, RIGHT);</span>
+<span class="nc" id="L69">    }</span>
+
+    @Test
+    void byteFailureTest() {
+<span class="nc" id="L73">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT))</span>
+<span class="nc" id="L74">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L75">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L76">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_BYTE, LEFT, ZERO_BYTE, RIGHT))</span>
+<span class="nc" id="L77">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L78">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L79">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_BYTE, LEFT, ONE_BYTE, RIGHT))</span>
+<span class="nc" id="L80">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L81">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L82">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT))</span>
+<span class="nc" id="L83">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L84">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L85">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_BYTE, LEFT, ONE_BYTE, RIGHT))</span>
+<span class="nc" id="L86">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L87">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L88">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_BYTE, LEFT, ZERO_BYTE, RIGHT))</span>
+<span class="nc" id="L89">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L90">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L91">    }</span>
+
+    @Test
+    void charSuccessTest() {
+<span class="nc" id="L95">        Arguments.checkLessThan(ZERO_CHAR, LEFT, ONE_CHAR, RIGHT);</span>
+<span class="nc" id="L96">        Arguments.checkLessThanOrEqual(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT);</span>
+<span class="nc" id="L97">        Arguments.checkEquals(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT);</span>
+<span class="nc" id="L98">        Arguments.checkNotEquals(ZERO_CHAR, LEFT, ONE_CHAR, RIGHT);</span>
+<span class="nc" id="L99">        Arguments.checkGreaterThanOrEqual(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT);</span>
+<span class="nc" id="L100">        Arguments.checkGreaterThan(ONE_CHAR, LEFT, ZERO_CHAR, RIGHT);</span>
+<span class="nc" id="L101">    }</span>
+
+    @Test
+    void charFailureTest() {
+<span class="nc" id="L105">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT))</span>
+<span class="nc" id="L106">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L107">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L108">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_CHAR, LEFT, ZERO_CHAR, RIGHT))</span>
+<span class="nc" id="L109">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L110">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L111">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_CHAR, LEFT, ONE_CHAR, RIGHT))</span>
+<span class="nc" id="L112">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L113">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L114">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT))</span>
+<span class="nc" id="L115">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L116">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L117">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_CHAR, LEFT, ONE_CHAR, RIGHT))</span>
+<span class="nc" id="L118">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L119">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L120">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_CHAR, LEFT, ZERO_CHAR, RIGHT))</span>
+<span class="nc" id="L121">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L122">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L123">    }</span>
+
+    @Test
+    void shortSuccessTest() {
+<span class="nc" id="L127">        Arguments.checkLessThan(ZERO_SHORT, LEFT, ONE_SHORT, RIGHT);</span>
+<span class="nc" id="L128">        Arguments.checkLessThanOrEqual(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT);</span>
+<span class="nc" id="L129">        Arguments.checkEquals(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT);</span>
+<span class="nc" id="L130">        Arguments.checkNotEquals(ZERO_SHORT, LEFT, ONE_SHORT, RIGHT);</span>
+<span class="nc" id="L131">        Arguments.checkGreaterThanOrEqual(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT);</span>
+<span class="nc" id="L132">        Arguments.checkGreaterThan(ONE_SHORT, LEFT, ZERO_SHORT, RIGHT);</span>
+<span class="nc" id="L133">    }</span>
+
+    @Test
+    void shortFailureTest() {
+<span class="nc" id="L137">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT))</span>
+<span class="nc" id="L138">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L139">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L140">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_SHORT, LEFT, ZERO_SHORT, RIGHT))</span>
+<span class="nc" id="L141">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L142">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L143">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_SHORT, LEFT, ONE_SHORT, RIGHT))</span>
+<span class="nc" id="L144">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L145">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L146">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT))</span>
+<span class="nc" id="L147">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L148">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L149">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_SHORT, LEFT, ONE_SHORT, RIGHT))</span>
+<span class="nc" id="L150">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L151">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L152">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_SHORT, LEFT, ZERO_SHORT, RIGHT))</span>
+<span class="nc" id="L153">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L154">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L155">    }</span>
+
+    @Test
+    void intSuccessTest() {
+<span class="nc" id="L159">        Arguments.checkLessThan(ZERO_INT, LEFT, ONE_INT, RIGHT);</span>
+<span class="nc" id="L160">        Arguments.checkLessThanOrEqual(ZERO_INT, LEFT, ZERO_INT, RIGHT);</span>
+<span class="nc" id="L161">        Arguments.checkEquals(ZERO_INT, LEFT, ZERO_INT, RIGHT);</span>
+<span class="nc" id="L162">        Arguments.checkNotEquals(ZERO_INT, LEFT, ONE_INT, RIGHT);</span>
+<span class="nc" id="L163">        Arguments.checkGreaterThanOrEqual(ZERO_INT, LEFT, ZERO_INT, RIGHT);</span>
+<span class="nc" id="L164">        Arguments.checkGreaterThan(ONE_INT, LEFT, ZERO_INT, RIGHT);</span>
+<span class="nc" id="L165">    }</span>
+
+    @Test
+    void intFailureTest() {
+<span class="nc" id="L169">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_INT, LEFT, ZERO_INT, RIGHT))</span>
+<span class="nc" id="L170">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L171">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L172">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_INT, LEFT, ZERO_INT, RIGHT))</span>
+<span class="nc" id="L173">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L174">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L175">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_INT, LEFT, ONE_INT, RIGHT))</span>
+<span class="nc" id="L176">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L177">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L178">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_INT, LEFT, ZERO_INT, RIGHT))</span>
+<span class="nc" id="L179">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L180">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L181">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_INT, LEFT, ONE_INT, RIGHT))</span>
+<span class="nc" id="L182">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L183">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L184">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_INT, LEFT, ZERO_INT, RIGHT))</span>
+<span class="nc" id="L185">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L186">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L187">    }</span>
+
+    @Test
+    void longSuccessTest() {
+<span class="nc" id="L191">        Arguments.checkLessThan(ZERO_LONG, LEFT, ONE_LONG, RIGHT);</span>
+<span class="nc" id="L192">        Arguments.checkLessThanOrEqual(ZERO_LONG, LEFT, ZERO_LONG, RIGHT);</span>
+<span class="nc" id="L193">        Arguments.checkEquals(ZERO_LONG, LEFT, ZERO_LONG, RIGHT);</span>
+<span class="nc" id="L194">        Arguments.checkNotEquals(ZERO_LONG, LEFT, ONE_LONG, RIGHT);</span>
+<span class="nc" id="L195">        Arguments.checkGreaterThanOrEqual(ZERO_LONG, LEFT, ZERO_LONG, RIGHT);</span>
+<span class="nc" id="L196">        Arguments.checkGreaterThan(ONE_LONG, LEFT, ZERO_LONG, RIGHT);</span>
+<span class="nc" id="L197">    }</span>
+
+    @Test
+    void longFailureTest() {
+<span class="nc" id="L201">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_LONG, LEFT, ZERO_LONG, RIGHT))</span>
+<span class="nc" id="L202">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L203">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L204">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_LONG, LEFT, ZERO_LONG, RIGHT))</span>
+<span class="nc" id="L205">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L206">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L207">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_LONG, LEFT, ONE_LONG, RIGHT))</span>
+<span class="nc" id="L208">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L209">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L210">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_LONG, LEFT, ZERO_LONG, RIGHT))</span>
+<span class="nc" id="L211">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L212">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L213">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_LONG, LEFT, ONE_LONG, RIGHT))</span>
+<span class="nc" id="L214">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L215">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L216">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_LONG, LEFT, ZERO_LONG, RIGHT))</span>
+<span class="nc" id="L217">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L218">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L219">    }</span>
+
+    @Test
+    void bigIntegerSuccessTest() {
+<span class="nc" id="L223">        Arguments.checkLessThan(BigInteger.ZERO, LEFT, BigInteger.ONE, RIGHT);</span>
+<span class="nc" id="L224">        Arguments.checkLessThanOrEqual(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT);</span>
+<span class="nc" id="L225">        Arguments.checkEquals(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT);</span>
+<span class="nc" id="L226">        Arguments.checkNotEquals(BigInteger.ZERO, LEFT, BigInteger.ONE, RIGHT);</span>
+<span class="nc" id="L227">        Arguments.checkGreaterThanOrEqual(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT);</span>
+<span class="nc" id="L228">        Arguments.checkGreaterThan(BigInteger.ONE, LEFT, BigInteger.ZERO, RIGHT);</span>
+<span class="nc" id="L229">    }</span>
+
+    @Test
+    void bigIntegerFailureTest() {
+<span class="nc" id="L233">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT))</span>
+<span class="nc" id="L234">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L235">                .hasMessage(&quot;left (=0) &gt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L236">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(BigInteger.ONE, LEFT, BigInteger.ZERO, RIGHT))</span>
+<span class="nc" id="L237">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L238">                .hasMessage(&quot;left (=1) &gt; right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L239">        assertThatThrownBy(() -&gt; Arguments.checkEquals(BigInteger.ZERO, LEFT, BigInteger.ONE, RIGHT))</span>
+<span class="nc" id="L240">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L241">                .hasMessage(&quot;left (=0) != right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L242">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT))</span>
+<span class="nc" id="L243">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L244">                .hasMessage(&quot;left (=0) == right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L245">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(BigInteger.ZERO, LEFT, BigInteger.ONE, RIGHT))</span>
+<span class="nc" id="L246">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L247">                .hasMessage(&quot;left (=0) &lt; right (=1) not allowed!&quot;);</span>
+<span class="nc" id="L248">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(BigInteger.ZERO, LEFT, BigInteger.ZERO, RIGHT))</span>
+<span class="nc" id="L249">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L250">                .hasMessage(&quot;left (=0) &lt;= right (=0) not allowed!&quot;);</span>
+<span class="nc" id="L251">    }</span>
+
+    @Test
+    void floatSuccessTest() {
+<span class="nc" id="L255">        Arguments.checkLessThan(ZERO_FLOAT, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L256">        Arguments.checkLessThanOrEqual(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT);</span>
+<span class="nc" id="L257">        Arguments.checkEquals(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT);</span>
+<span class="nc" id="L258">        Arguments.checkEquals(Float.POSITIVE_INFINITY, LEFT, Float.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L259">        Arguments.checkEquals(Float.NEGATIVE_INFINITY, LEFT, Float.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L260">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L261">        Arguments.checkNotEquals(Float.NaN, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L262">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Float.NaN, RIGHT);</span>
+<span class="nc" id="L263">        Arguments.checkNotEquals(Float.NaN, LEFT, Float.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L264">        Arguments.checkNotEquals(Float.POSITIVE_INFINITY, LEFT, Float.NaN, RIGHT);</span>
+<span class="nc" id="L265">        Arguments.checkNotEquals(Float.NaN, LEFT, Float.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L266">        Arguments.checkNotEquals(Float.NEGATIVE_INFINITY, LEFT, Float.NaN, RIGHT);</span>
+<span class="nc" id="L267">        Arguments.checkNotEquals(Float.NaN, LEFT, Float.NaN, RIGHT);</span>
+<span class="nc" id="L268">        Arguments.checkNotEquals(Float.POSITIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L269">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Float.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L270">        Arguments.checkNotEquals(Float.NEGATIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L271">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Float.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L272">        Arguments.checkNotEquals(Float.POSITIVE_INFINITY, LEFT, Float.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L273">        Arguments.checkNotEquals(Float.NEGATIVE_INFINITY, LEFT, Float.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L274">        Arguments.checkGreaterThanOrEqual(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT);</span>
+<span class="nc" id="L275">        Arguments.checkGreaterThan(ONE_FLOAT, LEFT, ZERO_FLOAT, RIGHT);</span>
+<span class="nc" id="L276">    }</span>
+
+    @Test
+    void floatFailureTest() {
+<span class="nc" id="L280">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT))</span>
+<span class="nc" id="L281">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L282">                .hasMessage(&quot;left (=0.000000) &gt;= right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L283">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_FLOAT, LEFT, ZERO_FLOAT, RIGHT))</span>
+<span class="nc" id="L284">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L285">                .hasMessage(&quot;left (=1.000000) &gt; right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L286">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L287">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L288">                .hasMessage(&quot;left (=0.000000) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L289">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT))</span>
+<span class="nc" id="L290">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L291">                .hasMessage(&quot;left (=0.000000) == right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L292">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_FLOAT, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L293">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L294">                .hasMessage(&quot;left (=0.000000) &lt; right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L295">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_FLOAT, LEFT, ZERO_FLOAT, RIGHT))</span>
+<span class="nc" id="L296">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L297">                .hasMessage(&quot;left (=0.000000) &lt;= right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L298">    }</span>
+
+    @Test
+    void floatFailureNanTest() {
+<span class="nc" id="L302">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NaN, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L303">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L304">                .hasMessage(&quot;left (=NaN) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L305">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Float.NaN, RIGHT))</span>
+<span class="nc" id="L306">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L307">                .hasMessage(&quot;left (=0.000000) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L308">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NaN, LEFT, Float.NaN, RIGHT))</span>
+<span class="nc" id="L309">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L310">                .hasMessage(&quot;left (=NaN) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L311">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NaN, LEFT, Float.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L312">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L313">                .hasMessage(&quot;left (=NaN) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L314">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.POSITIVE_INFINITY, LEFT, Float.NaN, RIGHT))</span>
+<span class="nc" id="L315">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L316">                .hasMessage(&quot;left (=Infinity) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L317">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NaN, LEFT, Float.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L318">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L319">                .hasMessage(&quot;left (=NaN) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L320">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NEGATIVE_INFINITY, LEFT, Float.NaN, RIGHT))</span>
+<span class="nc" id="L321">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L322">                .hasMessage(&quot;left (=-Infinity) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L323">    }</span>
+
+    @Test
+    void floatFailureInfinityTest() {
+<span class="nc" id="L327">        assertThatThrownBy(</span>
+<span class="nc" id="L328">                        () -&gt; Arguments.checkNotEquals(Float.POSITIVE_INFINITY, LEFT, Float.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L329">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L330">                .hasMessage(&quot;left (=Infinity) == right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L331">        assertThatThrownBy(</span>
+<span class="nc" id="L332">                        () -&gt; Arguments.checkNotEquals(Float.NEGATIVE_INFINITY, LEFT, Float.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L333">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L334">                .hasMessage(&quot;left (=-Infinity) == right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L335">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.POSITIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L336">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L337">                .hasMessage(&quot;left (=Infinity) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L338">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Float.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L339">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L340">                .hasMessage(&quot;left (=0.000000) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L341">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NEGATIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L342">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L343">                .hasMessage(&quot;left (=-Infinity) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L344">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Float.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L345">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L346">                .hasMessage(&quot;left (=0.000000) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L347">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.POSITIVE_INFINITY, LEFT, Float.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L348">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L349">                .hasMessage(&quot;left (=Infinity) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L350">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Float.NEGATIVE_INFINITY, LEFT, Float.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L351">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L352">                .hasMessage(&quot;left (=-Infinity) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L353">    }</span>
+
+    @Test
+    void doubleSuccessTest() {
+<span class="nc" id="L357">        Arguments.checkLessThan(ZERO_DOUBLE, LEFT, ONE_DOUBLE, RIGHT);</span>
+<span class="nc" id="L358">        Arguments.checkLessThanOrEqual(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT);</span>
+<span class="nc" id="L359">        Arguments.checkEquals(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT);</span>
+<span class="nc" id="L360">        Arguments.checkEquals(Double.POSITIVE_INFINITY, LEFT, Double.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L361">        Arguments.checkEquals(Double.NEGATIVE_INFINITY, LEFT, Double.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L362">        Arguments.checkNotEquals(ZERO_DOUBLE, LEFT, ONE_DOUBLE, RIGHT);</span>
+<span class="nc" id="L363">        Arguments.checkNotEquals(Double.NaN, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L364">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Double.NaN, RIGHT);</span>
+<span class="nc" id="L365">        Arguments.checkNotEquals(Double.NaN, LEFT, Double.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L366">        Arguments.checkNotEquals(Double.POSITIVE_INFINITY, LEFT, Double.NaN, RIGHT);</span>
+<span class="nc" id="L367">        Arguments.checkNotEquals(Double.NaN, LEFT, Double.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L368">        Arguments.checkNotEquals(Double.NEGATIVE_INFINITY, LEFT, Double.NaN, RIGHT);</span>
+<span class="nc" id="L369">        Arguments.checkNotEquals(Double.NaN, LEFT, Double.NaN, RIGHT);</span>
+<span class="nc" id="L370">        Arguments.checkNotEquals(Double.POSITIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L371">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Double.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L372">        Arguments.checkNotEquals(Double.NEGATIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT);</span>
+<span class="nc" id="L373">        Arguments.checkNotEquals(ZERO_FLOAT, LEFT, Double.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L374">        Arguments.checkNotEquals(Double.POSITIVE_INFINITY, LEFT, Double.NEGATIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L375">        Arguments.checkNotEquals(Double.NEGATIVE_INFINITY, LEFT, Double.POSITIVE_INFINITY, RIGHT);</span>
+<span class="nc" id="L376">        Arguments.checkGreaterThanOrEqual(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT);</span>
+<span class="nc" id="L377">        Arguments.checkGreaterThan(ONE_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT);</span>
+<span class="nc" id="L378">    }</span>
+
+    @Test
+    void doubleFailureTest() {
+<span class="nc" id="L382">        assertThatThrownBy(() -&gt; Arguments.checkLessThan(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT))</span>
+<span class="nc" id="L383">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L384">                .hasMessage(&quot;left (=0.000000) &gt;= right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L385">        assertThatThrownBy(() -&gt; Arguments.checkLessThanOrEqual(ONE_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT))</span>
+<span class="nc" id="L386">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L387">                .hasMessage(&quot;left (=1.000000) &gt; right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L388">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_DOUBLE, LEFT, ONE_DOUBLE, RIGHT))</span>
+<span class="nc" id="L389">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L390">                .hasMessage(&quot;left (=0.000000) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L391">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT))</span>
+<span class="nc" id="L392">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L393">                .hasMessage(&quot;left (=0.000000) == right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L394">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThanOrEqual(ZERO_DOUBLE, LEFT, ONE_DOUBLE, RIGHT))</span>
+<span class="nc" id="L395">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L396">                .hasMessage(&quot;left (=0.000000) &lt; right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L397">        assertThatThrownBy(() -&gt; Arguments.checkGreaterThan(ZERO_DOUBLE, LEFT, ZERO_DOUBLE, RIGHT))</span>
+<span class="nc" id="L398">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L399">                .hasMessage(&quot;left (=0.000000) &lt;= right (=0.000000) not allowed!&quot;);</span>
+<span class="nc" id="L400">    }</span>
+
+    @Test
+    void doubleFailureNanTest() {
+<span class="nc" id="L404">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NaN, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L405">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L406">                .hasMessage(&quot;left (=NaN) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L407">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Double.NaN, RIGHT))</span>
+<span class="nc" id="L408">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L409">                .hasMessage(&quot;left (=0.000000) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L410">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NaN, LEFT, Double.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L411">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L412">                .hasMessage(&quot;left (=NaN) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L413">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.POSITIVE_INFINITY, LEFT, Double.NaN, RIGHT))</span>
+<span class="nc" id="L414">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L415">                .hasMessage(&quot;left (=Infinity) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L416">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NaN, LEFT, Double.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L417">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L418">                .hasMessage(&quot;left (=NaN) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L419">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NEGATIVE_INFINITY, LEFT, Double.NaN, RIGHT))</span>
+<span class="nc" id="L420">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L421">                .hasMessage(&quot;left (=-Infinity) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L422">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NaN, LEFT, Double.NaN, RIGHT))</span>
+<span class="nc" id="L423">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L424">                .hasMessage(&quot;left (=NaN) != right (=NaN) not allowed!&quot;);</span>
+<span class="nc" id="L425">    }</span>
+
+    @Test
+    void doubleFailureInfinityTest() {
+<span class="nc" id="L429">        assertThatThrownBy(</span>
+<span class="nc" id="L430">                        () -&gt; Arguments.checkNotEquals(Double.POSITIVE_INFINITY, LEFT, Double.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L431">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L432">                .hasMessage(&quot;left (=Infinity) == right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L433">        assertThatThrownBy(</span>
+<span class="nc" id="L434">                        () -&gt; Arguments.checkNotEquals(Double.NEGATIVE_INFINITY, LEFT, Double.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L435">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L436">                .hasMessage(&quot;left (=-Infinity) == right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L437">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.POSITIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L438">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L439">                .hasMessage(&quot;left (=Infinity) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L440">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Double.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L441">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L442">                .hasMessage(&quot;left (=0.000000) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L443">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NEGATIVE_INFINITY, LEFT, ONE_FLOAT, RIGHT))</span>
+<span class="nc" id="L444">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L445">                .hasMessage(&quot;left (=-Infinity) != right (=1.000000) not allowed!&quot;);</span>
+<span class="nc" id="L446">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_FLOAT, LEFT, Double.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L447">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L448">                .hasMessage(&quot;left (=0.000000) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L449">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.POSITIVE_INFINITY, LEFT, Double.NEGATIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L450">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L451">                .hasMessage(&quot;left (=Infinity) != right (=-Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L452">        assertThatThrownBy(() -&gt; Arguments.checkEquals(Double.NEGATIVE_INFINITY, LEFT, Double.POSITIVE_INFINITY, RIGHT))</span>
+<span class="nc" id="L453">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L454">                .hasMessage(&quot;left (=-Infinity) != right (=Infinity) not allowed!&quot;);</span>
+<span class="nc" id="L455">    }</span>
+
+    @Test
+    void objectSuccessTest() {
+<span class="nc" id="L459">        Arguments.checkEquals(ZERO_OBJECT, LEFT, ZERO_OBJECT, RIGHT);</span>
+<span class="nc" id="L460">        Arguments.checkEquals(ONE_OBJECT, LEFT, ONE_OBJECT, RIGHT);</span>
+<span class="nc" id="L461">        Arguments.checkEquals(NULL_OBJECT, LEFT, NULL_OBJECT, RIGHT);</span>
+<span class="nc" id="L462">        Arguments.checkNotEquals(ZERO_OBJECT, LEFT, ONE_OBJECT, RIGHT);</span>
+<span class="nc" id="L463">        Arguments.checkNotEquals(ONE_OBJECT, LEFT, ZERO_OBJECT, RIGHT);</span>
+<span class="nc" id="L464">        Arguments.checkNotEquals(ZERO_OBJECT, LEFT, NULL_OBJECT, RIGHT);</span>
+<span class="nc" id="L465">        Arguments.checkNotEquals(NULL_OBJECT, LEFT, ONE_OBJECT, RIGHT);</span>
+<span class="nc" id="L466">        Arguments.checkNull(NULL_OBJECT, LEFT);</span>
+<span class="nc" id="L467">        Arguments.checkNotNull(ZERO_OBJECT, LEFT);</span>
+<span class="nc" id="L468">    }</span>
+
+    @Test
+    void objectFailureTest() {
+<span class="nc" id="L472">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_OBJECT, LEFT, ONE_OBJECT, RIGHT))</span>
+<span class="nc" id="L473">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L474">                .hasMessageMatching(</span>
+                        &quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) != right \\(=java.lang.Object@[0-9a-fA-F]+\\) not allowed!&quot;);
+<span class="nc" id="L476">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ONE_OBJECT, LEFT, ZERO_OBJECT, RIGHT))</span>
+<span class="nc" id="L477">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L478">                .hasMessageMatching(</span>
+                        &quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) != right \\(=java.lang.Object@[0-9a-fA-F]+\\) not allowed!&quot;);
+<span class="nc" id="L480">        assertThatThrownBy(() -&gt; Arguments.checkEquals(ZERO_OBJECT, LEFT, NULL_OBJECT, RIGHT))</span>
+<span class="nc" id="L481">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L482">                .hasMessageMatching(&quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) != right \\(=null\\) not allowed!&quot;);</span>
+<span class="nc" id="L483">        assertThatThrownBy(() -&gt; Arguments.checkEquals(NULL_OBJECT, LEFT, ONE_OBJECT, RIGHT))</span>
+<span class="nc" id="L484">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L485">                .hasMessageMatching(&quot;left \\(=null\\) != right \\(=java.lang.Object@[0-9a-fA-F]+\\) not allowed!&quot;);</span>
+<span class="nc" id="L486">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ZERO_OBJECT, LEFT, ZERO_OBJECT, RIGHT))</span>
+<span class="nc" id="L487">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L488">                .hasMessageMatching(</span>
+                        &quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) == right \\(=java.lang.Object@[0-9a-fA-F]+\\) not allowed!&quot;);
+<span class="nc" id="L490">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(ONE_OBJECT, LEFT, ONE_OBJECT, RIGHT))</span>
+<span class="nc" id="L491">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L492">                .hasMessageMatching(</span>
+                        &quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) == right \\(=java.lang.Object@[0-9a-fA-F]+\\) not allowed!&quot;);
+<span class="nc" id="L494">        assertThatThrownBy(() -&gt; Arguments.checkNotEquals(NULL_OBJECT, LEFT, NULL_OBJECT, RIGHT))</span>
+<span class="nc" id="L495">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L496">                .hasMessageMatching(&quot;left \\(=null\\) == right \\(=null\\) not allowed!&quot;);</span>
+<span class="nc" id="L497">        assertThatThrownBy(() -&gt; Arguments.checkNull(ZERO_OBJECT, LEFT))</span>
+<span class="nc" id="L498">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L499">                .hasMessageMatching(&quot;left \\(=java.lang.Object@[0-9a-fA-F]+\\) != null not allowed!&quot;);</span>
+<span class="nc" id="L500">        assertThatThrownBy(() -&gt; Arguments.checkNotNull(NULL_OBJECT, LEFT))</span>
+<span class="nc" id="L501">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L502">                .hasMessageMatching(&quot;left \\(=null\\) == null not allowed!&quot;);</span>
+<span class="nc" id="L503">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

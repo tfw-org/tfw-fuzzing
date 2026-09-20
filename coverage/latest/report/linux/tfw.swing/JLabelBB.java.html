@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JLabelBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JLabelBB.java</span></div><h1>JLabelBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import javax.swing.JLabel;
+import tfw.swing.label.SetTextCommit;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.ecd.StringECD;
+
+public class JLabelBB extends JLabel implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JLabelBB(String name, StringECD textECD) {
+<span class="nc" id="L14">        this(new Branch(&quot;JLabelBB[&quot; + name + &quot;]&quot;), textECD);</span>
+<span class="nc" id="L15">    }</span>
+
+<span class="nc" id="L17">    public JLabelBB(Branch branch, StringECD textECD) {</span>
+<span class="nc" id="L18">        this.branch = branch;</span>
+
+<span class="nc" id="L20">        branch.add(new SetTextCommit(&quot;JLabelBB&quot;, textECD, this, null));</span>
+<span class="nc" id="L21">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L25">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

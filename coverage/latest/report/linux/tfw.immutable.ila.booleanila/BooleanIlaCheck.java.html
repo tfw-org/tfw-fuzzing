@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BooleanIlaCheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.booleanila</a> &gt; <span class="el_source">BooleanIlaCheck.java</span></div><h1>BooleanIlaCheck.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.booleanila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import tfw.check.Argument;
+
+public final class BooleanIlaCheck {
+    private BooleanIlaCheck() {
+        // non-instantiable class
+    }
+
+    public static void checkGetArguments(final BooleanIla ila) throws IOException {
+<span class="nc" id="L16">        final long ilaLength = ila.length();</span>
+<span class="nc" id="L17">        final boolean[] array = new boolean[10];</span>
+
+<span class="nc" id="L19">        assertThatThrownBy(() -&gt; ila.get(null, 0, 0, 1))</span>
+<span class="nc" id="L20">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L21">                .hasMessage(&quot;array == null not allowed!&quot;);</span>
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; ila.get(array, -1, 0, 1))</span>
+<span class="nc" id="L23">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L24">                .hasMessage(&quot;offset (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L25">        assertThatThrownBy(() -&gt; ila.get(array, 0, -1, 1))</span>
+<span class="nc" id="L26">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L27">                .hasMessage(&quot;start (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L28">        assertThatThrownBy(() -&gt; ila.get(array, 0, 0, -1))</span>
+<span class="nc" id="L29">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L30">                .hasMessage(&quot;length (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L31">        assertThatThrownBy(() -&gt; ila.get(array, array.length, 0, 1))</span>
+<span class="nc" id="L32">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L33">                .hasMessage(&quot;offset (=10) &gt;= array.length (=10) not allowed!&quot;);</span>
+<span class="nc" id="L34">        assertThatThrownBy(() -&gt; ila.get(array, 0, ilaLength, 1))</span>
+<span class="nc" id="L35">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L36">                .hasMessage(&quot;start (=%s) &gt;= ila.length() (=%s) not allowed!&quot;, ilaLength, ilaLength);</span>
+<span class="nc" id="L37">        assertThatThrownBy(() -&gt; ila.get(array, array.length - 1, 0, 2))</span>
+<span class="nc" id="L38">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L39">                .hasMessage(&quot;offset+length (=11) &gt; array.length (=10) not allowed!&quot;);</span>
+<span class="nc" id="L40">        assertThatThrownBy(() -&gt; ila.get(array, 0, ilaLength - 1, 2))</span>
+<span class="nc" id="L41">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L42">                .hasMessage(&quot;start+length (=%s) &gt; ila.length() (=%s) not allowed!&quot;, ilaLength + 1, ilaLength);</span>
+<span class="nc" id="L43">    }</span>
+
+    public static void checkGetExhaustively(BooleanIla ila1, BooleanIla ila2) throws IOException {
+<span class="nc" id="L46">        final int length1 = (int) Math.min(ila1.length(), Integer.MAX_VALUE);</span>
+<span class="nc" id="L47">        final int length2 = (int) Math.min(ila2.length(), Integer.MAX_VALUE);</span>
+
+<span class="nc" id="L49">        assertThat(length2).isEqualTo(length1);</span>
+
+<span class="nc" id="L51">        final boolean[] a1 = new boolean[length1];</span>
+<span class="nc" id="L52">        final boolean[] a2 = new boolean[length1];</span>
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        for (int s = 0; s &lt; length1; s++) {</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            for (int l = 0; l &lt; length1 - s; l++) {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                for (int o = 0; o &lt; length1 - l; o++) {</span>
+<span class="nc" id="L57">                    ila1.get(a1, o, s, l);</span>
+<span class="nc" id="L58">                    ila2.get(a2, o, s, l);</span>
+
+<span class="nc" id="L60">                    assertThat(a2).isEqualTo(a1);</span>
+                }
+            }
+        }
+<span class="nc" id="L64">    }</span>
+
+    public static void check(final BooleanIla expectedIla, BooleanIla actualIla) throws IOException {
+<span class="nc" id="L67">        checkGetArguments(actualIla);</span>
+<span class="nc" id="L68">        checkGetExhaustively(expectedIla, actualIla);</span>
+<span class="nc" id="L69">    }</span>
+
+    public static void checkAll(
+            BooleanIla target, BooleanIla actual, int addlOffsetLength, int maxAbsStride, boolean epsilon)
+            throws Exception {
+<span class="nc" id="L74">        checkGetArguments(actual);</span>
+<span class="nc" id="L75">        BooleanIlaUtilCheck.checkAll(actual, epsilon);</span>
+<span class="nc" id="L76">        checkFourFiveEquivalence(actual, addlOffsetLength, epsilon);</span>
+<span class="nc" id="L77">        checkCorrectness(target, actual, addlOffsetLength, maxAbsStride, epsilon);</span>
+<span class="nc" id="L78">    }</span>
+
+    public static void checkWithoutCorrectness(final BooleanIla actual, final int offsetLength, boolean epsilon)
+            throws Exception {
+<span class="nc" id="L82">        checkGetArguments(actual);</span>
+<span class="nc" id="L83">        BooleanIlaUtilCheck.checkAll(actual, epsilon);</span>
+<span class="nc" id="L84">        checkFourFiveEquivalence(actual, offsetLength, epsilon);</span>
+<span class="nc" id="L85">    }</span>
+
+    public static void checkFourFiveEquivalence(final BooleanIla ila, final int offsetLength, boolean epsilon)
+            throws Exception {
+<span class="nc" id="L89">        Argument.assertNotLessThan(offsetLength, 0, &quot;offsetLength&quot;);</span>
+
+<span class="nc" id="L91">        final StridedBooleanIla stridedBooleanIla = StridedBooleanIlaFromBooleanIla.create(ila, new boolean[10]);</span>
+<span class="nc" id="L92">        final Random random = new Random(0);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        final int ilaLength = ila.length() + offsetLength &lt;= Integer.MAX_VALUE</span>
+<span class="nc" id="L94">                ? (int) ila.length()</span>
+<span class="nc" id="L95">                : Integer.MAX_VALUE - offsetLength;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        for (int offset = 0; offset &lt; offsetLength; ++offset) {</span>
+<span class="nc" id="L97">            final boolean[] four = new boolean[ilaLength + offsetLength];</span>
+<span class="nc" id="L98">            final boolean[] five = new boolean[ilaLength + offsetLength];</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    for (int ii = 0; ii &lt; four.length; ++ii) {</span>
+<span class="nc" id="L102">                        five[ii] = four[ii] = random.nextBoolean();</span>
+                    }
+<span class="nc" id="L104">                    ila.get(four, offset, start, length);</span>
+<span class="nc" id="L105">                    stridedBooleanIla.get(five, offset, 1, start, length);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                    for (int ii = 0; ii &lt; length; ++ii) {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                        if (!(four[ii] == five[ii]))</span>
+<span class="nc" id="L108">                            throw new Exception(&quot;four[&quot; + ii + &quot;] (&quot;</span>
+                                    + four[ii] + &quot;) !~ five[&quot;
+                                    + ii + &quot;] (&quot;
+                                    + five[ii]
+                                    + &quot;) {length=&quot; + length
+                                    + &quot;,start=&quot; + start
+                                    + &quot;,offset=&quot; + offset
+                                    + &quot;}&quot;);
+                    }
+                }
+            }
+        }
+<span class="nc" id="L120">    }</span>
+
+    public static void checkCorrectness(
+            BooleanIla target, BooleanIla actual, int addlOffsetLength, int maxAbsStride, boolean epsilon)
+            throws Exception {
+<span class="nc" id="L125">        Argument.assertNotLessThan(addlOffsetLength, 0, &quot;addlOffsetLength&quot;);</span>
+<span class="nc" id="L126">        Argument.assertNotLessThan(maxAbsStride, 1, &quot;maxAbsStride&quot;);</span>
+<span class="nc" id="L127">        Argument.assertEquals(target.length(), actual.length(), &quot;target.length()&quot;, &quot;actual.length()&quot;);</span>
+
+<span class="nc" id="L129">        final StridedBooleanIla stridedTarget = StridedBooleanIlaFromBooleanIla.create(target, new boolean[10]);</span>
+<span class="nc" id="L130">        final StridedBooleanIla stridedActual = StridedBooleanIlaFromBooleanIla.create(target, new boolean[10]);</span>
+<span class="nc" id="L131">        final Random random = new Random(0);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        final int ilaLength = target.length() + addlOffsetLength &lt;= Integer.MAX_VALUE</span>
+<span class="nc" id="L133">                ? (int) target.length()</span>
+<span class="nc" id="L134">                : Integer.MAX_VALUE - addlOffsetLength;</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        for (int stride = -maxAbsStride; stride &lt;= maxAbsStride; ++stride) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (stride != 0) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                int absStride = stride &lt; 0 ? -stride : stride;</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                int offsetStart = stride &lt; 0 ? (ilaLength - 1) * absStride : 0;</span>
+<span class="nc" id="L139">                int offsetEnd = offsetStart + addlOffsetLength;</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                for (int offset = offsetStart; offset &lt; offsetEnd; ++offset) {</span>
+<span class="nc" id="L141">                    final int arraySize = (ilaLength - 1) * absStride + 1 + addlOffsetLength;</span>
+<span class="nc" id="L142">                    final boolean[] targetBase = new boolean[arraySize];</span>
+<span class="nc" id="L143">                    final boolean[] actualBase = new boolean[arraySize];</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                    for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                        for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; targetBase.length; ++ii) {</span>
+<span class="nc" id="L147">                                targetBase[ii] = actualBase[ii] = random.nextBoolean();</span>
+                            }
+<span class="nc" id="L149">                            stridedTarget.get(targetBase, offset, stride, start, length);</span>
+<span class="nc" id="L150">                            stridedActual.get(actualBase, offset, stride, start, length);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; arraySize; ++ii) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                                if (!(actualBase[ii] == targetBase[ii]))</span>
+<span class="nc" id="L153">                                    throw new Exception(&quot;actual[&quot; + ii</span>
+                                            + &quot;] (&quot;
+                                            + actualBase[ii]
+                                            + &quot;) !~ target[&quot;
+                                            + ii + &quot;] (&quot;
+                                            + targetBase[ii]
+                                            + &quot;) {length=&quot;
+                                            + length
+                                            + &quot;,start=&quot; + start
+                                            + &quot;,offset=&quot;
+                                            + offset
+                                            + &quot;,stride=&quot;
+                                            + stride
+                                            + &quot;}&quot;);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+<span class="nc" id="L173">    }</span>
+
+    public static void dump(String msg, boolean[] array) {
+<span class="nc" id="L176">        System.out.println(msg + &quot;:&quot;);</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L178">            System.out.print(&quot; &quot; + array[ii]);</span>
+        }
+<span class="nc" id="L180">        System.out.println();</span>
+<span class="nc" id="L181">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

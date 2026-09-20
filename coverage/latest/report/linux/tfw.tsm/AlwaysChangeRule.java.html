@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlwaysChangeRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">AlwaysChangeRule.java</span></div><h1>AlwaysChangeRule.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+/**
+ * A state change rule for always notifying sinks when state is published.
+ */
+public class AlwaysChangeRule implements StateChangeRule {
+    /** An instance of the rule. */
+<span class="nc" id="L8">    public static final AlwaysChangeRule RULE = new AlwaysChangeRule();</span>
+
+    /**
+     * Hide constructor to avoid un-needed object creation. This rule is
+     * stateless and therefore only one instance is needed.
+     */
+    private AlwaysChangeRule() {}
+
+    /**
+     * Returns an instance of the rule.
+     *
+     * @return an instance of the rule.
+     */
+    public static AlwaysChangeRule getInstance() {
+<span class="nc" id="L22">        return RULE;</span>
+    }
+
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; reqardless of the specified values.
+     *
+     * @param currentState
+     *            the current event channel state.
+     * @param newState
+     *            the new state value for the event channel.
+     * @return &lt;code&gt;true&lt;/code&gt; reqardless of the specified values.
+     */
+    @Override
+    public boolean isChange(Object currentState, Object newState) {
+<span class="nc" id="L36">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

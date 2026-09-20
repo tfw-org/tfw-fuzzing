@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Root.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Root.java</span></div><h1>Root.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.List;
+import tfw.check.Argument;
+import tfw.check.Arguments;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * The base of the event channel communications structure. All event channels
+ * which reach the Root must be terminated at the root or an
+ * exception will be thrown.
+ *
+ */
+public class Root extends Branch {
+    private final TransactionMgr transactionMgr;
+
+    /**
+     * Creates a root with the specified event channels and ports.
+     *
+     * @param name of the Root branch
+     * @param eventChannels the list of event channels associated with this root branch.
+     * @param transactionMgr the transaction manager associated with this root branch.
+     */
+    Root(String name, EventChannel[] eventChannels, TransactionMgr transactionMgr) {
+<span class="nc" id="L29">        super(name, null, null, eventChannels);</span>
+<span class="nc" id="L30">        this.transactionMgr = transactionMgr;</span>
+<span class="nc" id="L31">        this.immediateRoot = this;</span>
+<span class="nc" id="L32">    }</span>
+
+    /**
+     * Returns the {@link TransactionMgr} for this tree.
+     * @return the {@link TransactionMgr} for this tree.
+     */
+    @Override
+    TransactionMgr getTransactionManager() {
+<span class="nc" id="L40">        return transactionMgr;</span>
+    }
+
+    /**
+     * Returns true.
+     * @return true.
+     */
+    @Override
+    public final boolean isRooted() {
+<span class="nc" id="L49">        return true;</span>
+    }
+
+    public boolean isLogging() {
+<span class="nc" id="L53">        return transactionMgr.isLogging();</span>
+    }
+
+    public void setLogging(boolean logging) {
+<span class="nc" id="L57">        transactionMgr.setLogging(logging);</span>
+<span class="nc" id="L58">    }</span>
+
+    public static final void setTraceLogging(boolean traceLogging) {
+<span class="nc" id="L61">        TransactionMgr.setTraceLogging(traceLogging);</span>
+<span class="nc" id="L62">    }</span>
+
+    public void setLocationFormatter(TransactionMgr.LocationFormatter locationFormatter) {
+<span class="nc" id="L65">        transactionMgr.setLocationFormatter(locationFormatter);</span>
+<span class="nc" id="L66">    }</span>
+
+    //    /**
+    //     * Sets the exception handler for this roots transaction manager. This
+    //     * method will over-write any previously set handlers. If an un-handle
+    //     * exception reaches the transaction manager the
+    //     * {@link TransactionExceptionHandler#handle(Exception)} will be called.
+    //     *
+    //     * @param handler the exception handler.
+    //     */
+    //    public final void setTransactionExceptionHandler(TransactionExceptionHandler handler){
+    //    	CheckArgument.checkNull(handler, &quot;handler&quot;);
+    //    	this.transactionMgr.setExceptionHandler(handler);
+    //    }
+
+    public static Builder builder() {
+<span class="nc" id="L82">        return new Builder();</span>
+    }
+
+    public static class Builder {
+<span class="nc" id="L86">        private String name = null;</span>
+<span class="nc" id="L87">        private TransactionQueue transactionQueue = null;</span>
+<span class="nc" id="L88">        private CheckDependencies checkDependencies = null;</span>
+<span class="nc" id="L89">        private boolean logging = false;</span>
+<span class="nc" id="L90">        private List&lt;EventChannelConfig&lt;? extends EventChannelDescription&gt;&gt; eventChannelConfigs = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L91">        private TransactionExceptionHandler transactionExceptionHandler = null;</span>
+
+<span class="nc" id="L93">        Builder() {}</span>
+
+        public Builder setName(final String name) {
+<span class="nc" id="L96">            this.name = name;</span>
+
+<span class="nc" id="L98">            return this;</span>
+        }
+
+        public Builder setTransactionQueue(final TransactionQueue transactionQueue) {
+<span class="nc" id="L102">            this.transactionQueue = transactionQueue;</span>
+
+<span class="nc" id="L104">            return this;</span>
+        }
+
+        public Builder setCheckDependencies(final CheckDependencies checkDependencies) {
+<span class="nc" id="L108">            this.checkDependencies = checkDependencies;</span>
+
+<span class="nc" id="L110">            return this;</span>
+        }
+
+        public Builder setLogging(final boolean logging) {
+<span class="nc" id="L114">            this.logging = logging;</span>
+
+<span class="nc" id="L116">            return this;</span>
+        }
+
+        public Builder addEventChannel(
+                EventChannelDescription eventChannelDescription,
+                StateChangeRule stateChangeRule,
+                Object initialState,
+                String[] exportTags) {
+<span class="nc" id="L124">            Arguments.checkNotNull(eventChannelDescription, &quot;eventChannelDescription&quot;);</span>
+<span class="nc" id="L125">            Arguments.checkNotNull(stateChangeRule, &quot;stateChangeRule&quot;);</span>
+
+<span class="nc" id="L127">            eventChannelConfigs.add(new DefaultEventChannelConfig&lt;&gt;(</span>
+                    eventChannelDescription, stateChangeRule, initialState, exportTags));
+
+<span class="nc" id="L130">            return this;</span>
+        }
+
+        public Builder addEventChannel(final EventChannelConfig&lt;? extends EventChannelDescription&gt; eventChannelConfig) {
+<span class="nc" id="L134">            Arguments.checkNotNull(eventChannelConfig, &quot;eventChannelConfig&quot;);</span>
+
+<span class="nc" id="L136">            eventChannelConfigs.add(eventChannelConfig);</span>
+
+<span class="nc" id="L138">            return this;</span>
+        }
+
+        public Builder addEventChannels(final List&lt;EventChannelEnum&lt;?&gt;&gt; eventChannelEnums) {
+<span class="nc" id="L142">            Arguments.checkNotNull(eventChannelEnums, &quot;eventChannelEnums&quot;);</span>
+
+<span class="nc" id="L144">            eventChannelConfigs.addAll(eventChannelEnums);</span>
+
+<span class="nc" id="L146">            return this;</span>
+        }
+
+        public Builder addObjectECD(ObjectECD objectECD, Object initialState) {
+<span class="nc" id="L150">            return addEventChannel(objectECD, DotEqualsRule.RULE, initialState, null);</span>
+        }
+
+        public Builder addRollbackECD(RollbackECD rollbackECD) {
+<span class="nc" id="L154">            return addEventChannel(rollbackECD, AlwaysChangeRule.RULE, null, null);</span>
+        }
+
+        public Builder addStatelessTriggerECD(StatelessTriggerECD statelessTriggerECD) {
+<span class="nc" id="L158">            return addEventChannel(statelessTriggerECD, AlwaysChangeRule.RULE, null, null);</span>
+        }
+
+        public Builder setTransactionExceptionHandler(final TransactionExceptionHandler transactionExceptionHandler) {
+<span class="nc" id="L162">            this.transactionExceptionHandler = transactionExceptionHandler;</span>
+
+<span class="nc" id="L164">            return this;</span>
+        }
+
+        public Root build() {
+<span class="nc" id="L168">            Argument.assertNotNull(name, &quot;name&quot;);</span>
+
+<span class="nc" id="L170">            TransactionMgr mgr = new TransactionMgr(transactionQueue, checkDependencies, logging);</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            if (transactionExceptionHandler != null) {</span>
+<span class="nc" id="L173">                mgr.setExceptionHandler(transactionExceptionHandler);</span>
+            }
+
+<span class="nc" id="L176">            final BaseBranchFactory baseBranchFactory = new BaseBranchFactory();</span>
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            for (EventChannelConfig&lt;? extends EventChannelDescription&gt; config : eventChannelConfigs) {</span>
+<span class="nc" id="L179">                baseBranchFactory.addEventChannel(</span>
+<span class="nc" id="L180">                        config.getEventChannelDescription(),</span>
+<span class="nc" id="L181">                        config.getInitialState(),</span>
+<span class="nc" id="L182">                        config.getStateChangeRule(),</span>
+<span class="nc" id="L183">                        config.getExportTags());</span>
+<span class="nc" id="L184">            }</span>
+
+<span class="nc" id="L186">            return new Root(name, baseBranchFactory.getTerminators(), mgr);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

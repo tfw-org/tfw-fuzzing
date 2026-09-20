@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InfiniteLoopTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">InfiniteLoopTest.java</span></div><h1>InfiniteLoopTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L9">final class InfiniteLoopTest {</span>
+<span class="nc" id="L10">    private static final StringECD PORT_A = new StringECD(&quot;a&quot;);</span>
+<span class="nc" id="L11">    private static final StringECD PORT_B = new StringECD(&quot;b&quot;);</span>
+<span class="nc" id="L12">    private static final StringECD PORT_C = new StringECD(&quot;c&quot;);</span>
+<span class="nc" id="L13">    String cvalue = null;</span>
+<span class="nc" id="L14">    private boolean loop = true;</span>
+<span class="nc" id="L15">    private boolean transactionStarted = false;</span>
+<span class="nc" id="L16">    private final Converter trigger = new Converter(&quot;TriggeredConverter&quot;, new StringECD[] {PORT_C}, null, null) {</span>
+        @Override
+        protected void convert() {
+<span class="nc" id="L19">            cvalue = (String) get(PORT_C);</span>
+<span class="nc" id="L20">        }</span>
+    };
+
+<span class="nc" id="L23">    private Converter convertAtoB =</span>
+<span class="nc" id="L24">            new Converter(&quot;A to B Converter&quot;, new ObjectECD[] {PORT_A}, new ObjectECD[] {PORT_B}) {</span>
+                @Override
+                protected void convert() {
+<span class="nc" id="L27">                    transactionStarted = true;</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">                    if (loop) {</span>
+<span class="nc" id="L29">                        set(PORT_B, &quot;from a to b&quot;);</span>
+                    }
+<span class="nc" id="L31">                }</span>
+            };
+
+<span class="nc" id="L34">    private Converter convertBtoA =</span>
+<span class="nc" id="L35">            new Converter(&quot;B to A Converter&quot;, new ObjectECD[] {PORT_B}, new ObjectECD[] {PORT_A}) {</span>
+                @Override
+                protected void convert() {
+<span class="nc bnc" id="L38" title="All 2 branches missed.">                    if (loop) {</span>
+<span class="nc" id="L39">                        set(PORT_A, &quot;from b to a&quot;);</span>
+                    }
+<span class="nc" id="L41">                }</span>
+            };
+
+<span class="nc" id="L44">    private Initiator initiator = new Initiator(&quot;Infinite loop initiator&quot;, new ObjectECD[] {PORT_A, PORT_C});</span>
+<span class="nc" id="L45">    public boolean isCommit = false;</span>
+<span class="nc" id="L46">    boolean isDebugCommit = false;</span>
+<span class="nc" id="L47">    String avalue = null;</span>
+<span class="nc" id="L48">    String bvalue = null;</span>
+<span class="nc" id="L49">    private final Commit commit = new Commit(&quot;Infinite loop commit&quot;, new ObjectECD[] {PORT_A, PORT_B}) {</span>
+        @Override
+        protected void commit() {
+<span class="nc" id="L52">            isCommit = true;</span>
+<span class="nc" id="L53">            avalue = (String) get(PORT_A);</span>
+<span class="nc" id="L54">            bvalue = (String) get(PORT_B);</span>
+<span class="nc" id="L55">        }</span>
+
+        @Override
+        protected void debugCommit() {
+<span class="nc" id="L59">            isDebugCommit = true;</span>
+<span class="nc" id="L60">            avalue = (String) get(PORT_A);</span>
+<span class="nc" id="L61">            bvalue = (String) get(PORT_B);</span>
+<span class="nc" id="L62">        }</span>
+    };
+
+    @Test
+    void infiniteLoopTest() throws Exception {
+<span class="nc" id="L67">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L68">        final Root root = Root.builder()</span>
+<span class="nc" id="L69">                .setName(&quot;Infinite loop test&quot;)</span>
+<span class="nc" id="L70">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L71">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L72">                .addEventChannel(PORT_A, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L73">                .addEventChannel(PORT_B, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L74">                .addEventChannel(PORT_C, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L75">                .build();</span>
+
+<span class="nc" id="L77">        root.add(initiator);</span>
+<span class="nc" id="L78">        root.add(convertAtoB);</span>
+
+<span class="nc" id="L80">        root.add(convertBtoA);</span>
+<span class="nc" id="L81">        root.add(trigger);</span>
+<span class="nc" id="L82">        root.add(commit);</span>
+<span class="nc" id="L83">        initiator.set(PORT_A, &quot;kick off value&quot;);</span>
+<span class="nc" id="L84">        assertThat(isCommit).isFalse();</span>
+<span class="nc" id="L85">        assertThat(isDebugCommit).isFalse();</span>
+
+<span class="nc" id="L87">        String newTransaction = &quot;generating new transaction&quot;;</span>
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        while (transactionStarted == false) {</span>
+<span class="nc" id="L90">            Thread.sleep(10);</span>
+        }
+
+<span class="nc" id="L93">        initiator.set(PORT_C, newTransaction);</span>
+
+        // Give it a chance to break through
+        // Note that there is no guarantee that we
+        // sleep long enough...
+<span class="nc" id="L98">        Thread.sleep(50);</span>
+
+<span class="nc" id="L100">        assertThat(cvalue).isNull();</span>
+
+        // terminate the infinite loop transaction...
+<span class="nc" id="L103">        loop = false;</span>
+
+        // Give the follow on transaction a chance to
+        // to execute...
+<span class="nc" id="L107">        queue.waitTilEmpty();</span>
+<span class="nc" id="L108">        assertThat(newTransaction).isEqualTo(cvalue);</span>
+<span class="nc" id="L109">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

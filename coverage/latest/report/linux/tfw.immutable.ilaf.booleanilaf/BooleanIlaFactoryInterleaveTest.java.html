@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BooleanIlaFactoryInterleaveTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilaf.booleanilaf</a> &gt; <span class="el_source">BooleanIlaFactoryInterleaveTest.java</span></div><h1>BooleanIlaFactoryInterleaveTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilaf.booleanilaf;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L8">final class BooleanIlaFactoryInterleaveTest {</span>
+    @Test
+    void argumentTest() {
+<span class="nc" id="L11">        final BooleanIlaFactory booleanIlaFactory = BooleanIlaFactoryFill.create(false, 10);</span>
+<span class="nc" id="L12">        final BooleanIlaFactory[] factories = new BooleanIlaFactory[] {booleanIlaFactory, booleanIlaFactory};</span>
+<span class="nc" id="L13">        final boolean[] buffer = new boolean[10];</span>
+
+<span class="nc" id="L15">        assertThatThrownBy(() -&gt; BooleanIlaFactoryInterleave.create(null, buffer))</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L17">                .hasMessage(&quot;ilaFactories == null not allowed!&quot;);</span>
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; BooleanIlaFactoryInterleave.create(factories, null))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;buffers == null not allowed!&quot;);</span>
+<span class="nc" id="L21">    }</span>
+
+    @Test
+    void createTest() {
+<span class="nc" id="L25">        final BooleanIlaFactory booleanIlaFactory = BooleanIlaFactoryFill.create(false, 10);</span>
+<span class="nc" id="L26">        final BooleanIlaFactory[] f = new BooleanIlaFactory[] {booleanIlaFactory, booleanIlaFactory};</span>
+<span class="nc" id="L27">        final boolean[] b = new boolean[10];</span>
+
+<span class="nc" id="L29">        assertThat(BooleanIlaFactoryInterleave.create(f, b).create()).isNotNull();</span>
+<span class="nc" id="L30">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

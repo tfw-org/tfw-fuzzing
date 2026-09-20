@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JFrameBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JFrameBB.java</span></div><h1>JFrameBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import java.awt.Container;
+import java.awt.event.WindowListener;
+import javax.swing.JFrame;
+import javax.swing.JMenuBar;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.TreeComponent;
+
+public class JFrameBB extends JFrame implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JFrameBB(String name) {
+<span class="nc" id="L16">        this(new Branch(&quot;JPanelBB[&quot; + name + &quot;]&quot;));</span>
+<span class="nc" id="L17">    }</span>
+
+<span class="nc" id="L19">    public JFrameBB(Branch branch) {</span>
+<span class="nc" id="L20">        this.branch = branch;</span>
+<span class="nc" id="L21">    }</span>
+
+    public final void setContentPaneForBoth(Container contentPane) {
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (getContentPane() instanceof BranchBox) {</span>
+<span class="nc" id="L25">            branch.remove((BranchBox) getContentPane());</span>
+        }
+<span class="nc" id="L27">        setContentPane(contentPane);</span>
+<span class="nc" id="L28">        branch.add((BranchBox) contentPane);</span>
+<span class="nc" id="L29">    }</span>
+
+    public final void setJMenuBarForBoth(JMenuBar menuBar) {
+<span class="nc" id="L32">        setJMenuBar(menuBar);</span>
+<span class="nc" id="L33">        branch.add((BranchBox) menuBar);</span>
+<span class="nc" id="L34">    }</span>
+
+    public final void addWindowListenerToBoth(WindowListener listener) {
+<span class="nc" id="L37">        addWindowListener(listener);</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (listener instanceof BranchBox) {</span>
+<span class="nc" id="L40">            branch.add((BranchBox) listener);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        } else if (listener instanceof TreeComponent) {</span>
+<span class="nc" id="L42">            branch.add((TreeComponent) listener);</span>
+        } else {
+<span class="nc" id="L44">            throw new IllegalArgumentException(&quot;listener != BranchBox || TreeComponent not allowed!&quot;);</span>
+        }
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L50">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

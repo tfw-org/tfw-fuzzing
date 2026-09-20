@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIisFactoryFromInputStreamFactoryTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iisf.byteiisf</a> &gt; <span class="el_source">ByteIisFactoryFromInputStreamFactoryTest.java</span></div><h1>ByteIisFactoryFromInputStreamFactoryTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.iisf.byteiisf;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.iis.byteiis.ByteIis;
+import tfw.immutable.iis.byteiis.InputStreamFactory;
+
+<span class="nc" id="L13">final class ByteIisFactoryFromInputStreamFactoryTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L16">        assertThatThrownBy(() -&gt; ByteIisFactoryFromInputStreamFactory.create(null))</span>
+<span class="nc" id="L17">                .isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L18">    }</span>
+
+    @Test
+    void createTest() throws IOException {
+<span class="nc" id="L22">        final TestInputStreamFactory tisf = new TestInputStreamFactory();</span>
+<span class="nc" id="L23">        final ByteIisFactory bif = ByteIisFactoryFromInputStreamFactory.create(tisf);</span>
+<span class="nc" id="L24">        final ByteIis bi = bif.create();</span>
+<span class="nc" id="L25">        final byte[] array = new byte[tisf.array.length];</span>
+
+<span class="nc" id="L27">        assertThat(bi.read(array, 0, array.length)).isEqualTo(array.length);</span>
+<span class="nc" id="L28">        assertThat(bi.read(array, 0, array.length)).isEqualTo(-1);</span>
+<span class="nc" id="L29">        assertThat(array).isEqualTo(tisf.array);</span>
+<span class="nc" id="L30">    }</span>
+
+<span class="nc" id="L32">    private static class TestInputStreamFactory implements InputStreamFactory {</span>
+<span class="nc" id="L33">        public final byte[] array = new byte[] {9, 8, 7, 6, 5, 4, 3, 2, 1, 0};</span>
+
+        @Override
+        public InputStream create() {
+<span class="nc" id="L37">            return new ByteArrayInputStream(array);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

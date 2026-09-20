@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WaveFmtChunk.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio.wave</a> &gt; <span class="el_source">WaveFmtChunk.java</span></div><h1>WaveFmtChunk.java</h1><pre class="source lang-java linenums">package tfw.audio.wave;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaSegment;
+
+public final class WaveFmtChunk extends WaveChunk {
+    public final int compressionCode;
+    public final int numberOfChannels;
+    public final int sampleRate;
+    public final int averageBytesPerSecond;
+    public final int blockAlign;
+    public final int significantBitsPerSample;
+    public final int extraFormatBytesSize;
+    public final ByteIla extraFormatBytes;
+    public final ByteIla chunkData;
+
+    public WaveFmtChunk(final ByteIla byteIla, final int bufferSize) throws IOException {
+<span class="nc" id="L20">        super(validateAndGetChunkID(byteIla, bufferSize), getChunkDataSize(byteIla, bufferSize));</span>
+
+<span class="nc" id="L22">        Argument.assertEquals(chunkID, 0x666D7420, &quot;chunkID&quot;, &quot;'fmt ' 0x666D7420&quot;);</span>
+
+<span class="nc" id="L24">        compressionCode = WaveUtil.intFromUnsignedTwoBytes(byteIla, 8, bufferSize);</span>
+<span class="nc" id="L25">        numberOfChannels = WaveUtil.intFromUnsignedTwoBytes(byteIla, 10, bufferSize);</span>
+<span class="nc" id="L26">        sampleRate = WaveUtil.intFromSignedFourBytes(byteIla, 12, true, bufferSize);</span>
+<span class="nc" id="L27">        averageBytesPerSecond = WaveUtil.intFromSignedFourBytes(byteIla, 16, true, bufferSize);</span>
+<span class="nc" id="L28">        blockAlign = WaveUtil.intFromUnsignedTwoBytes(byteIla, 20, bufferSize);</span>
+<span class="nc" id="L29">        significantBitsPerSample = WaveUtil.intFromUnsignedTwoBytes(byteIla, 22, bufferSize);</span>
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (chunkDataSize &gt; 16) {</span>
+<span class="nc" id="L32">            extraFormatBytesSize = WaveUtil.intFromUnsignedTwoBytes(byteIla, 24, bufferSize);</span>
+<span class="nc" id="L33">            extraFormatBytes = ByteIlaSegment.create(byteIla, 26, extraFormatBytesSize);</span>
+        } else {
+<span class="nc" id="L35">            extraFormatBytesSize = 0;</span>
+<span class="nc" id="L36">            extraFormatBytes = null;</span>
+        }
+<span class="nc" id="L38">        chunkData = ByteIlaSegment.create(byteIla, 0, 8 + chunkDataSize + extraFormatBytesSize);</span>
+<span class="nc" id="L39">    }</span>
+
+    private static int validateAndGetChunkID(final ByteIla byteIla, final int bufferSize) throws IOException {
+<span class="nc" id="L42">        Argument.assertNotNull(byteIla, &quot;byteIla&quot;);</span>
+<span class="nc" id="L43">        Argument.assertNotLessThan(byteIla.length(), 24, &quot;byteIla.length()&quot;);</span>
+
+<span class="nc" id="L45">        return WaveUtil.intFromSignedFourBytes(byteIla, 0, false, bufferSize);</span>
+    }
+
+    private static int getChunkDataSize(final ByteIla byteIla, final int bufferSize) throws IOException {
+<span class="nc" id="L49">        return WaveUtil.intFromSignedFourBytes(byteIla, 4, true, bufferSize);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

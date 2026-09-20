@@ -1,0 +1,939 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionMgr.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">TransactionMgr.java</span></div><h1>TransactionMgr.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tfw.check.Argument;
+
+// TODO: What should happen if an exception occurs while processing a
+// transaction? Currently the transaction state is left as is.
+// pending transaction will attempt to execute.
+// TODO: Review exception handling for exceptions that are not
+// currently caught.
+// TODO: test rollback state changes
+// TODO: test rollback component changes
+
+/**
+ * The transaction manager for the framework.
+ *
+ * Three kinds of transaction initiation:
+ * &lt;UL&gt;
+ * &lt;LI&gt;State Change - any call to (@link #addStateChange(InitiatorSource[], Object[]))
+ * causes a new transaction to be create.&lt;/LI&gt;
+ * &lt;LI&gt;Component Change - consecutive calls to
+ * (@link #addComponent(AddComponentRunnable, Throwable)) and
+ * (@link #removeComponent(RemoveComponentRunnable, Throwable)) may or may not be
+ * coalesced into one or more transactions. A call to
+ * (@link #addStateChange(InitiatorSource[], Object[])) will cause the coalescing of
+ * component changes in order to insure the correct ordering of transactions.
+ * &lt;/LI&gt;
+ * &lt;LI&gt;Event channelfiring (Need to verify the validity of this type).&lt;/LI&gt;
+ * &lt;/UL&gt;
+ */
+public final class TransactionMgr {
+<span class="nc" id="L37">    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionMgr.class);</span>
+
+    final TransactionQueue queue;
+    final CheckDependencies checkDependencies;
+
+<span class="nc" id="L42">    private long transactionCount = 0;</span>
+
+    private long transactionId;
+    private long currentlyExecutingTransactionId;
+<span class="nc" id="L46">    private final Object lock = new Object();</span>
+
+    private boolean logging;
+
+<span class="nc" id="L50">    private static final Object STATIC_LOCK = new Object();</span>
+<span class="nc" id="L51">    private static boolean traceLogging = false;</span>
+
+<span class="nc" id="L53">    private final ArrayList&lt;Source&gt; stateChanges = new ArrayList&lt;Source&gt;();</span>
+
+<span class="nc" id="L55">    private HashSet&lt;Validator&gt; validators = null;</span>
+
+<span class="nc" id="L57">    private ArrayList&lt;Processor&gt; processors = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L58">    private ArrayList&lt;Processor&gt; delayedProcessors = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L60">    private ArrayList&lt;CommitRollbackListener&gt; crListeners = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L62">    private ArrayList&lt;EventChannel&gt; cycleStateChanges = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L64">    private ArrayList&lt;EventChannel&gt; transStateChanges = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L66">    private ArrayList&lt;EventChannel&gt; eventChannelFires = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L68">    private Runnable componentChange = null;</span>
+
+<span class="nc" id="L70">    private boolean inTransaction = false;</span>
+
+<span class="nc" id="L72">    private boolean executingStateChanges = false;</span>
+
+<span class="nc" id="L74">    private TransactionExceptionHandler exceptionHandler = new TransactionExceptionHandler() {</span>
+        @Override
+        public void handle(Exception exception) {
+<span class="nc" id="L77">            LOGGER.atWarn().setCause(exception).log(&quot;Unexpected Exception!&quot;);</span>
+
+<span class="nc" id="L79">            throw new RuntimeException(</span>
+<span class="nc" id="L80">                    &quot;An unhandled exception occured while processing a transaction: &quot; + exception.getMessage(),</span>
+                    exception);
+        }
+    };
+
+<span class="nc" id="L85">    private LocationFormatter locationFormatter = null;</span>
+
+    /**
+     * Constructs a transaction manager
+     *
+     * @param queue
+     *            the transaction queue
+     * @param logging
+     *            a flag to turn logging on or off.
+     */
+<span class="nc" id="L95">    TransactionMgr(TransactionQueue queue, CheckDependencies checkDependencies, boolean logging) {</span>
+<span class="nc" id="L96">        Argument.assertNotNull(queue, &quot;queue&quot;);</span>
+<span class="nc" id="L97">        this.queue = queue;</span>
+<span class="nc" id="L98">        this.checkDependencies = checkDependencies;</span>
+<span class="nc" id="L99">        this.logging = logging;</span>
+<span class="nc" id="L100">    }</span>
+
+    public void addChangedEventChannel(EventChannel ec) {
+<span class="nc" id="L103">        cycleStateChanges.add(ec);</span>
+<span class="nc" id="L104">        transStateChanges.add(ec);</span>
+<span class="nc" id="L105">    }</span>
+
+    public void setLogging(boolean logging) {
+<span class="nc" id="L108">        this.logging = logging;</span>
+<span class="nc" id="L109">    }</span>
+
+    public boolean isLogging() {
+<span class="nc" id="L112">        return logging;</span>
+    }
+
+    public void setLocationFormatter(LocationFormatter locationFormatter) {
+<span class="nc" id="L116">        synchronized (lock) {</span>
+<span class="nc" id="L117">            this.locationFormatter = locationFormatter;</span>
+<span class="nc" id="L118">        }</span>
+<span class="nc" id="L119">    }</span>
+
+    public static void setTraceLogging(boolean traceLogging) {
+<span class="nc" id="L122">        synchronized (STATIC_LOCK) {</span>
+<span class="nc" id="L123">            TransactionMgr.traceLogging = traceLogging;</span>
+<span class="nc" id="L124">        }</span>
+<span class="nc" id="L125">    }</span>
+
+    public static boolean isTraceLogging() {
+<span class="nc" id="L128">        synchronized (STATIC_LOCK) {</span>
+<span class="nc" id="L129">            return traceLogging;</span>
+        }
+    }
+
+    public TransactionQueue getTransactionQueue() {
+<span class="nc" id="L134">        return queue;</span>
+    }
+
+    /**
+     * Gets the ID of the currently-executing transaction (or last executed
+     * transaction if there is currently no transaction)
+     *
+     * @return the ID of the currently-executing transaction
+     */
+    long getCurrentlyExecutingTransactionId() {
+<span class="nc" id="L144">        return currentlyExecutingTransactionId;</span>
+    }
+
+    /**
+     * Set the exception handler for this transaction manager.
+     *
+     * @param exceptionHandler
+     *            the new exception handler
+     */
+    void setExceptionHandler(TransactionExceptionHandler exceptionHandler) {
+<span class="nc" id="L154">        Argument.assertNotNull(exceptionHandler, &quot;exceptionHandler&quot;);</span>
+<span class="nc" id="L155">        this.exceptionHandler = exceptionHandler;</span>
+<span class="nc" id="L156">    }</span>
+
+    private boolean isDebugEnabled() {
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        return logging &amp;&amp; LOGGER.isDebugEnabled();</span>
+    }
+
+    private boolean isTraceEnabled() {
+<span class="nc bnc" id="L163" title="All 4 branches missed.">        return logging &amp;&amp; LOGGER.isTraceEnabled();</span>
+    }
+
+    private void debug(String format, Object... args) {
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (isDebugEnabled()) {</span>
+<span class="nc" id="L168">            LOGGER.atDebug().log(format, args);</span>
+        }
+<span class="nc" id="L170">    }</span>
+
+    private void trace(String format, Object... args) {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (isTraceEnabled()) {</span>
+<span class="nc" id="L174">            LOGGER.atTrace().log(format, args);</span>
+        }
+<span class="nc" id="L176">    }</span>
+
+    private void executeTransaction(TransactionState transactionState, Throwable location) {
+<span class="nc" id="L179">        Throwable thrown = null;</span>
+
+        try {
+<span class="nc" id="L182">            thrown = executeTransactionHelper(transactionState, location);</span>
+        } finally {
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (transactionState != null) {</span>
+<span class="nc" id="L185">                transactionState.getResultFuture().setResultAndRelease(thrown);</span>
+            }
+        }
+<span class="nc" id="L188">    }</span>
+
+    private void executeTransactionCycles() {
+<span class="nc" id="L191">        executeComponentChange();</span>
+
+<span class="nc" id="L193">        long cycleNumber = 0;</span>
+        do {
+<span class="nc" id="L195">            debug(&quot;Cycle {}&quot;, cycleNumber);</span>
+<span class="nc" id="L196">            debug(&quot;  State Changes:&quot;);</span>
+
+<span class="nc" id="L198">            trace(&quot;executeEventChannelFires()&quot;);</span>
+
+<span class="nc" id="L200">            executeEventChannelFires();</span>
+
+<span class="nc" id="L202">            trace(&quot;executeStateChanges()&quot;);</span>
+
+<span class="nc" id="L204">            executeStateChanges();</span>
+
+<span class="nc" id="L206">            debug(&quot;  Validators:&quot;);</span>
+
+<span class="nc" id="L208">            executeValidators();</span>
+
+<span class="nc" id="L210">            debug(&quot;  Processors:&quot;);</span>
+
+<span class="nc" id="L212">            executeProcessors();</span>
+
+<span class="nc" id="L214">            trace(&quot;synchronizeCycleState()&quot;);</span>
+
+<span class="nc" id="L216">            synchronizeCycleState();</span>
+
+<span class="nc" id="L218">            trace(&quot;executeEndOfCycleRunnables&quot;);</span>
+
+<span class="nc" id="L220">            executeEndOfCycleRunnables();</span>
+
+<span class="nc" id="L222">            cycleNumber++;</span>
+<span class="nc bnc" id="L223" title="All 6 branches missed.">        } while (!stateChanges.isEmpty() || !eventChannelFires.isEmpty() || !processors.isEmpty());</span>
+
+<span class="nc" id="L225">        componentChange = null;</span>
+<span class="nc" id="L226">    }</span>
+
+    private Throwable executeTransactionHelper(TransactionState transactionState, Throwable location) {
+<span class="nc" id="L229">        inTransaction = true;</span>
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (transactionState != null) {</span>
+            while (true) {
+                try {
+<span class="nc" id="L234">                    currentlyExecutingTransactionId =</span>
+<span class="nc" id="L235">                            transactionState.getTransactionIdFuture().get().longValue();</span>
+
+<span class="nc" id="L237">                    break;</span>
+<span class="nc" id="L238">                } catch (Exception e) {</span>
+<span class="nc" id="L239">                }</span>
+            }
+        }
+
+<span class="nc" id="L243">        debug(&quot;******** Begin transaction: {} *********&quot;, ++transactionCount);</span>
+
+<span class="nc" id="L245">        synchronized (lock) {</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (locationFormatter != null) {</span>
+<span class="nc" id="L247">                locationFormatter.formatLocation(LOGGER, location);</span>
+            }
+<span class="nc" id="L249">        }</span>
+
+<span class="nc" id="L251">        Throwable thrown = null;</span>
+
+        try {
+<span class="nc" id="L254">            executeTransactionCycles();</span>
+<span class="nc" id="L255">        } catch (RollbackException re) {</span>
+<span class="nc" id="L256">            thrown = re;</span>
+<span class="nc" id="L257">            executeRollback();</span>
+<span class="nc" id="L258">        } catch (Exception exception) {</span>
+            // TODO figure out if this is the right thing to do.
+<span class="nc" id="L260">            thrown = exception;</span>
+<span class="nc" id="L261">            executeRollback();</span>
+<span class="nc" id="L262">            exceptionHandler.handle(exception);</span>
+<span class="nc" id="L263">        }</span>
+
+        try {
+<span class="nc" id="L266">            commitTransaction();</span>
+<span class="nc" id="L267">            synchronizeTransState();</span>
+<span class="nc" id="L268">        } catch (Exception exception) {</span>
+<span class="nc" id="L269">            exceptionHandler.handle(exception);</span>
+        } finally {
+<span class="nc" id="L271">            inTransaction = false;</span>
+        }
+
+<span class="nc" id="L274">        debug(&quot;End transaction: {}&quot;, transactionCount);</span>
+
+<span class="nc" id="L276">        return thrown;</span>
+    }
+
+<span class="nc" id="L279">    private int sourcesArraySize = 0;</span>
+<span class="nc" id="L280">    private Source[] sourcesArray = new Source[sourcesArraySize];</span>
+
+    private void executeStateChanges() {
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (stateChanges.size() == 0) {</span>
+<span class="nc" id="L284">            return;</span>
+        }
+
+<span class="nc" id="L287">        sourcesArraySize = stateChanges.size();</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        if (sourcesArray.length &lt; sourcesArraySize) {</span>
+<span class="nc" id="L289">            sourcesArray = new Source[sourcesArraySize];</span>
+        }
+<span class="nc" id="L291">        stateChanges.toArray(sourcesArray);</span>
+<span class="nc" id="L292">        stateChanges.clear();</span>
+<span class="nc" id="L293">        executingStateChanges = true;</span>
+
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        for (int i = 0; i &lt; sourcesArraySize; i++) {</span>
+<span class="nc" id="L296">            Object state = sourcesArray[i].fire();</span>
+<span class="nc" id="L297">            cycleStateChanges.add(sourcesArray[i].eventChannel);</span>
+<span class="nc" id="L298">            transStateChanges.add(sourcesArray[i].eventChannel);</span>
+<span class="nc" id="L299">            debug(</span>
+                    &quot;    S{} : {} : {} = {}&quot;,
+<span class="nc" id="L301">                    i,</span>
+<span class="nc" id="L302">                    sourcesArray[i].getTreeComponent().getName(),</span>
+<span class="nc" id="L303">                    sourcesArray[i].ecd.getEventChannelName(),</span>
+                    state);
+        }
+
+<span class="nc" id="L307">        executingStateChanges = false;</span>
+<span class="nc" id="L308">    }</span>
+
+    private void executeValidators() {
+        // if no validators have been added...
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (validators == null) {</span>
+<span class="nc" id="L313">            return;</span>
+        }
+
+<span class="nc" id="L316">        Validator[] v = validators.toArray(new Validator[validators.size()]);</span>
+<span class="nc" id="L317">        validators = null;</span>
+
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        for (int i = 0; i &lt; v.length; i++) {</span>
+<span class="nc" id="L320">            debug(&quot;validators[{}].validateState(): {}&quot;, i, v[i].getName());</span>
+
+<span class="nc" id="L322">            v[i].validate();</span>
+        }
+<span class="nc" id="L324">    }</span>
+
+<span class="nc" id="L326">    private int executeProcessorsArraySize = 0;</span>
+<span class="nc" id="L327">    private Processor[] executeProcessorsArray = new Processor[executeProcessorsArraySize];</span>
+
+    private void executeProcessors() {
+        // if there are no processors...
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        if (processors.size() == 0) {</span>
+<span class="nc" id="L332">            return;</span>
+        }
+
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        if (processors.size() &gt; 1) {</span>
+<span class="nc" id="L336">            checkDependencies.checkDependencies(processors, delayedProcessors, null);</span>
+        }
+
+        // process the independent processors...
+<span class="nc" id="L340">        executeProcessorsArraySize = processors.size();</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (executeProcessorsArray.length &lt; executeProcessorsArraySize) {</span>
+<span class="nc" id="L342">            executeProcessorsArray = new Processor[executeProcessorsArraySize];</span>
+        }
+<span class="nc" id="L344">        processors.toArray(executeProcessorsArray);</span>
+<span class="nc" id="L345">        processors.clear();</span>
+
+        // if there are dependent processor to be delayed...
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        if (delayedProcessors.size() &gt; 0) {</span>
+            // remember the delayed processors for the next state change
+            // cycle...
+<span class="nc" id="L351">            ArrayList&lt;Processor&gt; t = processors;</span>
+<span class="nc" id="L352">            processors = delayedProcessors;</span>
+<span class="nc" id="L353">            delayedProcessors = t;</span>
+        }
+
+<span class="nc bnc" id="L356" title="All 2 branches missed.">        for (int i = 0; i &lt; executeProcessorsArraySize; i++) {</span>
+<span class="nc" id="L357">            debug(&quot;    P{} : {}&quot;, i, executeProcessorsArray[i].getName());</span>
+            try {
+<span class="nc" id="L359">                executeProcessorsArray[i].process();</span>
+<span class="nc" id="L360">            } catch (Exception e) {</span>
+<span class="nc" id="L361">                LOGGER.atWarn().setCause(e).log(&quot;Exception in {}&quot;, executeProcessorsArray[i].getName());</span>
+<span class="nc" id="L362">            }</span>
+        }
+<span class="nc" id="L364">    }</span>
+
+    /**
+     * Searches the set of processors for dependencies. If a dependency is
+     * found, the dependent processor is removed from the processor set and
+     * added to the delayedProcessors set.
+     *
+     * @param processors
+     *            The set of processors to be check for dependencies.
+     * @param delayedProcessors
+     *            The set of dependent processors which are to be delayed.
+     */
+    private static void checkDependencies(Set&lt;TreeComponent&gt; processors, Set&lt;TreeComponent&gt; delayedProcessors) {
+<span class="nc" id="L377">        Set&lt;TreeComponent&gt; processorCrumbs = new HashSet&lt;TreeComponent&gt;();</span>
+<span class="nc" id="L378">        Set&lt;Terminator&gt; terminatorCrumbs = new HashSet&lt;Terminator&gt;();</span>
+<span class="nc" id="L379">        Processor[] procs = processors.toArray(new Processor[processors.size()]);</span>
+
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        for (int i = 0; i &lt; procs.length; i++) {</span>
+            // if the ith processor has not already been delayed...
+<span class="nc bnc" id="L383" title="All 2 branches missed.">            if (processors.contains(procs[i])) {</span>
+<span class="nc" id="L384">                checkDependencies(procs[i], processors, delayedProcessors, processorCrumbs, terminatorCrumbs);</span>
+            }
+        }
+<span class="nc" id="L387">    }</span>
+
+    /**
+     * Checks to see if any processors are dependent on the specified processor.
+     *
+     * @param processor The processor to checked
+     * @param processors The list of processors to run.
+     * @param delayedProcessors The list of delayed processors to run later.
+     * @param processorCrumbs Processors that have already been visit in the recursive descent algorithm.
+     * @param terminatorCrumbs Terminators that have already been visited in the recursive descent algorithm.
+     */
+    private static void checkDependencies(
+            TreeComponent processor,
+            Set&lt;TreeComponent&gt; processors,
+            Set&lt;TreeComponent&gt; delayedProcessors,
+            Set&lt;TreeComponent&gt; processorCrumbs,
+            Set&lt;Terminator&gt; terminatorCrumbs) {
+<span class="nc" id="L404">        processorCrumbs.add(processor);</span>
+
+        // For each of the processor's sources
+<span class="nc" id="L407">        List&lt;Source&gt; sources = processor.getSources();</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.size(); i++) {</span>
+<span class="nc" id="L409">            Source src = sources.get(i);</span>
+
+            // If the source is connected to a terminator...
+            // TODO: Climb up through multiplexors/demultiplexors to
+            // to find the terminators (This isn't going to be fun).
+<span class="nc bnc" id="L414" title="All 2 branches missed.">            if (src.eventChannel instanceof Terminator) {</span>
+<span class="nc" id="L415">                Terminator t = (Terminator) src.eventChannel;</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (terminatorCrumbs.add(t) == false) {</span>
+<span class="nc" id="L417">                    continue;</span>
+                }
+<span class="nc" id="L419">                Sink[] sinks = t.getSinks();</span>
+                // For each sink that the processors might publish too...
+<span class="nc bnc" id="L421" title="All 2 branches missed.">                for (int j = 0; j &lt; sinks.length; j++) {</span>
+                    // get the sink's component...
+<span class="nc" id="L423">                    TreeComponent tc = sinks[j].getTreeComponent();</span>
+
+                    // if we have already visited this component...
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                    if (processorCrumbs.contains(tc)) {</span>
+                        // Break infinite loop...
+<span class="nc" id="L428">                        continue;</span>
+                    }
+
+                    // if the dependent component is in the set of processors
+                    // remove it and add it to the set of delayed processors...
+<span class="nc bnc" id="L433" title="All 2 branches missed.">                    if (processors.remove(tc)) {</span>
+<span class="nc" id="L434">                        delayedProcessors.add(tc);</span>
+                    }
+
+                    // continue searching the dependency chain...
+<span class="nc" id="L438">                    checkDependencies(tc, processors, delayedProcessors, processorCrumbs, terminatorCrumbs);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L443">        processorCrumbs.remove(processor);</span>
+<span class="nc" id="L444">    }</span>
+
+<span class="nc" id="L446">    private int cycleStateChangesArraySize = 0;</span>
+<span class="nc" id="L447">    private EventChannel[] cycleStateChangesArray = new EventChannel[cycleStateChangesArraySize];</span>
+
+    private void synchronizeCycleState() {
+<span class="nc bnc" id="L450" title="All 2 branches missed.">        if (cycleStateChanges.size() == 0) {</span>
+<span class="nc" id="L451">            return;</span>
+        }
+
+<span class="nc" id="L454">        cycleStateChangesArraySize = cycleStateChanges.size();</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">        if (cycleStateChangesArray.length &lt; cycleStateChangesArraySize) {</span>
+<span class="nc" id="L456">            cycleStateChangesArray = new EventChannel[cycleStateChangesArraySize];</span>
+        }
+<span class="nc" id="L458">        cycleStateChanges.toArray(cycleStateChangesArray);</span>
+<span class="nc" id="L459">        cycleStateChanges.clear();</span>
+
+<span class="nc bnc" id="L461" title="All 2 branches missed.">        for (int i = 0; i &lt; cycleStateChangesArraySize; i++) {</span>
+<span class="nc" id="L462">            trace(</span>
+                    &quot;eventChannels[{}].synchronizeCycleState(): {}&quot;,
+<span class="nc" id="L464">                    i,</span>
+<span class="nc" id="L465">                    cycleStateChangesArray[i].getECD().getEventChannelName());</span>
+
+<span class="nc" id="L467">            cycleStateChangesArray[i].synchronizeCycleState();</span>
+        }
+<span class="nc" id="L469">    }</span>
+
+<span class="nc" id="L471">    private int eventChannelsSize = 0;</span>
+<span class="nc" id="L472">    private EventChannel[] eventChannels = new EventChannel[eventChannelsSize];</span>
+
+    private void synchronizeTransState() {
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if (transStateChanges.size() == 0) {</span>
+<span class="nc" id="L476">            return;</span>
+        }
+
+<span class="nc" id="L479">        eventChannelsSize = transStateChanges.size();</span>
+<span class="nc bnc" id="L480" title="All 2 branches missed.">        if (eventChannels.length &lt; eventChannelsSize) {</span>
+<span class="nc" id="L481">            eventChannels = new EventChannel[eventChannelsSize];</span>
+        }
+<span class="nc" id="L483">        transStateChanges.toArray(eventChannels);</span>
+<span class="nc" id="L484">        transStateChanges.clear();</span>
+
+<span class="nc bnc" id="L486" title="All 2 branches missed.">        for (int i = 0; i &lt; eventChannelsSize; i++) {</span>
+<span class="nc" id="L487">            trace(</span>
+                    &quot;eventChannels[{}].synchronizeTransactionState(): {}&quot;,
+<span class="nc" id="L489">                    i,</span>
+<span class="nc" id="L490">                    eventChannels[i].getECD().getEventChannelName());</span>
+
+<span class="nc" id="L492">            eventChannels[i].synchronizeTransactionState();</span>
+        }
+<span class="nc" id="L494">    }</span>
+
+    private void executeEventChannelFires() {
+<span class="nc bnc" id="L497" title="All 2 branches missed.">        if (eventChannelFires.size() == 0) {</span>
+<span class="nc" id="L498">            return;</span>
+        }
+
+<span class="nc" id="L501">        EventChannel[] ec = eventChannelFires.toArray(new EventChannel[eventChannelFires.size()]);</span>
+<span class="nc" id="L502">        eventChannelFires.clear();</span>
+
+<span class="nc" id="L504">        executingStateChanges = true;</span>
+
+<span class="nc bnc" id="L506" title="All 2 branches missed.">        for (int i = 0; i &lt; ec.length; i++) {</span>
+<span class="nc" id="L507">            ec[i].fire();</span>
+
+<span class="nc" id="L509">            debug(&quot;    S{} : {} : {}&quot;, i, ec[i].getECD().getEventChannelName(), ec[i].getState());</span>
+
+<span class="nc" id="L511">            this.transStateChanges.add(ec[i]);</span>
+        }
+
+<span class="nc" id="L514">        executingStateChanges = false;</span>
+<span class="nc" id="L515">    }</span>
+
+    private void executeComponentChange() {
+<span class="nc bnc" id="L518" title="All 2 branches missed.">        if (componentChange == null) {</span>
+<span class="nc" id="L519">            return;</span>
+        }
+
+<span class="nc" id="L522">        debug(&quot;Add/Remove Component&quot;);</span>
+<span class="nc" id="L523">        debug(&quot;  {}&quot;, componentChange);</span>
+
+<span class="nc" id="L525">        componentChange.run();</span>
+<span class="nc" id="L526">    }</span>
+
+    private void executeRollback() {
+<span class="nc" id="L529">        stateChanges.clear();</span>
+<span class="nc" id="L530">        validators = null;</span>
+<span class="nc" id="L531">        processors.clear();</span>
+<span class="nc" id="L532">        delayedProcessors.clear();</span>
+<span class="nc" id="L533">        cycleStateChanges.clear();</span>
+<span class="nc" id="L534">        transStateChanges.clear();</span>
+<span class="nc" id="L535">        eventChannelFires.clear();</span>
+<span class="nc" id="L536">        componentChange = null;</span>
+
+<span class="nc" id="L538">        CommitRollbackListener[] crls = crListeners.toArray(new CommitRollbackListener[crListeners.size()]);</span>
+<span class="nc" id="L539">        crListeners.clear();</span>
+
+<span class="nc bnc" id="L541" title="All 2 branches missed.">        for (int i = 0; i &lt; crls.length; i++) {</span>
+<span class="nc" id="L542">            crls[i].rollback();</span>
+        }
+
+<span class="nc" id="L545">        executeTransactionCycles();</span>
+<span class="nc" id="L546">    }</span>
+
+<span class="nc" id="L548">    private int commitRollbackListenersSize = 0;</span>
+<span class="nc" id="L549">    private CommitRollbackListener[] commitRollbackListeners = new CommitRollbackListener[commitRollbackListenersSize];</span>
+
+    private void commitTransaction() {
+<span class="nc" id="L552">        debug(&quot;Commit:&quot;);</span>
+
+<span class="nc" id="L554">        synchronized (this) {</span>
+<span class="nc" id="L555">            commitRollbackListenersSize = crListeners.size();</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">            if (commitRollbackListeners.length &lt; commitRollbackListenersSize) {</span>
+<span class="nc" id="L557">                commitRollbackListeners = new CommitRollbackListener[commitRollbackListenersSize];</span>
+            }
+<span class="nc" id="L559">            crListeners.toArray(commitRollbackListeners);</span>
+<span class="nc" id="L560">            crListeners.clear();</span>
+<span class="nc" id="L561">        }</span>
+
+<span class="nc" id="L563">        int commitNumber = 0;</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">        for (int i = 0; i &lt; commitRollbackListenersSize; i++) {</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">            if (!(commitRollbackListeners[i] instanceof Terminator)) {</span>
+<span class="nc" id="L566">                debug(&quot;  C{} : {}&quot;, commitNumber++, commitRollbackListeners[i].getName());</span>
+            }
+
+            try {
+<span class="nc" id="L570">                commitRollbackListeners[i].commit();</span>
+<span class="nc" id="L571">            } catch (Exception e) {</span>
+<span class="nc" id="L572">                LOGGER.atWarn().setCause(e).log(&quot;Exception in {}&quot;, commitRollbackListeners[i].getName());</span>
+<span class="nc" id="L573">            }</span>
+        }
+<span class="nc" id="L575">    }</span>
+
+    void addCommitRollbackListener(CommitRollbackListener listener) {
+<span class="nc" id="L578">        synchronized (this) {</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">            if (!crListeners.contains(listener)) {</span>
+<span class="nc" id="L580">                crListeners.add(listener);</span>
+            }
+<span class="nc" id="L582">        }</span>
+<span class="nc" id="L583">    }</span>
+
+    /**
+     * Adds a source for a state change. This method is called by {@link Source}.
+     * It can be called at any time, by any thread.
+     *
+     * @param source
+     *            The source to be added.
+     */
+    void addStateChange(ProcessorSource source) {
+<span class="nc bnc" id="L593" title="All 2 branches missed.">        if (!queue.isDispatchThread()) {</span>
+<span class="nc" id="L594">            StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L595">            sb.append(&quot;A Processor attempted to change state of event channel '&quot;);</span>
+<span class="nc" id="L596">            sb.append(source.ecd.getEventChannelName());</span>
+<span class="nc" id="L597">            sb.append(&quot;' outside of the transaction thread.&quot;);</span>
+<span class="nc" id="L598">            sb.append(&quot; The source for the state change is '&quot;);</span>
+<span class="nc" id="L599">            sb.append(source.getFullyQualifiedName()).append(&quot;'&quot;);</span>
+<span class="nc" id="L600">            throw new IllegalStateException(sb.toString());</span>
+        }
+
+<span class="nc bnc" id="L603" title="All 2 branches missed.">        if (!inTransaction) {</span>
+<span class="nc" id="L604">            StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L605">            sb.append(&quot;A Processor attempted to change state of event channel '&quot;);</span>
+<span class="nc" id="L606">            sb.append(source.ecd.getEventChannelName());</span>
+<span class="nc" id="L607">            sb.append(&quot;' outside of an active transaction.&quot;);</span>
+<span class="nc" id="L608">            sb.append(&quot; The source for the state change is '&quot;);</span>
+<span class="nc" id="L609">            sb.append(source.getFullyQualifiedName()).append(&quot;'&quot;);</span>
+<span class="nc" id="L610">            throw new IllegalStateException(sb.toString());</span>
+        }
+
+<span class="nc bnc" id="L613" title="All 2 branches missed.">        if (!stateChanges.add(source)) {</span>
+<span class="nc" id="L614">            throw new IllegalStateException(source.getTreeComponent().getName()</span>
+                    + &quot; attempted to change the state of '&quot;
+<span class="nc" id="L616">                    + source.ecd.getEventChannelName()</span>
+                    + &quot;' twice in the same state change cycle.&quot;);
+        }
+<span class="nc" id="L619">    }</span>
+
+    void addStateChange(InitiatorSource[] sources, Object[] state) {
+<span class="nc" id="L622">        addStateChange(sources, state, queue.createTransactionState(), null);</span>
+<span class="nc" id="L623">    }</span>
+
+    void addStateChange(
+            InitiatorSource[] sources, Object[] state, TransactionState transactionState, Throwable setLocation) {
+<span class="nc" id="L627">        long id = invokeLater(new StateChangeTransaction(sources, state, transactionState, setLocation));</span>
+<span class="nc" id="L628">        transactionState.getTransactionIdFuture().setResultAndRelease(Long.valueOf(id));</span>
+<span class="nc" id="L629">    }</span>
+
+    /**
+     * This method is called by {@link Processor}and {@link TriggeredConverter}.
+     * It should only be called in the state change phase.
+     *
+     * @param processor
+     *            the processor to be added.
+     */
+    void addProcessor(Processor processor) {
+<span class="nc bnc" id="L639" title="All 2 branches missed.">        if (!executingStateChanges) {</span>
+<span class="nc" id="L640">            throw new IllegalStateException(&quot;Processors can only be active during state change cycles.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L643" title="All 2 branches missed.">        if (!processors.contains(processor)) {</span>
+<span class="nc" id="L644">            processors.add(processor);</span>
+        }
+<span class="nc" id="L646">    }</span>
+
+    /**
+     * This method is called by {@link Validator}. It should only be called in
+     * the state change phase.
+     *
+     * @param validator
+     *            the validator to be added.
+     */
+    void addValidator(Validator validator) {
+<span class="nc bnc" id="L656" title="All 2 branches missed.">        if (!executingStateChanges) {</span>
+<span class="nc" id="L657">            throw new IllegalStateException(&quot;Validators can only be active during state change cycles.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L660" title="All 2 branches missed.">        if (validators == null) {</span>
+<span class="nc" id="L661">            validators = new HashSet&lt;Validator&gt;();</span>
+        }
+
+<span class="nc" id="L664">        validators.add(validator);</span>
+<span class="nc" id="L665">    }</span>
+
+    /**
+     * Creates an adds component change. This is called by {@link TreeComponent}.
+     * It can be called at any time from any thread.
+     *
+     * @param addComponentRunnable the runnable that will add the component.
+     * @param addLocation the location where the add occurred or null.
+     */
+    void addComponent(AddComponentRunnable addComponentRunnable, Throwable addLocation) {
+<span class="nc" id="L675">        invokeLater(new ComponentChangeTransaction(addComponentRunnable, addLocation));</span>
+<span class="nc" id="L676">    }</span>
+
+    /**
+     * Creates remove component change. This is called by {@link TreeComponent}.
+     * It can be called at any time from any thread.
+     *
+     * @param removeComponentRunnable the runnable that will remove the component.
+     * @param removeLocation the location where the remove occurred or null.
+     */
+    void removeComponent(RemoveComponentRunnable removeComponentRunnable, Throwable removeLocation) {
+<span class="nc" id="L686">        invokeLater(new ComponentChangeTransaction(removeComponentRunnable, removeLocation));</span>
+<span class="nc" id="L687">    }</span>
+
+    void addEventChannelFire(EventChannel eventChannel) {
+<span class="nc bnc" id="L690" title="All 2 branches missed.">        if (!inTransaction) {</span>
+<span class="nc" id="L691">            invokeLater(new EventChannelFireTransaction(</span>
+<span class="nc bnc" id="L692" title="All 2 branches missed.">                    eventChannel, isTraceLogging() ? new Throwable(&quot;EventChannelFire&quot;) : null));</span>
+<span class="nc bnc" id="L693" title="All 2 branches missed.">        } else if (!queue.isDispatchThread()) {</span>
+            // This means we are in a transaction but the method call
+            // occurred outside of the transaction.
+<span class="nc" id="L696">            throw new IllegalStateException(</span>
+                    &quot;can't call outside transaction queue thread while a transaction is &quot; + &quot;in progress&quot;);
+        } else {
+<span class="nc" id="L699">            eventChannelFires.add(eventChannel);</span>
+        }
+<span class="nc" id="L701">    }</span>
+
+    boolean isDispatchThread() {
+<span class="nc" id="L704">        return queue.isDispatchThread();</span>
+    }
+
+    boolean isComponentChangeTransactionExecuting() {
+<span class="nc bnc" id="L708" title="All 2 branches missed.">        return componentChange != null;</span>
+    }
+
+<span class="nc" id="L711">    private final HashSet&lt;Runnable&gt; endOfCycleRunnables = new HashSet&lt;Runnable&gt;();</span>
+
+    public void addEndOfCycleRunnable(Runnable runnable) {
+<span class="nc" id="L714">        Argument.assertNotNull(runnable, &quot;runnable&quot;);</span>
+
+<span class="nc" id="L716">        synchronized (this) {</span>
+<span class="nc" id="L717">            endOfCycleRunnables.add(runnable);</span>
+<span class="nc" id="L718">        }</span>
+<span class="nc" id="L719">    }</span>
+
+    private void executeEndOfCycleRunnables() {
+<span class="nc" id="L722">        Runnable[] runnables = null;</span>
+
+<span class="nc" id="L724">        synchronized (this) {</span>
+<span class="nc bnc" id="L725" title="All 2 branches missed.">            if (endOfCycleRunnables.size() == 0) {</span>
+<span class="nc" id="L726">                return;</span>
+            }
+
+<span class="nc" id="L729">            runnables = endOfCycleRunnables.toArray(new Runnable[endOfCycleRunnables.size()]);</span>
+<span class="nc" id="L730">            endOfCycleRunnables.clear();</span>
+<span class="nc" id="L731">        }</span>
+
+<span class="nc bnc" id="L733" title="All 2 branches missed.">        for (int i = 0; i &lt; runnables.length; i++) {</span>
+<span class="nc" id="L734">            runnables[i].run();</span>
+        }
+<span class="nc" id="L736">    }</span>
+
+    void lockTransactionQueue() {
+<span class="nc" id="L739">        queue.lock();</span>
+<span class="nc" id="L740">    }</span>
+
+    void unlockTransactionQueue() {
+<span class="nc" id="L743">        queue.unlock();</span>
+<span class="nc" id="L744">    }</span>
+
+    private long invokeLater(Runnable runnable) {
+        try {
+<span class="nc" id="L748">            queue.lock();</span>
+<span class="nc" id="L749">            queue.invokeLater(runnable);</span>
+
+<span class="nc" id="L751">            return transactionId++;</span>
+        } finally {
+<span class="nc" id="L753">            queue.unlock();</span>
+        }
+    }
+
+    private class ComponentChangeTransaction implements Runnable {
+        private final Runnable change;
+        private final Throwable addRemoveLocation;
+
+<span class="nc" id="L761">        public ComponentChangeTransaction(Runnable change, Throwable addRemoveLocation) {</span>
+<span class="nc" id="L762">            this.change = change;</span>
+<span class="nc" id="L763">            this.addRemoveLocation = addRemoveLocation;</span>
+<span class="nc" id="L764">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L768">            componentChange = change;</span>
+
+            try {
+<span class="nc" id="L771">                executeTransaction(null, addRemoveLocation);</span>
+<span class="nc" id="L772">            } catch (Exception exp) {</span>
+<span class="nc" id="L773">                exceptionHandler.handle(exp);</span>
+<span class="nc" id="L774">            }</span>
+<span class="nc" id="L775">        }</span>
+    }
+
+    private class StateChangeTransaction implements Runnable {
+        private final InitiatorSource[] sources;
+        private final Object[] state;
+        private final TransactionState transactionState;
+        private final Throwable setLocation;
+
+        public StateChangeTransaction(
+<span class="nc" id="L785">                InitiatorSource[] sources, Object[] state, TransactionState transactionState, Throwable setLocation) {</span>
+<span class="nc" id="L786">            this.sources = sources;</span>
+<span class="nc" id="L787">            this.state = state;</span>
+<span class="nc" id="L788">            this.transactionState = transactionState;</span>
+<span class="nc" id="L789">            this.setLocation = setLocation;</span>
+<span class="nc" id="L790">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc bnc" id="L794" title="All 2 branches missed.">            for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="nc bnc" id="L795" title="All 2 branches missed.">                if (sources[i].isConnected()) {</span>
+<span class="nc" id="L796">                    sources[i].setState(state[i]);</span>
+<span class="nc" id="L797">                    stateChanges.add(sources[i]);</span>
+                } else {
+<span class="nc" id="L799">                    IllegalStateException ise = new IllegalStateException(&quot;Attempting to change state on source &quot;</span>
+<span class="nc" id="L800">                            + sources[i].getFullyQualifiedName() + &quot;; however, it is not connected!&quot;);</span>
+
+<span class="nc bnc" id="L802" title="All 2 branches missed.">                    if (transactionState != null) {</span>
+<span class="nc" id="L803">                        transactionState.getResultFuture().setResultAndRelease(ise);</span>
+                    } else {
+<span class="nc" id="L805">                        throw ise;</span>
+                    }
+                }
+            }
+
+<span class="nc" id="L810">            executeTransaction(transactionState, setLocation);</span>
+<span class="nc" id="L811">        }</span>
+    }
+
+    private class EventChannelFireTransaction implements Runnable {
+        private final EventChannel eventChannel;
+        private final Throwable eventChannelLocation;
+
+<span class="nc" id="L818">        public EventChannelFireTransaction(EventChannel eventChannel, Throwable eventChannelLocation) {</span>
+<span class="nc" id="L819">            this.eventChannel = eventChannel;</span>
+<span class="nc" id="L820">            this.eventChannelLocation = eventChannelLocation;</span>
+<span class="nc" id="L821">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L825">            eventChannelFires.add(eventChannel);</span>
+<span class="nc" id="L826">            executeTransaction(null, eventChannelLocation);</span>
+<span class="nc" id="L827">        }</span>
+    }
+
+    static class AddComponentRunnable implements Runnable {
+        final BranchComponent parent;
+        final TreeComponent child;
+        private TransactionMgr transactionMgr;
+
+<span class="nc" id="L835">        AddComponentRunnable(final BranchComponent parent, final TreeComponent child) {</span>
+<span class="nc" id="L836">            this.parent = parent;</span>
+<span class="nc" id="L837">            this.child = child;</span>
+<span class="nc" id="L838">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L842">            parent.addToChildren(child);</span>
+<span class="nc bnc" id="L843" title="All 2 branches missed.">            if (child instanceof BranchComponent) {</span>
+<span class="nc" id="L844">                parent.terminateParentAndLocalConnections(</span>
+<span class="nc" id="L845">                        ((BranchComponent) child).terminateChildAndLocalConnections());</span>
+            } else {
+<span class="nc" id="L847">                parent.terminateParentAndLocalConnections(child.terminateLocally(new HashSet&lt;Port&gt;()));</span>
+            }
+<span class="nc bnc" id="L849" title="All 4 branches missed.">            if (!(child instanceof Initiator) &amp;&amp; !(child instanceof BaseCommit)) {</span>
+<span class="nc" id="L850">                transactionMgr.checkDependencies.clearCache();</span>
+            }
+<span class="nc" id="L852">        }</span>
+
+        public TransactionMgr getTransactionMgr() {
+<span class="nc" id="L855">            return transactionMgr;</span>
+        }
+
+        public void setTransactionMgr(TransactionMgr transactionMgr) {
+<span class="nc" id="L859">            this.transactionMgr = transactionMgr;</span>
+<span class="nc" id="L860">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L864">            return &quot;add Component &quot; + child.getName() + &quot; to &quot; + parent.getName();</span>
+        }
+    }
+
+    static class RemoveComponentRunnable implements Runnable {
+        final BranchComponent parent;
+        final TreeComponent child;
+        final TreeComponent[] children;
+        private TransactionMgr transactionMgr;
+
+<span class="nc" id="L874">        RemoveComponentRunnable(final BranchComponent parent, final TreeComponent child) {</span>
+<span class="nc" id="L875">            this.parent = parent;</span>
+<span class="nc" id="L876">            this.child = child;</span>
+<span class="nc" id="L877">            this.children = null;</span>
+<span class="nc" id="L878">        }</span>
+
+<span class="nc" id="L880">        RemoveComponentRunnable(final BranchComponent parent, final TreeComponent[] children) {</span>
+<span class="nc" id="L881">            this.parent = parent;</span>
+<span class="nc" id="L882">            this.child = null;</span>
+<span class="nc" id="L883">            this.children = children;</span>
+<span class="nc" id="L884">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L888">            LOGGER.atDebug().log(&quot;{}&quot;, this);</span>
+
+<span class="nc" id="L890">            boolean clearCache = false;</span>
+
+<span class="nc bnc" id="L892" title="All 2 branches missed.">            if (child != null) {</span>
+<span class="nc" id="L893">                clearCache = removeChild(child);</span>
+            }
+
+<span class="nc bnc" id="L896" title="All 2 branches missed.">            if (children != null) {</span>
+<span class="nc bnc" id="L897" title="All 2 branches missed.">                for (int i = 0; i &lt; children.length; i++) {</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">                    clearCache = removeChild(children[i]) ? true : clearCache;</span>
+                }
+            }
+
+<span class="nc bnc" id="L902" title="All 2 branches missed.">            if (clearCache) {</span>
+<span class="nc" id="L903">                transactionMgr.checkDependencies.clearCache();</span>
+            }
+<span class="nc" id="L905">        }</span>
+
+        private boolean removeChild(final TreeComponent child) {
+
+<span class="nc bnc" id="L909" title="All 2 branches missed.">            if (child.isRooted()) {</span>
+<span class="nc" id="L910">                parent.removeFromChildren(child);</span>
+<span class="nc bnc" id="L911" title="All 2 branches missed.">                if (child instanceof BranchComponent) {</span>
+<span class="nc" id="L912">                    ((BranchComponent) child).disconnect();</span>
+                } else {
+<span class="nc" id="L914">                    child.disconnectPorts();</span>
+                }
+            }
+
+<span class="nc bnc" id="L918" title="All 4 branches missed.">            return !(child instanceof Initiator) &amp;&amp; !(child instanceof BaseCommit);</span>
+        }
+
+        public TransactionMgr getTransactionMgr() {
+<span class="nc" id="L922">            return transactionMgr;</span>
+        }
+
+        public void setTransactionMgr(TransactionMgr transactionMgr) {
+<span class="nc" id="L926">            this.transactionMgr = transactionMgr;</span>
+<span class="nc" id="L927">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L931">            return &quot;remove Component &quot; + child.getName() + &quot; from &quot; + parent.getName();</span>
+        }
+    }
+
+    public interface LocationFormatter {
+        void formatLocation(Logger logger, Throwable throwable);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

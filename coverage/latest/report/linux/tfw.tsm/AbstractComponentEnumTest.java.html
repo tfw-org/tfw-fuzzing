@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractComponentEnumTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">AbstractComponentEnumTest.java</span></div><h1>AbstractComponentEnumTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+
+<span class="nc" id="L9">class AbstractComponentEnumTest {</span>
+    @Test
+    void testValues() {
+<span class="nc" id="L12">        List&lt;ComponentEnum&lt;?&gt;&gt; channels = TestComponentEnum.values();</span>
+
+<span class="nc" id="L14">        assertThat(channels).hasSize(2);</span>
+<span class="nc" id="L15">        assertThat(channels.get(0)).isEqualTo(TestComponentEnum.INITIATOR1);</span>
+<span class="nc" id="L16">        assertThat(channels.get(1)).isEqualTo(TestComponentEnum.INITIATOR2);</span>
+<span class="nc" id="L17">    }</span>
+
+    static class TestComponentEnum&lt;T extends TreeComponent&gt; extends AbstractComponentEnum&lt;T&gt; {
+<span class="nc" id="L20">        public static final TestComponentEnum&lt;Initiator&gt; INITIATOR1 = new TestComponentEnum&lt;&gt;(Initiator.builder()</span>
+<span class="nc" id="L21">                .setName(&quot;test1&quot;)</span>
+<span class="nc" id="L22">                .addEventChannelDescription(new ObjectECD(&quot;test1&quot;))</span>
+<span class="nc" id="L23">                .build());</span>
+<span class="nc" id="L24">        public static final TestComponentEnum&lt;Initiator&gt; INITIATOR2 = new TestComponentEnum&lt;&gt;(Initiator.builder()</span>
+<span class="nc" id="L25">                .setName(&quot;test2&quot;)</span>
+<span class="nc" id="L26">                .addEventChannelDescription(new ObjectECD(&quot;test2&quot;))</span>
+<span class="nc" id="L27">                .build());</span>
+
+        public TestComponentEnum(T component) {
+<span class="nc" id="L30">            super(component);</span>
+<span class="nc" id="L31">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;ComponentEnum&lt;?&gt;&gt; values() {
+<span class="nc" id="L35">            return valuesFromClass(TestComponentEnum.class);</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Test
+    void testValuesFromClassWhenNoInstances() {
+        // Call valuesFromClass on a class that has no instances registered
+<span class="nc" id="L43">        List&lt;UnregisteredComponentEnum&lt;?&gt;&gt; result =</span>
+<span class="nc" id="L44">                AbstractComponentEnum.valuesFromClass(UnregisteredComponentEnum.class);</span>
+
+<span class="nc" id="L46">        assertThat(result).isEmpty();</span>
+<span class="nc" id="L47">    }</span>
+
+    static class UnregisteredComponentEnum&lt;T extends TreeComponent&gt; extends AbstractComponentEnum&lt;T&gt; {
+        public UnregisteredComponentEnum(T component) {
+<span class="nc" id="L51">            super(component);</span>
+<span class="nc" id="L52">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public static List&lt;EventChannelEnum&lt;?&gt;&gt; values() {
+<span class="nc" id="L56">            return valuesFromClass(UnregisteredComponentEnum.class);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

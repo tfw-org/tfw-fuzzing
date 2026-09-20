@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventChannelDescriptionTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm.ecd</a> &gt; <span class="el_source">EventChannelDescriptionTest.java</span></div><h1>EventChannelDescriptionTest.java</h1><pre class="source lang-java linenums">package tfw.tsm.ecd;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.function.Predicate;
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L9">final class EventChannelDescriptionTest {</span>
+    @Test
+    void constructionTest() {
+<span class="nc" id="L12">        final IsAssignableFromPredicate predicate = new IsAssignableFromPredicate(String.class);</span>
+
+<span class="nc" id="L14">        assertThatThrownBy(() -&gt; new TestECD(null, predicate))</span>
+<span class="nc" id="L15">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L16">                .hasMessage(&quot;eventChannelName == null not allowed!&quot;);</span>
+
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; new TestECD(&quot; &quot;, predicate))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;eventChannelName.trim().length() == 0 not allowed!&quot;);</span>
+
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; new TestECD(&quot;A&quot;, null))</span>
+<span class="nc" id="L23">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L24">                .hasMessage(&quot;predicate == null not allowed!&quot;);</span>
+<span class="nc" id="L25">    }</span>
+
+    @Test
+    void equalsTest() {
+<span class="nc" id="L29">        TestECD ecd1 = new TestECD(&quot;A&quot;, new IsAssignableFromPredicate(String.class));</span>
+<span class="nc" id="L30">        TestECD ecd2 = new TestECD(&quot;A&quot;, new IsAssignableFromPredicate(String.class));</span>
+
+<span class="nc" id="L32">        assertThat(ecd1).isEqualTo(ecd2);</span>
+<span class="nc" id="L33">        assertThat(ecd2).isEqualTo(ecd1);</span>
+<span class="nc" id="L34">        assertThat(ecd1).hasSameHashCodeAs(ecd2);</span>
+
+<span class="nc" id="L36">        ecd2 = new TestECD(&quot;different&quot;, new IsAssignableFromPredicate(String.class));</span>
+
+<span class="nc" id="L38">        assertThat(ecd1).isNotEqualTo(ecd2);</span>
+
+<span class="nc" id="L40">        ecd2 = new TestECD(&quot;A&quot;, new IsAssignableFromPredicate(Integer.class));</span>
+
+<span class="nc" id="L42">        assertThat(ecd1).isNotEqualTo(ecd2);</span>
+<span class="nc" id="L43">    }</span>
+
+    @Test
+    void statelessTriggerEqualsTest() {
+<span class="nc" id="L47">        StatelessTriggerECD ecd1 = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L48">        StatelessTriggerECD ecd2 = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+
+<span class="nc" id="L50">        assertThat(ecd1).isEqualTo(ecd2);</span>
+<span class="nc" id="L51">        assertThat(ecd2).isEqualTo(ecd1);</span>
+<span class="nc" id="L52">        assertThat(ecd1).hasSameHashCodeAs(ecd2);</span>
+<span class="nc" id="L53">    }</span>
+
+    @Test
+    void integerRangeEqualsTest() {
+<span class="nc" id="L57">        IntegerECD ecd1 = new IntegerECD(&quot;value&quot;, 0, 100);</span>
+<span class="nc" id="L58">        IntegerECD ecd2 = new IntegerECD(&quot;value&quot;, 0, 100);</span>
+
+<span class="nc" id="L60">        assertThat(ecd1).isEqualTo(ecd2);</span>
+<span class="nc" id="L61">        assertThat(ecd2).isEqualTo(ecd1);</span>
+<span class="nc" id="L62">        assertThat(ecd1).hasSameHashCodeAs(ecd2);</span>
+
+<span class="nc" id="L64">        ecd2 = new IntegerECD(&quot;value&quot;, 0, 101);</span>
+
+<span class="nc" id="L66">        assertThat(ecd1).isNotEqualTo(ecd2);</span>
+<span class="nc" id="L67">    }</span>
+
+    private static class TestECD extends ObjectECD {
+        public TestECD(String eventChannelName, Predicate&lt;Object&gt; predicate) {
+<span class="nc" id="L71">            super(eventChannelName, predicate);</span>
+<span class="nc" id="L72">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

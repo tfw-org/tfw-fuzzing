@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidatorProxy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ValidatorProxy.java</span></div><h1>ValidatorProxy.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.check.Argument;
+
+public final class ValidatorProxy implements Proxy {
+    private final Validator validator;
+
+<span class="nc" id="L8">    public ValidatorProxy(Validator validator) {</span>
+<span class="nc" id="L9">        Argument.assertNotNull(validator, &quot;validator&quot;);</span>
+
+<span class="nc" id="L11">        this.validator = validator;</span>
+<span class="nc" id="L12">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L16">        return validator.getName();</span>
+    }
+
+    public SinkProxy[] getSinkProxies() {
+<span class="nc" id="L20">        Object[] sinks = validator.sinks.values().toArray();</span>
+<span class="nc" id="L21">        SinkProxy[] sp = new SinkProxy[sinks.length];</span>
+
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        for (int i = 0; i &lt; sinks.length; i++) {</span>
+<span class="nc" id="L24">            sp[i] = new SinkProxy((Sink) sinks[i]);</span>
+        }
+<span class="nc" id="L26">        return sp;</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (obj instanceof ValidatorProxy) {</span>
+<span class="nc" id="L32">            ValidatorProxy ip = (ValidatorProxy) obj;</span>
+
+<span class="nc" id="L34">            return validator.equals(ip.validator);</span>
+        }
+
+<span class="nc" id="L37">        return false;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L42">        return validator.hashCode();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

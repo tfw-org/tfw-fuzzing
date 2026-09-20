@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FloatIlaInvertTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.floatila</a> &gt; <span class="el_source">FloatIlaInvertTest.java</span></div><h1>FloatIlaInvertTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.floatila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L11">final class FloatIlaInvertTest {</span>
+    @Test
+    void argumentsTest() throws Exception {
+<span class="nc" id="L14">        assertThatThrownBy(() -&gt; FloatIlaInvert.create(null))</span>
+<span class="nc" id="L15">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L16">                .hasMessage(&quot;ila == null not allowed!&quot;);</span>
+<span class="nc" id="L17">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L21">        final Random random = new Random(0);</span>
+<span class="nc" id="L22">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L23">        final float[] array = new float[length];</span>
+<span class="nc" id="L24">        final float[] target = new float[length];</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L26">            array[ii] = random.nextFloat();</span>
+<span class="nc" id="L27">            target[ii] = (float) 1 / array[ii];</span>
+        }
+<span class="nc" id="L29">        FloatIla ila = FloatIlaFromArray.create(array);</span>
+<span class="nc" id="L30">        FloatIla targetIla = FloatIlaFromArray.create(target);</span>
+<span class="nc" id="L31">        FloatIla actualIla = FloatIlaInvert.create(ila);</span>
+
+<span class="nc" id="L33">        FloatIlaCheck.check(targetIla, actualIla);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L38">        final TestCloseFloatIla testIla = new TestCloseFloatIla();</span>
+
+<span class="nc" id="L40">        try (FloatIla ila = FloatIlaInvert.create(testIla)) {</span>
+<span class="nc" id="L41">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L44">        assertThat(testIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L45">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntIlaFromArrayTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.intila</a> &gt; <span class="el_source">IntIlaFromArrayTest.java</span></div><h1>IntIlaFromArrayTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.intila;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L9">final class IntIlaFromArrayTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L12">        assertThatThrownBy(() -&gt; IntIlaFromArray.create(null))</span>
+<span class="nc" id="L13">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L14">                .hasMessage(&quot;array == null not allowed!&quot;);</span>
+<span class="nc" id="L15">    }</span>
+
+    @Test
+    void immutabililtyTest() throws Exception {
+<span class="nc" id="L19">        final int ilaLength = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L20">        final Random random = new Random(0);</span>
+<span class="nc" id="L21">        final int[] creation = new int[ilaLength];</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        for (int ii = 0; ii &lt; creation.length; ++ii) {</span>
+<span class="nc" id="L23">            creation[ii] = random.nextInt();</span>
+        }
+<span class="nc" id="L25">        final IntIla ila = IntIlaFromArray.create(creation);</span>
+<span class="nc" id="L26">        final int offsetLength = IlaTestDimensions.defaultOffsetLength();</span>
+<span class="nc" id="L27">        final int epsilon = 0;</span>
+<span class="nc" id="L28">        IntIlaCheck.checkWithoutCorrectness(ila, offsetLength, epsilon);</span>
+<span class="nc" id="L29">    }</span>
+
+    @Test
+    void valueCorrectnessTest() throws Exception {
+<span class="nc" id="L33">        final int ilaLength = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L34">        final int addlOffsetLength = IlaTestDimensions.defaultOffsetLength();</span>
+<span class="nc" id="L35">        final int maxAbsStride = IlaTestDimensions.defaultMaxStride();</span>
+<span class="nc" id="L36">        final Random random = new Random(0);</span>
+<span class="nc" id="L37">        final int[] creation = new int[ilaLength];</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        for (int ii = 0; ii &lt; creation.length; ++ii) {</span>
+<span class="nc" id="L39">            creation[ii] = random.nextInt();</span>
+        }
+<span class="nc" id="L41">        final IntIla ila = IntIlaFromArray.create(creation);</span>
+<span class="nc" id="L42">        final StridedIntIla stridedIla = StridedIntIlaFromIntIla.create(ila, new int[1000]);</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        for (int stride = -maxAbsStride; stride &lt;= maxAbsStride; ++stride) {</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (stride != 0) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                int absStride = stride &lt; 0 ? -stride : stride;</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                int offsetStart = stride &lt; 0 ? (ilaLength - 1) * absStride : 0;</span>
+<span class="nc" id="L48">                int offsetEnd = offsetStart + addlOffsetLength;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                for (int offset = offsetStart; offset &lt; offsetEnd; ++offset) {</span>
+<span class="nc" id="L50">                    final int[] arrayBase = new int[(ilaLength - 1) * absStride + 1 + addlOffsetLength];</span>
+<span class="nc" id="L51">                    final int[] ilaBase = new int[(ilaLength - 1) * absStride + 1 + addlOffsetLength];</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                    for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                        for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; arrayBase.length; ++ii) {</span>
+<span class="nc" id="L55">                                arrayBase[ii] = ilaBase[ii] = random.nextInt();</span>
+                            }
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                            for (int ii = (int) start, index = offset; ii &lt; start + length; ++ii, index += stride) {</span>
+<span class="nc" id="L58">                                arrayBase[index] = creation[ii];</span>
+                            }
+<span class="nc" id="L60">                            stridedIla.get(ilaBase, offset, stride, start, length);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; arrayBase.length; ++ii) {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                                if (arrayBase[ii] != ilaBase[ii])</span>
+<span class="nc" id="L63">                                    throw new Exception(&quot;actual[&quot; + ii + &quot;] (&quot;</span>
+                                            + ilaBase[ii]
+                                            + &quot;) !~ target[&quot;
+                                            + ii + &quot;] (&quot;
+                                            + arrayBase[ii]
+                                            + &quot;) {length=&quot;
+                                            + length
+                                            + &quot;,start=&quot; + start
+                                            + &quot;,offset=&quot; + offset
+                                            + &quot;,stride=&quot; + stride
+                                            + &quot;}&quot;);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+<span class="nc" id="L80">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

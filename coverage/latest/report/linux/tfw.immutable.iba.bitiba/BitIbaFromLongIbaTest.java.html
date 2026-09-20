@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIbaFromLongIbaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iba.bitiba</a> &gt; <span class="el_source">BitIbaFromLongIbaTest.java</span></div><h1>BitIbaFromLongIbaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.iba.bitiba;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.math.BigInteger;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.iba.longiba.LongIba;
+import tfw.immutable.iba.longiba.LongIbaFromArray;
+
+<span class="nc" id="L11">class BitIbaFromLongIbaTest {</span>
+    @Test
+    void parameterTest() {
+<span class="nc" id="L14">        final LongIba longIba = LongIbaFromArray.create(new long[1]);</span>
+<span class="nc" id="L15">        final BigInteger biNegativeOne = BigInteger.valueOf(-1);</span>
+
+<span class="nc" id="L17">        assertThatThrownBy(() -&gt; BitIbaFromLongIba.create(null, 0, BigInteger.ZERO))</span>
+<span class="nc" id="L18">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L19">                .hasMessage(&quot;longIba == null not allowed!&quot;);</span>
+<span class="nc" id="L20">        assertThatThrownBy(() -&gt; BitIbaFromLongIba.create(longIba, -1, BigInteger.TEN))</span>
+<span class="nc" id="L21">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L22">                .hasMessage(&quot;firstLongOffsetInBits (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L23">        assertThatThrownBy(() -&gt; BitIbaFromLongIba.create(longIba, 64, BigInteger.TEN))</span>
+<span class="nc" id="L24">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L25">                .hasMessage(&quot;firstLongOffsetInBits (=64) &gt; 63 not allowed!&quot;);</span>
+<span class="nc" id="L26">        assertThatThrownBy(() -&gt; BitIbaFromLongIba.create(longIba, 0, null))</span>
+<span class="nc" id="L27">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L28">                .hasMessage(&quot;lengthInBits == null not allowed!&quot;);</span>
+<span class="nc" id="L29">        assertThatThrownBy(() -&gt; BitIbaFromLongIba.create(longIba, 0, biNegativeOne))</span>
+<span class="nc" id="L30">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L31">                .hasMessage(&quot;lengthInBits (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L32">    }</span>
+
+    @Test
+    void goodTest() throws Exception {
+<span class="nc" id="L36">        final long[] expectedArray = new long[1];</span>
+<span class="nc" id="L37">        final long[] actualArray = expectedArray.clone();</span>
+<span class="nc" id="L38">        final LongIba longIba = LongIbaFromArray.create(new long[1]);</span>
+
+<span class="nc" id="L40">        try (BitIba bitIba = BitIbaFromLongIba.create(longIba, 0, BigInteger.TEN)) {</span>
+<span class="nc" id="L41">            assertThat(bitIba.lengthInBits()).isEqualTo(BigInteger.TEN);</span>
+
+<span class="nc" id="L43">            bitIba.get(actualArray, 0, BigInteger.ZERO, 10);</span>
+
+<span class="nc" id="L45">            assertThat(actualArray).isEqualTo(expectedArray);</span>
+        }
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

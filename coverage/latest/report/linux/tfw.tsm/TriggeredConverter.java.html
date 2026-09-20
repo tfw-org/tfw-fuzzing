@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TriggeredConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">TriggeredConverter.java</span></div><h1>TriggeredConverter.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * The base class for components which participate in transactions base on
+ * the firing of a stateless event channel.
+ */
+public abstract class TriggeredConverter extends Processor {
+    private final EventChannelDescription triggerDescription;
+
+    /**
+     * Creates a TriggeredConverter with the specified attributes.
+     * @param name the name of the component.
+     * @param triggerDescription the description of the trigger event channel.
+     * @param sinkDescriptions the set of event channel sink descriptions.
+     * @param sourceDescriptions the set of event channel source descriptions.
+     */
+    public TriggeredConverter(
+            String name,
+            StatelessTriggerECD triggerDescription,
+            ObjectECD[] sinkDescriptions,
+            EventChannelDescription[] sourceDescriptions) {
+<span class="nc" id="L26">        super(name, new EventChannelDescription[] {triggerDescription}, sinkDescriptions, sourceDescriptions);</span>
+
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (triggerDescription == null) {</span>
+<span class="nc" id="L29">            throw new IllegalArgumentException(&quot;triggerEventChannel == null not allowed&quot;);</span>
+        }
+
+<span class="nc" id="L32">        this.triggerDescription = triggerDescription;</span>
+<span class="nc" id="L33">    }</span>
+
+    // Override Processor's stateChanged() method to filter on the
+    // triggerEventChannel.
+    @Override
+    void stateChange(EventChannel eventChannel) {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (eventChannel.getECD().getEventChannelName().equals(triggerDescription.getEventChannelName())) {</span>
+<span class="nc" id="L40">            getTransactionManager().addProcessor(this);</span>
+        }
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    void process() {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (isStateNonNull()) {</span>
+<span class="nc" id="L47">            convert();</span>
+        } else {
+<span class="nc" id="L49">            debugConvert();</span>
+        }
+<span class="nc" id="L51">    }</span>
+
+    /**
+     * This method is called in any transaction in which the trigger
+     * event channel is fired and all of the sinks which were specified
+     * at construction have non-null state.
+     */
+    protected abstract void convert();
+
+    /**
+     * This method is called in any transaction in which the trigger
+     * event channel is fired and one or more of the sinks which were specified
+     * at construction have null state.
+     */
+<span class="nc" id="L65">    protected void debugConvert() {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

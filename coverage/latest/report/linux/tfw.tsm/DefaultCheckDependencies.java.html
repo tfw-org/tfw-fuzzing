@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultCheckDependencies.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">DefaultCheckDependencies.java</span></div><h1>DefaultCheckDependencies.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+<span class="nc" id="L12">public class DefaultCheckDependencies implements CheckDependencies {</span>
+<span class="nc" id="L13">    private final Map&lt;Processor, Map&lt;Processor, Boolean&gt;&gt; processorCache = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L15">    private static int origProcessorsArraySize = 0;</span>
+<span class="nc" id="L16">    private static Processor[] origProcessorsArray = new Processor[origProcessorsArraySize];</span>
+<span class="nc" id="L17">    private static int processorsArraySize = 0;</span>
+<span class="nc" id="L18">    private static Processor[] processorsArray = new Processor[processorsArraySize];</span>
+<span class="nc" id="L19">    private static int toProcessorsSize = 0;</span>
+<span class="nc" id="L20">    private static Processor[] toProcessors = new Processor[toProcessorsSize];</span>
+<span class="nc" id="L21">    private static Set&lt;Processor&gt; processorCrumbs = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L22">    private static Set&lt;EventChannel&gt; terminatorCrumbs = new HashSet&lt;&gt;();</span>
+
+    @Override
+    public void checkDependencies(List&lt;Processor&gt; processors, List&lt;Processor&gt; delayedProcessors, Logger logger) {
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (logger != null) {</span>
+<span class="nc" id="L27">            logger.log(</span>
+                    Level.FINE,
+<span class="nc" id="L29">                    &quot;CDN: p.s=&quot; + processors.size() + &quot; dp.s=&quot; + delayedProcessors.size() + &quot; c.s=&quot;</span>
+<span class="nc" id="L30">                            + processorCache.size());</span>
+        }
+
+<span class="nc" id="L33">        origProcessorsArraySize = processors.size();</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (origProcessorsArray.length &lt; origProcessorsArraySize) {</span>
+<span class="nc" id="L35">            origProcessorsArray = new Processor[origProcessorsArraySize];</span>
+        }
+<span class="nc" id="L37">        processors.toArray(origProcessorsArray);</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        for (int i = 0; i &lt; origProcessorsArraySize; i++) {</span>
+<span class="nc" id="L40">            Processor origProcessor = origProcessorsArray[i];</span>
+
+            // if the ith processor has not already been delayed...
+<span class="nc bnc" id="L43" title="All 2 branches missed.">            if (processors.contains(origProcessor)) {</span>
+<span class="nc" id="L44">                boolean skipDependencyCheck = false;</span>
+<span class="nc" id="L45">                Map&lt;Processor, Boolean&gt; map = processorCache.get(origProcessor);</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                if (map != null) {</span>
+<span class="nc" id="L47">                    skipDependencyCheck = true;</span>
+<span class="nc" id="L48">                    toProcessorsSize = processors.size();</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                    if (toProcessors.length &lt; toProcessorsSize) {</span>
+<span class="nc" id="L50">                        toProcessors = new Processor[toProcessorsSize];</span>
+                    }
+<span class="nc" id="L52">                    processors.toArray(toProcessors);</span>
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                    for (int j = 0; j &lt; toProcessorsSize; j++) {</span>
+<span class="nc" id="L55">                        Processor p = toProcessors[j];</span>
+
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                        if (p == origProcessor) {</span>
+<span class="nc" id="L58">                            continue;</span>
+                        }
+
+<span class="nc" id="L61">                        Boolean b = map.get(p);</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                        if (b == null) {</span>
+<span class="nc" id="L64">                            skipDependencyCheck = false;</span>
+<span class="nc" id="L65">                            break;</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                        } else if (b.booleanValue()) {</span>
+<span class="nc" id="L67">                            processors.remove(p);</span>
+<span class="nc" id="L68">                            delayedProcessors.add(p);</span>
+                        }
+                    }
+                }
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                if (!skipDependencyCheck) {</span>
+<span class="nc" id="L74">                    processorCrumbs.clear();</span>
+<span class="nc" id="L75">                    terminatorCrumbs.clear();</span>
+
+<span class="nc" id="L77">                    checkDependenciesNew(</span>
+                            origProcessor,
+                            origProcessor,
+                            processors,
+                            delayedProcessors,
+                            processorCrumbs,
+                            terminatorCrumbs,
+                            processorCache,
+                            2,
+                            null,
+                            logger);
+
+<span class="nc" id="L89">                    map = processorCache.get(origProcessor);</span>
+
+<span class="nc" id="L91">                    processorsArraySize = processors.size();</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                    if (processorsArray.length &lt; processorsArraySize) {</span>
+<span class="nc" id="L93">                        processorsArray = new Processor[processorsArraySize];</span>
+                    }
+<span class="nc" id="L95">                    processors.toArray(processorsArray);</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    for (int j = 0; j &lt; processorsArraySize; j++) {</span>
+<span class="nc" id="L98">                        Processor p = processorsArray[j];</span>
+
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                        if (p != origProcessor) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                            if (map == null) {</span>
+<span class="nc" id="L102">                                map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L103">                                processorCache.put(origProcessor, map);</span>
+                            }
+<span class="nc" id="L105">                            map.put(p, Boolean.FALSE);</span>
+                        }
+                    }
+                }
+            }
+        }
+<span class="nc" id="L111">    }</span>
+
+    private static void checkDependenciesNew(
+            Processor fromProcessor,
+            Processor toProcessor,
+            List&lt;Processor&gt; processors,
+            List&lt;Processor&gt; delayedProcessors,
+            Set&lt;Processor&gt; visitedProcessors,
+            Set&lt;EventChannel&gt; visitedEventChannels,
+            Map&lt;Processor, Map&lt;Processor, Boolean&gt;&gt; cache,
+            int spaces,
+            List&lt;Processor&gt; dependencyChain,
+            Logger logger) {
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (visitedProcessors.contains(toProcessor)) {</span>
+<span class="nc" id="L125">            return;</span>
+        }
+
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        if (fromProcessor != toProcessor &amp;&amp; processors.remove(toProcessor)) {</span>
+<span class="nc" id="L129">            delayedProcessors.add(toProcessor);</span>
+
+<span class="nc" id="L131">            Map&lt;Processor, Boolean&gt; map = cache.get(fromProcessor);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (map == null) {</span>
+<span class="nc" id="L133">                map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L134">                cache.put(fromProcessor, map);</span>
+            }
+
+<span class="nc" id="L137">            map.put(toProcessor, Boolean.TRUE);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (dependencyChain != null) {</span>
+<span class="nc" id="L139">                StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                for (Processor p : dependencyChain) {</span>
+<span class="nc" id="L141">                    sb.append(p.getName());</span>
+<span class="nc" id="L142">                    sb.append(&quot;, &quot;);</span>
+<span class="nc" id="L143">                }</span>
+<span class="nc" id="L144">                logger.log(Level.FINE, sb.toString());</span>
+            }
+        }
+
+<span class="nc" id="L148">        visitedProcessors.add(toProcessor);</span>
+
+<span class="nc" id="L150">        List&lt;Source&gt; sources = toProcessor.getSources();</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.size(); i++) {</span>
+<span class="nc" id="L152">            Source source = sources.get(i);</span>
+<span class="nc" id="L153">            EventChannel eventChannel = source.eventChannel;</span>
+
+<span class="nc" id="L155">            checkDependenciesNew(</span>
+                    fromProcessor,
+                    eventChannel,
+                    processors,
+                    delayedProcessors,
+                    visitedProcessors,
+                    visitedEventChannels,
+                    cache,
+                    spaces + 2,
+                    dependencyChain,
+                    logger);
+        }
+<span class="nc" id="L167">    }</span>
+
+    private static void checkDependenciesNew(
+            Processor fromProcessor,
+            EventChannel eventChannel,
+            List&lt;Processor&gt; processors,
+            List&lt;Processor&gt; delayedProcessors,
+            Set&lt;Processor&gt; visitedProcessors,
+            Set&lt;EventChannel&gt; visitedEventChannels,
+            Map&lt;Processor, Map&lt;Processor, Boolean&gt;&gt; cache,
+            int spaces,
+            List&lt;Processor&gt; dependencyChain,
+            Logger logger) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (visitedEventChannels.contains(eventChannel)) {</span>
+<span class="nc" id="L181">            return;</span>
+        }
+
+<span class="nc" id="L184">        visitedEventChannels.add(eventChannel);</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (eventChannel instanceof DemultiplexedEventChannel) {</span>
+<span class="nc" id="L187">            DemultiplexedEventChannel demultiplexedEventChannel = (DemultiplexedEventChannel) eventChannel;</span>
+<span class="nc" id="L188">            Source multiSource = demultiplexedEventChannel.getMultiplexer().processorMultiSource;</span>
+
+<span class="nc" id="L190">            checkDependenciesNew(</span>
+                    fromProcessor,
+                    multiSource.eventChannel,
+                    processors,
+                    delayedProcessors,
+                    visitedProcessors,
+                    visitedEventChannels,
+                    cache,
+                    spaces + 2,
+                    dependencyChain,
+                    logger);
+        }
+
+<span class="nc" id="L203">        Terminator terminator = (Terminator) eventChannel;</span>
+<span class="nc" id="L204">        Sink[] sinks = terminator.getSinks();</span>
+
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        for (int i = 0; i &lt; sinks.length; i++) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (sinks[i] instanceof Multiplexer.MultiSink) {</span>
+<span class="nc" id="L208">                Multiplexer.MultiSink multiSink = (Multiplexer.MultiSink) sinks[i];</span>
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                for (Iterator&lt;DemultiplexedEventChannel&gt; d = multiSink.getDemultiplexedEventChannels(); d.hasNext(); ) {</span>
+<span class="nc" id="L211">                    DemultiplexedEventChannel demultiplexedEventChannel = d.next();</span>
+
+<span class="nc" id="L213">                    checkDependenciesNew(</span>
+                            fromProcessor,
+                            demultiplexedEventChannel,
+                            processors,
+                            delayedProcessors,
+                            visitedProcessors,
+                            visitedEventChannels,
+                            cache,
+                            spaces + 4,
+                            dependencyChain,
+                            logger);
+<span class="nc" id="L224">                }</span>
+<span class="nc" id="L225">            } else {</span>
+<span class="nc" id="L226">                TreeComponent treeComponent = sinks[i].getTreeComponent();</span>
+
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                if (treeComponent instanceof Processor) {</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                    if (dependencyChain != null) {</span>
+<span class="nc" id="L230">                        dependencyChain.add((Processor) treeComponent);</span>
+                    }
+
+<span class="nc" id="L233">                    checkDependenciesNew(</span>
+                            fromProcessor,
+                            (Processor) treeComponent,
+                            processors,
+                            delayedProcessors,
+                            visitedProcessors,
+                            visitedEventChannels,
+                            cache,
+                            spaces + 4,
+                            dependencyChain,
+                            logger);
+
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                    if (dependencyChain != null) {</span>
+<span class="nc" id="L246">                        dependencyChain.remove(dependencyChain.size() - 1);</span>
+                    }
+                }
+            }
+        }
+<span class="nc" id="L251">    }</span>
+
+    @Override
+    public void clearCache() {
+<span class="nc" id="L255">        processorCache.clear();</span>
+<span class="nc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

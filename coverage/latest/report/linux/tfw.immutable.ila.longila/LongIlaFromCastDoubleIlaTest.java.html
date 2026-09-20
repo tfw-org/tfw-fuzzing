@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LongIlaFromCastDoubleIlaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.longila</a> &gt; <span class="el_source">LongIlaFromCastDoubleIlaTest.java</span></div><h1>LongIlaFromCastDoubleIlaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.longila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+import tfw.immutable.ila.doubleila.DoubleIla;
+import tfw.immutable.ila.doubleila.DoubleIlaFromArray;
+import tfw.immutable.ila.doubleila.TestCloseDoubleIla;
+
+<span class="nc" id="L14">final class LongIlaFromCastDoubleIlaTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L17">        final DoubleIla ila = DoubleIlaFromArray.create(new double[10]);</span>
+
+<span class="nc" id="L19">        assertThatThrownBy(() -&gt; LongIlaFromCastDoubleIla.create(null, 1))</span>
+<span class="nc" id="L20">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L21">                .hasMessage(&quot;doubleIla == null not allowed!&quot;);</span>
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; LongIlaFromCastDoubleIla.create(ila, 0))</span>
+<span class="nc" id="L23">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L24">                .hasMessage(&quot;bufferSize (=0) &lt; 1 not allowed!&quot;);</span>
+<span class="nc" id="L25">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L29">        final Random random = new Random(0);</span>
+<span class="nc" id="L30">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L31">        final double[] array = new double[length];</span>
+<span class="nc" id="L32">        final long[] target = new long[length];</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L34">            array[ii] = random.nextDouble();</span>
+<span class="nc" id="L35">            target[ii] = (long) array[ii];</span>
+        }
+<span class="nc" id="L37">        DoubleIla ila = DoubleIlaFromArray.create(array);</span>
+<span class="nc" id="L38">        LongIla targetIla = LongIlaFromArray.create(target);</span>
+<span class="nc" id="L39">        LongIla actualIla = LongIlaFromCastDoubleIla.create(ila, 100);</span>
+
+<span class="nc" id="L41">        LongIlaCheck.check(targetIla, actualIla);</span>
+<span class="nc" id="L42">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L46">        final TestCloseDoubleIla testIla = new TestCloseDoubleIla();</span>
+
+<span class="nc" id="L48">        try (LongIla ila = LongIlaFromCastDoubleIla.create(testIla, 100)) {</span>
+<span class="nc" id="L49">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L52">        assertThat(testIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L53">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

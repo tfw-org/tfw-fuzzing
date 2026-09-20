@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharIlaInsert.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.charila</a> &gt; <span class="el_source">CharIlaInsert.java</span></div><h1>CharIlaInsert.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.charila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.IlaInsertUtil;
+
+public final class CharIlaInsert {
+    private CharIlaInsert() {
+        // non-instantiable class
+    }
+
+    public static CharIla create(CharIla ila, long index, char value) {
+<span class="nc" id="L13">        return new CharIlaImpl(ila, index, value);</span>
+    }
+
+    private static class CharIlaImpl extends AbstractCharIla {
+        private final CharIla ila;
+        private final long index;
+        private final char value;
+
+<span class="nc" id="L21">        private CharIlaImpl(CharIla ila, long index, char value) {</span>
+<span class="nc" id="L22">            Argument.assertNotNull(ila, &quot;ila&quot;);</span>
+<span class="nc" id="L23">            Argument.assertNotLessThan(index, 0, &quot;index&quot;);</span>
+            try {
+<span class="nc" id="L25">                Argument.assertNotGreaterThan(index, ila.length(), &quot;index&quot;, &quot;ila.length()&quot;);</span>
+<span class="nc" id="L26">            } catch (IOException e) {</span>
+<span class="nc" id="L27">                throw new IllegalArgumentException(&quot;Could not get ila length()!&quot;, e);</span>
+<span class="nc" id="L28">            }</span>
+
+<span class="nc" id="L30">            this.ila = ila;</span>
+<span class="nc" id="L31">            this.index = index;</span>
+<span class="nc" id="L32">            this.value = value;</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L37">            return ila.length() + 1;</span>
+        }
+
+        @Override
+        protected void getImpl(char[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L42">            IlaInsertUtil.get(</span>
+                    index,
+                    start,
+                    length,
+                    offset,
+<span class="nc" id="L47">                    (destinationOffset, sourceStart, amount) -&gt; ila.get(array, destinationOffset, sourceStart, amount),</span>
+<span class="nc" id="L48">                    destinationOffset -&gt; array[destinationOffset] = value);</span>
+<span class="nc" id="L49">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L53">            ila.close();</span>
+<span class="nc" id="L54">        }</span>
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

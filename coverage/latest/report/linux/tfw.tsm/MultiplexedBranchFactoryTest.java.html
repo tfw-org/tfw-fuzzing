@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiplexedBranchFactoryTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">MultiplexedBranchFactoryTest.java</span></div><h1>MultiplexedBranchFactoryTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+<span class="nc" id="L11">final class MultiplexedBranchFactoryTest {</span>
+<span class="nc" id="L12">    private ObjectECD valueECD = new StringECD(&quot;value&quot;);</span>
+<span class="nc" id="L13">    private ObjectIlaECD multiValueECD = new ObjectIlaECD(&quot;multiValue&quot;);</span>
+
+    @Test
+    void addMultiplexerTest() {
+<span class="nc" id="L17">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+
+<span class="nc" id="L19">        assertThatThrownBy(() -&gt; mbf.addMultiplexer(null, multiValueECD))</span>
+<span class="nc" id="L20">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L21">                .hasMessage(&quot;valueECD == null not allowed!&quot;);</span>
+
+<span class="nc" id="L23">        assertThatThrownBy(() -&gt; mbf.addMultiplexer(valueECD, null))</span>
+<span class="nc" id="L24">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L25">                .hasMessage(&quot;multiValueECD == null not allowed!&quot;);</span>
+
+<span class="nc" id="L27">        ObjectIlaECD newMultiValueECD = new ObjectIlaECD(&quot;differentMultiValue&quot;);</span>
+
+<span class="nc" id="L29">        mbf.addMultiplexer(valueECD, newMultiValueECD);</span>
+
+<span class="nc" id="L31">        assertThatThrownBy(() -&gt; mbf.addMultiplexer(valueECD, multiValueECD))</span>
+<span class="nc" id="L32">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L33">                .hasMessage(&quot;Attempt to add multiple multiplexers for value event channel 'value'&quot;);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Test
+    void createTest() {
+<span class="nc" id="L38">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+
+<span class="nc" id="L40">        assertThatThrownBy(() -&gt; mbf.create(null))</span>
+<span class="nc" id="L41">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L42">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+
+        //        try
+        //        {
+        //            mbf.create(&quot;test&quot;);
+        //            fail(&quot;create() created empty multiplexed branch&quot;);
+        //        }
+        //        catch (IllegalStateException expected)
+        //        {
+        //            //System.out.println(expected);
+        //        }
+
+<span class="nc" id="L54">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+
+<span class="nc" id="L56">        mbf.clear();</span>
+
+        //        try
+        //        {
+        //            mbf.create(&quot;test&quot;);
+        //            fail(&quot;clear() didn't reset the multiplexer state&quot;);
+        //        }
+        //        catch (IllegalStateException expected)
+        //        {
+        //            //System.out.println(expected);
+        //        }
+
+<span class="nc" id="L68">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+
+<span class="nc" id="L70">        assertThatThrownBy(() -&gt; mbf.addMultiplexer(valueECD, multiValueECD))</span>
+<span class="nc" id="L71">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L72">                .hasMessage(&quot;Attempt to add multiple multiplexers for multi event channel 'multiValue'&quot;);</span>
+
+<span class="nc" id="L74">        MultiplexedBranch branch = mbf.create(&quot;test&quot;);</span>
+<span class="nc" id="L75">        assertThat(branch).isNotNull();</span>
+<span class="nc" id="L76">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

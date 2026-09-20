@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PoskanzerFft.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.doubleilm</a> &gt; <span class="el_source">PoskanzerFft.java</span></div><h1>PoskanzerFft.java</h1><pre class="source lang-java linenums">/* libfft.c - fast fourier transform library
+ *
+ * Copyright (C) 1989 by Jef Poskanzer.
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted, provided
+ * that the above copyright notice appear in all copies and that both  that
+ * copyright notice and this permission notice appear in supporting
+ * documentation. This software is provided &quot;as is&quot; without express or
+ * implied warranty.
+ */
+package tfw.immutable.ilm.doubleilm;
+
+import java.util.Arrays;
+
+/**
+ * This is a Java implementation of the fast Fourier transform
+ * written by Jef Poskanzer. The copyright appears above.
+ */
+public class PoskanzerFft {
+    private static final double TWOPI = 2.0 * Math.PI;
+
+    // Limits on the number of bits this algorithm can utilize
+    private static final int LOG2_MAXFFTSIZE = 15;
+    private static final int LOG2_MINFFTSIZE = 5;
+    private static final int MAXFFTSIZE = 1 &lt;&lt; LOG2_MAXFFTSIZE;
+
+    // Private class data
+    private boolean applyHammWindow;
+    private int fftSize;
+    private int size;
+    private int tableIndx;
+    private double tableSize;
+    private int[] bitreverse;
+    private int[] indxTable;
+    private double[] cosTable;
+    private double[] sinTable;
+    private double[] hammWindow;
+    private double[] iHammWindow;
+<span class="nc" id="L40">    private boolean setFftSizeCalled = false;</span>
+<span class="nc" id="L41">    private int setFftSizeValue = 0;</span>
+
+    /**
+     * FFT class constructor
+     * Initializes code for doing a fast fourier transform.
+     *
+     * @param size the size is a power of two such that 2^b is the number of samples
+     */
+<span class="nc" id="L49">    public PoskanzerFft(int size) {</span>
+<span class="nc" id="L50">        this.size = size;</span>
+
+<span class="nc" id="L52">        applyHammWindow = false;</span>
+<span class="nc" id="L53">        setFftSizeCalled = true;</span>
+<span class="nc" id="L54">        setFftSizeValue = size;</span>
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * A fast Fourier transform routine to rectangular format. When converting
+     * to the frequency domain, a Hamm window can be applied first to taper the
+     * ends of the audio signal. This reduces the distortion introduced by
+     * the FFT dealing with abrupt ends. The side effect of this is that when
+     * the FFT is inverted back to the time domain, the ends of the audio
+     * signal are tapered resulting in a pulsing effect when the audio is
+     * listened to. To eliminate this, after the audio is converted back to
+     * the time domain, an inverse Hamm window is applied to restore the
+     * correct amplitude of the samples at both ends of the signal.
+     *
+     * The indxTable, cosTable and sinTable are look up tables containing
+     * values that are calculated with the FFT independent of the unique
+     * audio data. Since these values are always the same for a given FFT size,
+     * these tables are generate at the time the FFT size is set so there
+     * is no need to recalculate these values everytime the FFT is performed.
+     * The tables are created and populated in setFftSize().
+     *
+     * @param real the double array which is the real part of the data to be transformed
+     * @param imaginary the double array which is the imaginary part of the
+     * data to be transformed (normally zero unless inverse transform is effected).
+     * @param invFlag the boolean value representing if inverse transform is being
+     * applied. true if inverse transform is being applied, false for a forward transform.
+     */
+    public void doFft(double[] real, double[] imaginary, boolean invFlag) {
+        int audioSample;
+        double cos;
+        int indx1;
+        int indx2;
+        int kn2;
+        int n;
+        int n2;
+        double sin;
+        double tr;
+        double ti;
+
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (setFftSizeCalled) {</span>
+<span class="nc" id="L94">            realSetFftSize(setFftSizeValue);</span>
+<span class="nc" id="L95">            setFftSizeCalled = false;</span>
+        }
+
+<span class="nc" id="L98">        n2 = (n = 1 &lt;&lt; fftSize) / 2;</span>
+
+        // Before converting from time to frequency domain, apply
+        // the Hamm window to the audio data to get a cleaner FFT.
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (invFlag == false &amp;&amp; applyHammWindow == true) {</span>
+<span class="nc bnc" id="L103" title="All 4 branches missed.">            for (indx1 = 0; indx1 &lt; real.length &amp;&amp; indx1 &lt; hammWindow.length; ++indx1) {</span>
+<span class="nc" id="L104">                real[indx1] *= hammWindow[indx1];</span>
+            }
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        } else if (invFlag == true) {</span>
+            // Before converting back to the time domain, mirror the
+            // real and imaginary into the upper symmetrical halves.
+<span class="nc" id="L109">            real[real.length / 2] = real[0];</span>
+<span class="nc" id="L110">            imaginary[imaginary.length / 2] = imaginary[0];</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            for (indx1 = 1; indx1 &lt; (real.length / 2); ++indx1) {</span>
+<span class="nc" id="L113">                real[real.length - indx1] = real[indx1];</span>
+<span class="nc" id="L114">                imaginary[imaginary.length - indx1] = -imaginary[indx1];</span>
+            }
+        }
+
+<span class="nc" id="L118">        tableIndx = 0;</span>
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        for (audioSample = 0; audioSample &lt; fftSize; ++audioSample) {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            for (indx1 = 0; indx1 &lt; n; indx1 += n2) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                for (indx2 = 0; indx2 &lt; n2; ++indx2, ++indx1) {</span>
+<span class="nc" id="L123">                    cos = cosTable[tableIndx];</span>
+<span class="nc" id="L124">                    sin = sinTable[tableIndx];</span>
+<span class="nc" id="L125">                    kn2 = indxTable[tableIndx];</span>
+
+<span class="nc" id="L127">                    ++tableIndx;</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                    if (invFlag) {</span>
+<span class="nc" id="L130">                        sin = -sin;</span>
+                    }
+
+<span class="nc" id="L133">                    tr = real[kn2] * cos + imaginary[kn2] * sin;</span>
+<span class="nc" id="L134">                    ti = imaginary[kn2] * cos - real[kn2] * sin;</span>
+
+<span class="nc" id="L136">                    real[kn2] = real[indx1] - tr;</span>
+<span class="nc" id="L137">                    imaginary[kn2] = imaginary[indx1] - ti;</span>
+<span class="nc" id="L138">                    real[indx1] += tr;</span>
+<span class="nc" id="L139">                    imaginary[indx1] += ti;</span>
+                }
+            }
+
+<span class="nc" id="L143">            n2 /= 2;</span>
+        }
+
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        for (indx1 = 0; indx1 &lt; n; ++indx1) {</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if ((indx2 = bitreverse[indx1]) &lt;= indx1) {</span>
+<span class="nc" id="L148">                continue;</span>
+            }
+
+<span class="nc" id="L151">            tr = real[indx1];</span>
+<span class="nc" id="L152">            ti = imaginary[indx1];</span>
+
+<span class="nc" id="L154">            real[indx1] = real[indx2];</span>
+<span class="nc" id="L155">            imaginary[indx1] = imaginary[indx2];</span>
+<span class="nc" id="L156">            real[indx2] = tr;</span>
+<span class="nc" id="L157">            imaginary[indx2] = ti;</span>
+        }
+
+        // Finally, multiply each value by 1/n, if this is the forward transform.
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (!invFlag) {</span>
+<span class="nc" id="L162">            double f = 1.0 / n;</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            for (indx1 = 0; indx1 &lt; n; ++indx1) {</span>
+<span class="nc" id="L165">                real[indx1] *= f;</span>
+<span class="nc" id="L166">                imaginary[indx1] *= f;</span>
+            }
+        }
+
+        // After converting back to the time domain, apply the
+        // inverse Hamm window to restore a smooth chunk of
+        // audio that isn't tapered at either end.
+<span class="nc bnc" id="L173" title="All 4 branches missed.">        if (invFlag == true &amp;&amp; applyHammWindow == true) {</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">            for (indx1 = 0; indx1 &lt; real.length &amp;&amp; indx1 &lt; iHammWindow.length; ++indx1) {</span>
+<span class="nc" id="L175">                real[indx1] *= iHammWindow[indx1];</span>
+            }
+        }
+<span class="nc" id="L178">    }</span>
+
+    /**
+     * Used to turn the Hamm windowing on or off.
+     *
+     * The size of the hamm window is specified in the second argument. If
+     * the size specified is less than or equal to zero, then the size of
+     * the window is equal to the length of the pre-fft real array.
+     *
+     * @param hammFlag boolean true turns window on, false turns it off.
+     */
+    public void doHammWindow(boolean hammFlag, int size) {
+<span class="nc" id="L190">        applyHammWindow = hammFlag;</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (applyHammWindow) {</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (size &lt;= 0) {</span>
+<span class="nc" id="L194">                size = this.size;</span>
+            }
+
+<span class="nc" id="L197">            hammWindow = new double[size];</span>
+<span class="nc" id="L198">            iHammWindow = new double[size];</span>
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            for (int indx = 0; indx &lt; hammWindow.length; ++indx) {</span>
+<span class="nc" id="L201">                hammWindow[indx] = 0.54 - (0.46 * Math.cos(2 * Math.PI * indx / hammWindow.length));</span>
+<span class="nc" id="L202">                iHammWindow[indx] = 1 / hammWindow[indx];</span>
+            }
+        }
+<span class="nc" id="L205">    }</span>
+
+    /**
+     * Convert polar format pairs to rectangular format pairs.
+     *
+     * @param real is the magnitudes of the bins in the spectrum.
+     * @param imaginary is the phase of the bins in the spectrum.
+     */
+    public static void polarToRec(double[] real, double[] imaginary) {
+<span class="nc" id="L214">        polarToRec(real, imaginary, real.length);</span>
+<span class="nc" id="L215">    }</span>
+
+    /**
+     * Convert polar format pairs to rectangular format pairs.
+     *
+     * @param real is the magnitudes of the bins in the spectrum.
+     * @param imaginary is the phase of the bins in the spectrum.
+     * @param size the number of the FFT magnitude &amp; phase paris to convert to rectangular format.
+     */
+    public static void polarToRec(double[] real, double[] imaginary, int size) {
+        int indx;
+        double magnitude;
+        double phase;
+
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        for (indx = 0; indx &lt; size; ++indx) {</span>
+<span class="nc" id="L230">            magnitude = real[indx];</span>
+<span class="nc" id="L231">            phase = imaginary[indx];</span>
+
+<span class="nc" id="L233">            real[indx] = magnitude * Math.cos(phase);</span>
+<span class="nc" id="L234">            imaginary[indx] = magnitude * Math.sin(phase);</span>
+        }
+<span class="nc" id="L236">    }</span>
+
+    /**
+     * Convert rectangular format pairs to polar format pairs.
+     *
+     * @param real contains the real portions of the complex number pairs in the spectrum.
+     * @param imaginary contains the imaginary portions of the complex number pairs in the spectrum.
+     */
+    public static void recToPolar(double[] real, double[] imaginary) {
+<span class="nc" id="L245">        recToPolar(real, imaginary, real.length);</span>
+<span class="nc" id="L246">    }</span>
+
+    /**
+     * Convert rectangular format pairs to polar format pairs.
+     *
+     * @param real contains the real portions of the complex number pairs in the spectrum.
+     * @param imaginary contains the imaginary portions of the complex number pairs in the spectrum.
+     * @param size the size being used.
+     */
+    public static void recToPolar(double[] real, double[] imaginary, int size) {
+        int indx;
+        double magnitude;
+        double phase;
+
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        for (indx = 0; indx &lt; size; ++indx) {</span>
+<span class="nc" id="L261">            magnitude = real[indx];</span>
+<span class="nc" id="L262">            phase = imaginary[indx];</span>
+
+<span class="nc" id="L264">            real[indx] = Math.sqrt(magnitude * magnitude + phase * phase);</span>
+<span class="nc" id="L265">            imaginary[indx] = Math.atan2(phase, magnitude);</span>
+        }
+<span class="nc" id="L267">    }</span>
+
+    public void setFftSize(int size) {
+<span class="nc" id="L270">        setFftSizeCalled = true;</span>
+<span class="nc" id="L271">        setFftSizeValue = size;</span>
+<span class="nc" id="L272">    }</span>
+
+    /**
+     * setFftSize allows the this class to be used to perform
+     * fast fourier transforms of different lengths. The FFT
+     * requires a lot of processing. Some calculations are made
+     * in this method, once the size is set for this FFT object.
+     * these calculations are performed and the results are
+     * stored in look up tables. Saving these values in look up
+     * tables increases the speed and efficiency of the FFT.
+     *
+     * @param size the size of the FFT as an exponent of 2
+     * eg. an fftSize of 10 specifies an FFT size of 1024.
+     */
+    private void realSetFftSize(int size) {
+        double ang;
+        int audioSample;
+        int indx1;
+        int indx2;
+        int n;
+        int n2;
+        int reverseBitOrder;
+
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (bitreverse == null) {</span>
+<span class="nc" id="L296">            bitreverse = new int[MAXFFTSIZE];</span>
+        }
+
+<span class="nc" id="L299">        fftSize = 0;</span>
+
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        while (size &gt; 1) {</span>
+<span class="nc" id="L302">            size /= 2;</span>
+<span class="nc" id="L303">            ++fftSize;</span>
+        }
+
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (fftSize &gt; LOG2_MAXFFTSIZE) {</span>
+<span class="nc" id="L307">            fftSize = LOG2_MAXFFTSIZE;</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        } else if (fftSize &lt; LOG2_MINFFTSIZE) {</span>
+<span class="nc" id="L309">            fftSize = LOG2_MINFFTSIZE;</span>
+        }
+
+<span class="nc" id="L312">        tableSize = (1 &lt;&lt; fftSize) * fftSize * 0.5;</span>
+
+<span class="nc" id="L314">        indxTable = new int[(int) tableSize];</span>
+<span class="nc" id="L315">        cosTable = new double[(int) tableSize];</span>
+<span class="nc" id="L316">        sinTable = new double[(int) tableSize];</span>
+
+<span class="nc" id="L318">        Arrays.fill(indxTable, 0);</span>
+<span class="nc" id="L319">        Arrays.fill(cosTable, 0.0);</span>
+<span class="nc" id="L320">        Arrays.fill(sinTable, 0.0);</span>
+
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        for (indx1 = (1 &lt;&lt; fftSize) - 1; indx1 &gt;= 0; --indx1) {</span>
+<span class="nc" id="L323">            reverseBitOrder = 0;</span>
+
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            for (indx2 = 0; indx2 &lt; fftSize; ++indx2) {</span>
+<span class="nc" id="L326">                reverseBitOrder *= 2;</span>
+
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                if ((indx1 &amp; (1 &lt;&lt; indx2)) != 0) {</span>
+<span class="nc" id="L329">                    ++reverseBitOrder;</span>
+                }
+            }
+
+<span class="nc" id="L333">            bitreverse[indx1] = reverseBitOrder;</span>
+        }
+
+<span class="nc" id="L336">        n2 = (n = 1 &lt;&lt; fftSize) / 2;</span>
+
+<span class="nc" id="L338">        tableIndx = 0;</span>
+
+<span class="nc bnc" id="L340" title="All 2 branches missed.">        for (audioSample = 0; audioSample &lt; fftSize; ++audioSample) {</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            for (indx1 = 0; indx1 &lt; n; indx1 += n2) {</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">                for (indx2 = 0; indx2 &lt; n2; ++indx2, ++indx1) {</span>
+<span class="nc" id="L343">                    ang = TWOPI * bitreverse[indx1 / n2] / n;</span>
+<span class="nc" id="L344">                    cosTable[tableIndx] = Math.cos(ang);</span>
+<span class="nc" id="L345">                    sinTable[tableIndx] = Math.sin(ang);</span>
+<span class="nc" id="L346">                    indxTable[tableIndx] = indx1 + n2;</span>
+
+<span class="nc" id="L348">                    ++tableIndx;</span>
+                }
+            }
+
+<span class="nc" id="L352">            n2 /= 2;</span>
+        }
+<span class="nc" id="L354">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

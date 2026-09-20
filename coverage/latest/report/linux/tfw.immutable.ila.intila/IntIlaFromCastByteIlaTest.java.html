@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntIlaFromCastByteIlaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.intila</a> &gt; <span class="el_source">IntIlaFromCastByteIlaTest.java</span></div><h1>IntIlaFromCastByteIlaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.intila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaFromArray;
+import tfw.immutable.ila.byteila.TestCloseByteIla;
+
+<span class="nc" id="L14">final class IntIlaFromCastByteIlaTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L17">        final ByteIla ila = ByteIlaFromArray.create(new byte[10]);</span>
+
+<span class="nc" id="L19">        assertThatThrownBy(() -&gt; IntIlaFromCastByteIla.create(null, 1))</span>
+<span class="nc" id="L20">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L21">                .hasMessage(&quot;byteIla == null not allowed!&quot;);</span>
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; IntIlaFromCastByteIla.create(ila, 0))</span>
+<span class="nc" id="L23">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L24">                .hasMessage(&quot;bufferSize (=0) &lt; 1 not allowed!&quot;);</span>
+<span class="nc" id="L25">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L29">        final Random random = new Random(0);</span>
+<span class="nc" id="L30">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L31">        final byte[] array = new byte[length];</span>
+<span class="nc" id="L32">        final int[] target = new int[length];</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L34">            array[ii] = (byte) random.nextInt();</span>
+<span class="nc" id="L35">            target[ii] = (int) array[ii];</span>
+        }
+<span class="nc" id="L37">        ByteIla ila = ByteIlaFromArray.create(array);</span>
+<span class="nc" id="L38">        IntIla targetIla = IntIlaFromArray.create(target);</span>
+<span class="nc" id="L39">        IntIla actualIla = IntIlaFromCastByteIla.create(ila, 100);</span>
+
+<span class="nc" id="L41">        IntIlaCheck.check(targetIla, actualIla);</span>
+<span class="nc" id="L42">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L46">        final TestCloseByteIla testIla = new TestCloseByteIla();</span>
+
+<span class="nc" id="L48">        try (IntIla ila = IntIlaFromCastByteIla.create(testIla, 100)) {</span>
+<span class="nc" id="L49">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L52">        assertThat(testIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L53">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

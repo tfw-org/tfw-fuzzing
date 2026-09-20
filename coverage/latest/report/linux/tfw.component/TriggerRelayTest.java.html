@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TriggerRelayTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.component</a> &gt; <span class="el_source">TriggerRelayTest.java</span></div><h1>TriggerRelayTest.java</h1><pre class="source lang-java linenums">package tfw.component;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.BasicTransactionQueue;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Initiator;
+import tfw.tsm.Root;
+import tfw.tsm.TriggeredCommit;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+<span class="nc" id="L13">final class TriggerRelayTest {</span>
+<span class="nc" id="L14">    private final StatelessTriggerECD triggerToRelayECD = new StatelessTriggerECD(&quot;triggerToRelay&quot;);</span>
+
+<span class="nc" id="L16">    private final StatelessTriggerECD relayedTriggerECD = new StatelessTriggerECD(&quot;relayedTrigger&quot;);</span>
+
+    @Test
+    void triggerRelayTest() throws InterruptedException {
+<span class="nc" id="L20">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L21">        final Root root = Root.builder()</span>
+<span class="nc" id="L22">                .setName(&quot;Root&quot;)</span>
+<span class="nc" id="L23">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L24">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L25">                .addStatelessTriggerECD(triggerToRelayECD)</span>
+<span class="nc" id="L26">                .addStatelessTriggerECD(relayedTriggerECD)</span>
+<span class="nc" id="L27">                .build();</span>
+
+<span class="nc" id="L29">        Initiator initiator = new Initiator(&quot;initiator&quot;, triggerToRelayECD);</span>
+<span class="nc" id="L30">        CommitImpl commit = new CommitImpl();</span>
+<span class="nc" id="L31">        root.add(initiator);</span>
+<span class="nc" id="L32">        root.add(commit);</span>
+<span class="nc" id="L33">        root.add(new TriggerRelay(&quot;relay&quot;, triggerToRelayECD, relayedTriggerECD));</span>
+<span class="nc" id="L34">        initiator.trigger(triggerToRelayECD);</span>
+<span class="nc" id="L35">        queue.waitTilEmpty();</span>
+<span class="nc" id="L36">        assertThat(commit.executed).isTrue();</span>
+<span class="nc" id="L37">    }</span>
+
+    private class CommitImpl extends TriggeredCommit {
+<span class="nc" id="L40">        public boolean executed = false;</span>
+
+<span class="nc" id="L42">        public CommitImpl() {</span>
+<span class="nc" id="L43">            super(&quot;CommitImpl&quot;, relayedTriggerECD);</span>
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L48">            this.executed = true;</span>
+<span class="nc" id="L49">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

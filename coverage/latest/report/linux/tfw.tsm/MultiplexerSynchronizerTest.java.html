@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiplexerSynchronizerTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">MultiplexerSynchronizerTest.java</span></div><h1>MultiplexerSynchronizerTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+<span class="nc" id="L7">final class MultiplexerSynchronizerTest {</span>
+
+    private static class MultiCommit extends Commit {
+
+<span class="nc" id="L11">        ObjectIla&lt;Object&gt; objectIla = null;</span>
+
+        private final ObjectIlaECD objectIlaECD;
+
+        public MultiCommit(String name, ObjectIlaECD objectIlaECD) {
+<span class="nc" id="L16">            super(name, new ObjectIlaECD[] {objectIlaECD});</span>
+<span class="nc" id="L17">            this.objectIlaECD = objectIlaECD;</span>
+<span class="nc" id="L18">        }</span>
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        protected void commit() {
+<span class="nc" id="L23">            this.objectIla = (ObjectIla&lt;Object&gt;) get(this.objectIlaECD);</span>
+<span class="nc" id="L24">        }</span>
+    }
+
+    @Test
+    void multiplexedSynchronizerTest() throws Exception {
+        /*
+                StringECD stringECD = new StringECD(&quot;string&quot;);
+                IntegerECD integerECD = new IntegerECD(&quot;integer&quot;);
+                ObjectIlaECD multiStringECD = new ObjectIlaECD(&quot;multiString&quot;);
+                ObjectIlaECD multiIntegerECD = new ObjectIlaECD(&quot;multiInteger&quot;);
+                StringRollbackECD errorECD = new StringRollbackECD(&quot;error&quot;);
+
+                Integer[] integerValues = new Integer[] { new Integer(0),
+                        new Integer(1), new Integer(2) };
+                ObjectIla initialInts = ObjectIlaFromArray.create(integerValues);
+                RootFactory rf = new RootFactory();
+                // rf.setLogging(true);
+
+                // THE FOLLOWING LINE SHOULD NOT HAVE A SECOND ARGUMENT.  THE SECOND
+                // ARGUMENT IS PUT IN TO SOLVE THE &quot;multistate == null not allowed!&quot;
+                // EXCEPTION!
+                rf.addEventChannel(multiStringECD, ObjectIlaFill.create(null, 3));
+                rf.addEventChannel(multiIntegerECD, initialInts);
+                rf.addEventChannel(errorECD);
+                BasicTransactionQueue queue = new BasicTransactionQueue();
+                Root root = rf.create(&quot;Test&quot;, queue);
+
+                MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();
+                mbf.addMultiplexer(stringECD, multiStringECD);
+                mbf.addMultiplexer(integerECD, multiIntegerECD);
+                MultiplexedBranch mbranch = mbf.create(&quot;multiBranch&quot;);
+
+        //        mbranch.add(new ObjectStringSynchronizer(&quot;sync 0&quot;, &quot;sync0&quot;, integerECD,
+        //                stringECD, errorECD, integerECD.getCodec()), 0);
+        //        mbranch.add(new ObjectStringSynchronizer(&quot;sync 1&quot;, &quot;sync1&quot;, integerECD,
+        //                stringECD, errorECD, integerECD.getCodec()), 1);
+        //        mbranch.add(new ObjectStringSynchronizer(&quot;sync 2&quot;, &quot;sync2&quot;, integerECD,
+        //                stringECD, errorECD, integerECD.getCodec()), 2);
+
+                MultiCommit stringMultiCommit = new MultiCommit(&quot;StringMultiCommit&quot;,
+                        multiStringECD);
+                MultiCommit integerMultiCommit = new MultiCommit(&quot;IntegerMultiCommit&quot;,
+                        multiIntegerECD);
+                root.add(stringMultiCommit);
+                root.add(integerMultiCommit);
+                root.add(mbranch);
+                queue.waitTilEmpty();
+
+                assertNotNull(&quot;integerMultiCommit.objectIla&quot;,
+                        integerMultiCommit.objectIla);
+                assertNotNull(&quot;stringMultiCommit.objectIla&quot;,
+                        stringMultiCommit.objectIla);
+                String[] strValues = new String[(int) initialInts.length()];
+                stringMultiCommit.objectIla.toArray(strValues, 0, 0, strValues.length);
+
+                assertTrue(&quot;wrong string values&quot;, Arrays.equals(new String[] { &quot;0&quot;,
+                        &quot;1&quot;, &quot;2&quot; }, strValues));
+
+                assertTrue(&quot;wrong integer values&quot;, Arrays.equals(integerValues,
+                        integerMultiCommit.objectIla.toArray()));
+
+                Initiator initiator = new Initiator(&quot;myInitiator&quot;, new ObjectECD[] {
+                        integerECD, stringECD });
+                mbranch.add(initiator, 1);
+                queue.waitTilEmpty();
+                strValues[1] = &quot;100&quot;;
+                integerValues[1] = new Integer(100);
+                initiator.set(stringECD, strValues[1]);
+                queue.waitTilEmpty();
+                assertTrue(&quot;wrong string values&quot;, Arrays.equals(strValues,
+                        stringMultiCommit.objectIla.toArray()));
+                assertTrue(&quot;wrong integer values&quot;, Arrays.equals(integerValues,
+                        integerMultiCommit.objectIla.toArray()));
+        */
+<span class="nc" id="L98">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

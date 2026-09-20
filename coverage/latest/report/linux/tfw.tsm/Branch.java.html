@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Branch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Branch.java</span></div><h1>Branch.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.check.Argument;
+
+/**
+ * The framework uses a tree metaphor to describe its hierarchical
+ * communications structure. The structure consists of a single root, branches
+ * and leaves.
+ *
+ */
+public class Branch extends BranchComponent {
+    /**
+     * Constructs a trivial branch with no event channels or ports. To create a
+     * non-trivial branch see {@link BranchFactory}.
+     *
+     * @param name
+     *            The name of the branch.
+     */
+    public Branch(String name) {
+<span class="nc" id="L20">        this(name, null, null, null);</span>
+<span class="nc" id="L21">    }</span>
+
+    /**
+     * Constructs a branch with the specified event channels and ports.
+     *
+     * @param name the name of the branch.
+     * @param sinks the set of sinks associated with this branch.
+     * @param sources the set of sources associated with this branch.
+     * @param eventChannels the set of event channels associated with this branch.
+     */
+    Branch(String name, Sink[] sinks, Source[] sources, EventChannel[] eventChannels) {
+<span class="nc" id="L32">        super(name, sinks, sources, eventChannels);</span>
+<span class="nc" id="L33">    }</span>
+
+    public final void add(TreeComponent child) {
+<span class="nc" id="L36">        Argument.assertNotNull(child, &quot;child&quot;);</span>
+
+<span class="nc" id="L38">        addChild(child);</span>
+<span class="nc" id="L39">    }</span>
+
+    /**
+     * Adds branch contained in the branch box to this branch as a child.
+     *
+     * @param branchBox
+     *            The branch box containing the child branch to be added.
+     */
+    public final void add(BranchBox branchBox) {
+<span class="nc" id="L48">        Argument.assertNotNull(branchBox, &quot;branchBox&quot;);</span>
+
+<span class="nc" id="L50">        addChild(branchBox.getBranch());</span>
+<span class="nc" id="L51">    }</span>
+
+    @Override
+    public final void remove(TreeComponent child) {
+<span class="nc" id="L55">        Argument.assertNotNull(child, &quot;child&quot;);</span>
+
+<span class="nc" id="L57">        removeChild(child);</span>
+<span class="nc" id="L58">    }</span>
+
+    /**
+     * Removes the specified branch box from this branch.
+     *
+     * @param branchBox
+     *            the branch box to be removed.
+     */
+    public final void remove(BranchBox branchBox) {
+<span class="nc" id="L67">        Argument.assertNotNull(branchBox, &quot;branchBox&quot;);</span>
+
+<span class="nc" id="L69">        removeChild(branchBox.getBranch());</span>
+<span class="nc" id="L70">    }</span>
+
+    public final synchronized void removeAll() {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (immediateChildren != null) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            for (TreeComponent child : immediateChildren) {</span>
+<span class="nc" id="L75">                removeChild(child);</span>
+<span class="nc" id="L76">            }</span>
+        }
+<span class="nc" id="L78">    }</span>
+
+    public final void addAndRemove(AddRemoveOperation[] operations) {
+<span class="nc" id="L81">        Argument.assertElementNotNull(operations, &quot;operations&quot;);</span>
+
+<span class="nc" id="L83">        performAddRemoveOperations(operations);</span>
+<span class="nc" id="L84">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

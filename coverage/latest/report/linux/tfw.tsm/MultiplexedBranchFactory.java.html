@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiplexedBranchFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">MultiplexedBranchFactory.java</span></div><h1>MultiplexedBranchFactory.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import tfw.check.Argument;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+/**
+ * A factory for creating a {@link MultiplexedBranch}.
+ */
+<span class="nc" id="L13">public class MultiplexedBranchFactory {</span>
+    /** A map of multi value event channel descriptions. */
+<span class="nc" id="L15">    HashMap&lt;String, ObjectECD&gt; multiValueECDMap = new HashMap&lt;String, ObjectECD&gt;();</span>
+
+    /** A map of value event channel descriptions. */
+<span class="nc" id="L18">    HashMap&lt;String, ObjectECD&gt; valueECDMap = new HashMap&lt;String, ObjectECD&gt;();</span>
+
+    /** A list of multi value event channel descriptions. */
+<span class="nc" id="L21">    ArrayList&lt;ObjectECD&gt; multiValueECDList = new ArrayList&lt;ObjectECD&gt;();</span>
+
+    /** A list of value event channel descriptions. */
+<span class="nc" id="L24">    ArrayList&lt;ObjectECD&gt; valueECDList = new ArrayList&lt;ObjectECD&gt;();</span>
+
+    /** A list of State change rules. */
+<span class="nc" id="L27">    ArrayList&lt;StateChangeRule&gt; stateChangeRules = new ArrayList&lt;StateChangeRule&gt;();</span>
+
+    /** A list of multiplexer strategies. */
+<span class="nc" id="L30">    ArrayList&lt;MultiplexerStrategy&gt; strategyList = new ArrayList&lt;MultiplexerStrategy&gt;();</span>
+
+    /**
+     * Addes a multiplexer for the specified event channels.
+     *
+     * @param valueECD
+     *            The event channel description of the child values.
+     * @param multiValueECD
+     *            The event channel description of the parent multiplexed
+     *            values.
+     */
+    public void addMultiplexer(ObjectECD valueECD, ObjectIlaECD multiValueECD) {
+<span class="nc" id="L42">        this.addMultiplexer(valueECD, multiValueECD, DotEqualsRule.getInstance(), new ObjectIlaMultiplexerStrategy());</span>
+<span class="nc" id="L43">    }</span>
+
+    /**
+     * Addes a multiplexer for the specified event channels.
+     *
+     * @param valueECD
+     *            The event channel description of the child values.
+     * @param multiValueECD
+     *            The event channel description of the parent multiplexed
+     *            values.
+     * @param valueStateChangeRule
+     *            The state change rule for the child or demultiplexed event
+     *            channels.
+     * @param multiplexerStrategy
+     *            The strategy for multiplexing and demultiplexing state.
+     */
+    public void addMultiplexer(
+            ObjectECD valueECD,
+            ObjectECD multiValueECD,
+            StateChangeRule valueStateChangeRule,
+            MultiplexerStrategy multiplexerStrategy) {
+<span class="nc" id="L64">        Argument.assertNotNull(valueECD, &quot;valueECD&quot;);</span>
+<span class="nc" id="L65">        Argument.assertNotNull(multiValueECD, &quot;multiValueECD&quot;);</span>
+<span class="nc" id="L66">        Argument.assertNotNull(valueStateChangeRule, &quot;valueStateChangeRule&quot;);</span>
+<span class="nc" id="L67">        Argument.assertNotNull(multiplexerStrategy, &quot;multiplexerStrategy&quot;);</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (valueECD.getEventChannelName().equals(multiValueECD.getEventChannelName())) {</span>
+<span class="nc" id="L70">            throw new IllegalArgumentException(</span>
+                    &quot;valueECD.getEventChannelName().equals(multiValueECD.getEventChannelName()) not allowed&quot;);
+        }
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (multiValueECDMap.put(multiValueECD.getEventChannelName(), multiValueECD) != null) {</span>
+<span class="nc" id="L74">            throw new IllegalArgumentException(&quot;Attempt to add multiple multiplexers for multi event channel '&quot;</span>
+<span class="nc" id="L75">                    + multiValueECD.getEventChannelName() + &quot;'&quot;);</span>
+        }
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (valueECDMap.put(valueECD.getEventChannelName(), multiValueECD) != null) {</span>
+<span class="nc" id="L79">            throw new IllegalArgumentException(&quot;Attempt to add multiple multiplexers for value event channel '&quot;</span>
+<span class="nc" id="L80">                    + valueECD.getEventChannelName() + &quot;'&quot;);</span>
+        }
+
+<span class="nc" id="L83">        valueECDList.add(valueECD);</span>
+<span class="nc" id="L84">        multiValueECDList.add(multiValueECD);</span>
+<span class="nc" id="L85">        stateChangeRules.add(valueStateChangeRule);</span>
+<span class="nc" id="L86">        strategyList.add(multiplexerStrategy);</span>
+<span class="nc" id="L87">    }</span>
+
+    private static Multiplexer[] generateMulitplexers(
+            String name,
+            List&lt;ObjectECD&gt; valueECDList,
+            List&lt;ObjectECD&gt; multiValueECDList,
+            List&lt;StateChangeRule&gt; stateChangeRules,
+            List&lt;MultiplexerStrategy&gt; strategyList) {
+<span class="nc" id="L95">        ArrayList&lt;Multiplexer&gt; list = new ArrayList&lt;Multiplexer&gt;();</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (int i = 0; i &lt; valueECDList.size(); i++) {</span>
+<span class="nc" id="L98">            list.add(new Multiplexer(</span>
+<span class="nc" id="L99">                    name, valueECDList.get(i), multiValueECDList.get(i), stateChangeRules.get(i), strategyList.get(i)));</span>
+        }
+
+<span class="nc" id="L102">        return list.toArray(new Multiplexer[list.size()]);</span>
+    }
+
+    /**
+     * Creates a multiplexed branch with the set of multiplexed event channels
+     * as previously defined by calls to
+     * {@link #addMultiplexer(ObjectECD, ObjectIlaECD)}.
+     *
+     * @param name
+     *            the name of the branch.
+     * @return the multiplexed branch.
+     */
+    public MultiplexedBranch create(String name) {
+<span class="nc" id="L115">        Argument.assertNotNull(name, &quot;name&quot;);</span>
+
+<span class="nc" id="L117">        return new MultiplexedBranch(</span>
+<span class="nc" id="L118">                name, generateMulitplexers(name, valueECDList, multiValueECDList, stateChangeRules, strategyList));</span>
+    }
+
+    /**
+     * Clears any previously added multiplexers.
+     */
+    public void clear() {
+<span class="nc" id="L125">        valueECDMap.clear();</span>
+<span class="nc" id="L126">        multiValueECDMap.clear();</span>
+<span class="nc" id="L127">        valueECDList.clear();</span>
+<span class="nc" id="L128">        multiValueECDList.clear();</span>
+<span class="nc" id="L129">        stateChangeRules.clear();</span>
+<span class="nc" id="L130">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

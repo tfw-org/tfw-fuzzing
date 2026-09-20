@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SetTextFactoryTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.event</a> &gt; <span class="el_source">SetTextFactoryTest.java</span></div><h1>SetTextFactoryTest.java</h1><pre class="source lang-java linenums">package tfw.swing.event;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.concurrent.Callable;
+import javax.swing.AbstractButton;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+import javax.swing.text.JTextComponent;
+import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
+import org.assertj.swing.edt.GuiActionRunner;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import tfw.tsm.ecd.StringECD;
+
+@DisabledIf(value = &quot;java.awt.GraphicsEnvironment#isHeadless&quot;, disabledReason = &quot;headless environment&quot;)
+<span class="nc" id="L18">final class SetTextFactoryTest {</span>
+    private static final String TEST_NAME = &quot;TestName&quot;;
+<span class="nc" id="L20">    private static final StringECD TEXT_ECD = new StringECD(&quot;TestText&quot;);</span>
+
+    @BeforeAll
+    static void setUpOnce() {
+<span class="nc" id="L24">        FailOnThreadViolationRepaintManager.install();</span>
+<span class="nc" id="L25">    }</span>
+
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L29">        final JButton jButton = GuiActionRunner.execute((Callable&lt;JButton&gt;) JButton::new);</span>
+<span class="nc" id="L30">        final JTextField jTextField = GuiActionRunner.execute((Callable&lt;JTextField&gt;) JTextField::new);</span>
+
+<span class="nc" id="L32">        assertThatThrownBy(() -&gt; SetTextFactory.create(null, TEXT_ECD, jButton, null))</span>
+<span class="nc" id="L33">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L34">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L35">        assertThatThrownBy(() -&gt; SetTextFactory.create(TEST_NAME, null, jButton, null))</span>
+<span class="nc" id="L36">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L37">                .hasMessage(&quot;textECD == null not allowed!&quot;);</span>
+<span class="nc" id="L38">        assertThatThrownBy(() -&gt; SetTextFactory.create(TEST_NAME, TEXT_ECD, (AbstractButton) null, null))</span>
+<span class="nc" id="L39">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L40">                .hasMessage(&quot;abstractButton == null not allowed!&quot;);</span>
+<span class="nc" id="L41">        assertThatThrownBy(() -&gt; SetTextFactory.create(null, TEXT_ECD, jTextField, null))</span>
+<span class="nc" id="L42">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L43">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L44">        assertThatThrownBy(() -&gt; SetTextFactory.create(TEST_NAME, null, jTextField, null))</span>
+<span class="nc" id="L45">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L46">                .hasMessage(&quot;textECD == null not allowed!&quot;);</span>
+<span class="nc" id="L47">        assertThatThrownBy(() -&gt; SetTextFactory.create(TEST_NAME, TEXT_ECD, (JTextComponent) null, null))</span>
+<span class="nc" id="L48">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L49">                .hasMessage(&quot;jTextComponent == null not allowed!&quot;);</span>
+<span class="nc" id="L50">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

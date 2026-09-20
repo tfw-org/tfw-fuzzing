@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Initiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Initiator.java</span></div><h1>Initiator.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.List;
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * This class provides an interface to generate a transaction and to set the
+ * state of event channels in that transaction. The initiator will queue state
+ * changes if it is not rooted. The queueing strategy can be set by providing
+ * the appropriate {@link StateQueueFactory} on the constructor
+ * {@link #Initiator(String, EventChannelDescription[], StateQueueFactory)}.
+ * The default queuing strategy employs an unbounded queue which will store up
+ * state changes until the initiator becomes rooted and can begin to fire its
+ * state changes. Note that a component is said to be rooted when it is attached
+ * to a root component or its parent is rooted.
+ * &lt;P&gt;
+ * State Change Rules:
+ * &lt;ol&gt;
+ * &lt;li&gt;If one of the 'set' or 'trigger' methods is called while the
+ * &lt;tt&gt;Initiator&lt;/tt&gt; is rooted, the state changes will be immediately
+ * scheduled with the transaction manager.&lt;/li&gt;
+ * &lt;li&gt;If one of the 'set' or 'trigger' methods is called while the
+ * &lt;tt&gt;Initiator&lt;/tt&gt; is not rooted the state changes will be queued,
+ * according to the queuing strategy supplied at construction, and deferred
+ * until such time as the &lt;tt&gt;Initiator&lt;/tt&gt; becomes rooted.&lt;/li&gt;
+ * &lt;li&gt;An &lt;tt&gt;Initiator&lt;/tt&gt; will schedule all of its deferred state changes
+ * with the transaction manager immediately upon becoming rooted. &lt;/li&gt;
+ * &lt;li&gt;If the &lt;tt&gt;Initiator&lt;/tt&gt; becomes un-rooted after state changes have
+ * been scheduled with the transaction manager and before the state changes have
+ * occurred, the state changes will occur if and only if the associated event
+ * channel is rooted when the state change transaction is executed. &lt;/li&gt;
+ * &lt;/ol&gt;
+ */
+public class Initiator extends TreeComponent {
+    /**
+     * The list of state changes which occur while the component is not
+     * connected.
+     */
+<span class="nc" id="L43">    private List&lt;TransactionContainer&gt; deferredStateChanges = null;</span>
+
+    /**
+     * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name and source
+     * event channel.
+     *
+     * @param name
+     *            the non-null name for the &lt;code&gt;Initiator&lt;/code&gt;
+     * @param source
+     *            the source event channel for this initiator.
+     */
+    public Initiator(String name, EventChannelDescription source) {
+<span class="nc" id="L55">        this(name, new EventChannelDescription[] {source});</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name and set of
+     * source event channels.
+     *
+     * @param name
+     *            the non-null name for the &lt;code&gt;Initiator&lt;/code&gt;
+     * @param sources
+     *            A non-null, non-empty array of source event channels for the
+     *            &lt;code&gt;Initiator&lt;/code&gt;.
+     */
+    public Initiator(String name, EventChannelDescription[] sources) {
+<span class="nc" id="L69">        this(name, sources, null);</span>
+<span class="nc" id="L70">    }</span>
+
+    /**
+     * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name, set of
+     * source event channels, and state queue.
+     *
+     * @param name
+     *            the non-null name for the &lt;code&gt;Initiator&lt;/code&gt;
+     * @param sources
+     *            A non-null, non-empty array of source event channels for the
+     *            &lt;code&gt;Initiator&lt;/code&gt;.
+     * @param queueFactory
+     *            a factory for creating state queue for each source event
+     *            channel.
+     */
+    public Initiator(String name, EventChannelDescription[] sources, StateQueueFactory queueFactory) {
+<span class="nc" id="L86">        super(</span>
+                name,
+                null,
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                createSources(name, sources, queueFactory == null ? new DefaultStateQueueFactory() : queueFactory),</span>
+                null);
+
+<span class="nc" id="L92">        Argument.assertNotNull(name, &quot;name&quot;);</span>
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (sources.length == 0) {</span>
+<span class="nc" id="L95">            throw new IllegalArgumentException(&quot;sources.length == 0 not allowed&quot;);</span>
+        }
+<span class="nc" id="L97">    }</span>
+
+    public static InitiatorBuilder builder() {
+<span class="nc" id="L100">        return new InitiatorBuilder();</span>
+    }
+
+    synchronized TransactionContainer[] getDeferredStateChangesAndClear() {
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (deferredStateChanges != null) {</span>
+<span class="nc" id="L105">            TransactionContainer[] sns =</span>
+<span class="nc" id="L106">                    deferredStateChanges.toArray(new TransactionContainer[deferredStateChanges.size()]);</span>
+
+<span class="nc" id="L108">            deferredStateChanges = null;</span>
+
+<span class="nc" id="L110">            return sns;</span>
+        } else {
+<span class="nc" id="L112">            return null;</span>
+        }
+    }
+
+    private static Source[] createSources(String name, EventChannelDescription[] sources, StateQueueFactory factory) {
+<span class="nc" id="L117">        Argument.assertNotNull(sources, &quot;sources&quot;);</span>
+<span class="nc" id="L118">        Argument.assertElementNotNull(sources, &quot;sources&quot;);</span>
+<span class="nc" id="L119">        Argument.assertNotNull(factory, &quot;factory&quot;);</span>
+
+<span class="nc" id="L121">        Source[] srcs = new Source[sources.length];</span>
+
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="nc" id="L124">            srcs[i] = new InitiatorSource(name, sources[i], factory.create());</span>
+        }
+
+<span class="nc" id="L127">        return srcs;</span>
+    }
+
+    private TransactionState newTransaction(InitiatorSource[] sources, Object[] state) {
+<span class="nc" id="L131">        Root localImmediateRoot = null;</span>
+<span class="nc" id="L132">        BranchComponent localImmediateParent = null;</span>
+
+<span class="nc" id="L134">        synchronized (this) {</span>
+<span class="nc" id="L135">            localImmediateRoot = immediateRoot;</span>
+<span class="nc" id="L136">            localImmediateParent = immediateParent;</span>
+<span class="nc" id="L137">        }</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (localImmediateRoot == null) {</span>
+<span class="nc" id="L140">            TransactionState transactionState = new DeferredTransactionState();</span>
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (localImmediateParent == null) {</span>
+<span class="nc" id="L143">                synchronized (this) {</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                    if (deferredStateChanges == null) {</span>
+<span class="nc" id="L145">                        deferredStateChanges = new ArrayList&lt;TransactionContainer&gt;();</span>
+                    }
+
+<span class="nc" id="L148">                    deferredStateChanges.add(</span>
+                            new TransactionContainer(new SourceNState(sources, state), transactionState));
+<span class="nc" id="L150">                }</span>
+            } else {
+<span class="nc" id="L152">                localImmediateParent.addStateChange(</span>
+                        new TransactionContainer(new SourceNState(sources, state), transactionState));
+            }
+
+<span class="nc" id="L156">            return transactionState;</span>
+        } else {
+<span class="nc" id="L158">            TransactionState transactionState = localImmediateRoot</span>
+<span class="nc" id="L159">                    .getTransactionManager()</span>
+<span class="nc" id="L160">                    .getTransactionQueue()</span>
+<span class="nc" id="L161">                    .createTransactionState();</span>
+
+<span class="nc" id="L163">            localImmediateRoot</span>
+<span class="nc" id="L164">                    .getTransactionManager()</span>
+<span class="nc" id="L165">                    .addStateChange(</span>
+                            sources,
+                            state,
+                            transactionState,
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                            TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null);</span>
+
+<span class="nc" id="L171">            return transactionState;</span>
+        }
+    }
+
+    /**
+     * Sets, asynchronously, the state of the specified event channel to the
+     * specified state. Note that the &lt;code&gt;sourceEventChannel&lt;/code&gt; will be
+     * updated in transaction manager event queue thread regardless of what
+     * thread calls this method.
+     *
+     * @param sourceEventChannel
+     *            The event channel to be updated. It must be one of the event
+     *            channels specified at construction.
+     *
+     * @param state
+     *            the new state for the event channel.
+     */
+    private TransactionState unifiedSet(EventChannelDescription sourceEventChannel, final Object state) {
+
+<span class="nc" id="L190">        Argument.assertNotNull(sourceEventChannel, &quot;sourceEventChannel&quot;);</span>
+        // Trigger have null values...
+        // CheckArgument.checkNull(state, &quot;state&quot;);
+
+<span class="nc" id="L194">        final InitiatorSource source = (InitiatorSource) getSource(sourceEventChannel.getEventChannelName());</span>
+
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L197">            throw new IllegalArgumentException(sourceEventChannel + &quot; not found&quot;);</span>
+        }
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (!source.ecd.getPredicate().test(state)) {</span>
+<span class="nc" id="L201">            throw new IllegalArgumentException(&quot;value == &quot; + state + &quot; does not meet the constraints on this value&quot;);</span>
+        }
+
+<span class="nc" id="L204">        return newTransaction(new InitiatorSource[] {source}, new Object[] {state});</span>
+    }
+
+    /**
+     * Sets the state of the eventChannels with values specified.
+     *
+     * @param state
+     *            the event channel state to set.
+     */
+    public final void set(EventChannelState[] state) {
+<span class="nc" id="L214">        fset(state);</span>
+<span class="nc" id="L215">    }</span>
+
+    public final TransactionState fset(EventChannelState[] state) {
+<span class="nc" id="L218">        Argument.assertNotEmpty(state, &quot;state&quot;);</span>
+
+<span class="nc" id="L220">        InitiatorSource[] sources = new InitiatorSource[state.length];</span>
+<span class="nc" id="L221">        Object[] stateObjects = new Object[state.length];</span>
+
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        for (int i = 0; i &lt; state.length; i++) {</span>
+<span class="nc" id="L224">            String eventChannel = state[i].getEventChannelName();</span>
+<span class="nc" id="L225">            InitiatorSource source = (InitiatorSource) getSource(eventChannel);</span>
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (source == null) {</span>
+<span class="nc" id="L228">                throw new IllegalArgumentException(eventChannel + &quot; not found&quot;);</span>
+            }
+
+<span class="nc" id="L231">            sources[i] = source;</span>
+<span class="nc" id="L232">            stateObjects[i] = state[i].getState();</span>
+        }
+
+<span class="nc" id="L235">        return newTransaction(sources, stateObjects);</span>
+    }
+
+    /**
+     * Sets, asynchronously, the state of the specified event channel to
+     * &lt;code&gt;new Object()&lt;/code&gt;. This is intended to be used to activate
+     * {@link TriggeredConverter}s where the state changes is not relevant.
+     *
+     * @param triggerEventChannel
+     *            The event channel to receive the trigger event.
+     */
+    public final void trigger(StatelessTriggerECD triggerEventChannel) {
+<span class="nc" id="L247">        ftrigger(triggerEventChannel);</span>
+<span class="nc" id="L248">    }</span>
+
+    public final TransactionState ftrigger(StatelessTriggerECD triggerEventChannel) {
+<span class="nc" id="L251">        return unifiedSet(triggerEventChannel, null);</span>
+    }
+
+    public final void set(ObjectECD objectECD, Object state) {
+<span class="nc" id="L255">        fset(objectECD, state);</span>
+<span class="nc" id="L256">    }</span>
+
+    public final TransactionState fset(ObjectECD objectECD, Object state) {
+<span class="nc" id="L259">        return unifiedSet(objectECD, state);</span>
+    }
+
+    static class SourceNState {
+        public final InitiatorSource[] sources;
+        public final Object[] state;
+
+<span class="nc" id="L266">        public SourceNState(InitiatorSource[] sources, Object[] state) {</span>
+<span class="nc" id="L267">            this.sources = sources;</span>
+<span class="nc" id="L268">            this.state = state;</span>
+<span class="nc" id="L269">        }</span>
+    }
+
+    static class TransactionContainer {
+        public final SourceNState state;
+        public final TransactionState transactionState;
+        public final Throwable setLocation;
+
+<span class="nc" id="L277">        public TransactionContainer(SourceNState state, TransactionState transactionState) {</span>
+<span class="nc" id="L278">            this.state = state;</span>
+<span class="nc" id="L279">            this.transactionState = transactionState;</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            this.setLocation = TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null;</span>
+<span class="nc" id="L281">        }</span>
+    }
+
+    public static class InitiatorBuilder {
+<span class="nc" id="L285">        private String name = null;</span>
+<span class="nc" id="L286">        private List&lt;EventChannelDescription&gt; eventChannelDescriptions = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L287">        private StateQueueFactory stateQueueFactory = new DefaultStateQueueFactory();</span>
+
+<span class="nc" id="L289">        InitiatorBuilder() {}</span>
+
+        public InitiatorBuilder setName(final String name) {
+<span class="nc" id="L292">            this.name = name;</span>
+
+<span class="nc" id="L294">            return this;</span>
+        }
+
+        public InitiatorBuilder addEventChannelDescription(final EventChannelDescription eventChannelDescription) {
+<span class="nc" id="L298">            eventChannelDescriptions.add(eventChannelDescription);</span>
+
+<span class="nc" id="L300">            return this;</span>
+        }
+
+        public InitiatorBuilder setStateQueueFactory(final StateQueueFactory stateQueueFactory) {
+<span class="nc" id="L304">            this.stateQueueFactory = stateQueueFactory;</span>
+
+<span class="nc" id="L306">            return this;</span>
+        }
+
+        public Initiator build() {
+<span class="nc" id="L310">            Argument.assertNotNull(name, &quot;name&quot;);</span>
+<span class="nc" id="L311">            Argument.assertGreaterThan(eventChannelDescriptions.size(), 0, &quot;eventChannelDescriptions.size()&quot;);</span>
+
+<span class="nc" id="L313">            final EventChannelDescription[] ecds =</span>
+<span class="nc" id="L314">                    eventChannelDescriptions.toArray(new EventChannelDescription[eventChannelDescriptions.size()]);</span>
+
+<span class="nc" id="L316">            return new Initiator(name, ecds, stateQueueFactory);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

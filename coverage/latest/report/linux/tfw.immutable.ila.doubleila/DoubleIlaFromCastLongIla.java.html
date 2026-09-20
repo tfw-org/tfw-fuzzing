@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DoubleIlaFromCastLongIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.doubleila</a> &gt; <span class="el_source">DoubleIlaFromCastLongIla.java</span></div><h1>DoubleIlaFromCastLongIla.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.doubleila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.longila.LongIla;
+import tfw.immutable.ila.longila.LongIlaIterator;
+import tfw.immutable.ila.longila.LongIlaSegment;
+
+public final class DoubleIlaFromCastLongIla {
+    private DoubleIlaFromCastLongIla() {
+        // non-instantiable class
+    }
+
+    public static DoubleIla create(LongIla longIla, int bufferSize) {
+<span class="nc" id="L15">        return new DoubleIlaImpl(longIla, bufferSize);</span>
+    }
+
+    private static class DoubleIlaImpl extends AbstractDoubleIla {
+        private final LongIla longIla;
+        private final int bufferSize;
+
+<span class="nc" id="L22">        private DoubleIlaImpl(LongIla longIla, int bufferSize) {</span>
+<span class="nc" id="L23">            Argument.assertNotNull(longIla, &quot;longIla&quot;);</span>
+<span class="nc" id="L24">            Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L26">            this.longIla = longIla;</span>
+<span class="nc" id="L27">            this.bufferSize = bufferSize;</span>
+<span class="nc" id="L28">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L32">            return longIla.length();</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L37">            LongIlaIterator fi =</span>
+<span class="nc" id="L38">                    new LongIlaIterator(LongIlaSegment.create(longIla, start, length), new long[bufferSize]);</span>
+
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
+<span class="nc" id="L41">                array[ii] = (double) fi.next();</span>
+            }
+<span class="nc" id="L43">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L47">            longIla.close();</span>
+<span class="nc" id="L48">        }</span>
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

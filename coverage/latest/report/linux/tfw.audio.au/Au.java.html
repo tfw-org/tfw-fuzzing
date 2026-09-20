@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Au.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio.au</a> &gt; <span class="el_source">Au.java</span></div><h1>Au.java</h1><pre class="source lang-java linenums">package tfw.audio.au;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaConcatenate;
+import tfw.immutable.ila.byteila.ByteIlaFromArray;
+import tfw.immutable.ila.byteila.ByteIlaSegment;
+import tfw.immutable.ila.byteila.ByteIlaUtil;
+
+/**
+ * The Au class represents a valid AU formatted set of bytes along with
+ * allowing easy access to the AU header fields and audio data.
+ */
+public final class Au {
+    /**
+     * A long representing the string &quot;.snd&quot;.
+     */
+    public static final long SUN_MAGIC_NUMBER = 0x2e736e64;
+
+    /**
+     * A long representing the string &quot;\000ds.&quot; (byte reversed).
+     */
+    public static final long DEC_MAGIC_NUMBER = 0x2e736400;
+
+    /**
+     * A long representing the string &quot;dns.&quot; signifying that everything should
+     * be read in &quot;little endian&quot; format (i.e. byte reversed).
+     */
+    public static final long REV_SUN_MAGIC_NUMBER = 0x646e732e;
+
+    /**
+     * A long representing the string &quot;.sd\000&quot; (byte reversed) signifying that
+     * everything should be read in &quot;little endian&quot; format (i.e. byte reversed).
+     */
+    public static final long REV_DEC_MAGIC_NUMBER = 0x0064732e;
+
+    public static final long ISDN_U_LAW_8_BIT = 1;
+    public static final long LINEAR_8_BIT = 2;
+    public static final long LINEAR_16_BIT = 3;
+    public static final long LINEAR_24_BIT = 4;
+    public static final long LINEAR_32_BIT = 5;
+    public static final long IEEE_FLOATING_POINT_32_BIT = 6;
+    public static final long IEEE_FLOATING_POINT_64_BIT = 7;
+    public static final long CCITT_G_721_4_BIT_ADPCM = 23;
+    public static final long CCITT_G_722_ADPCM = 24;
+    public static final long CCITT_G_723_3_BIT_ADPCM = 25;
+    public static final long CCITT_G_723_5_BIT_ADPCM = 26;
+    public static final long ISDN_A_LAW_8_BIT = 27;
+    public static final long UNKNOWN_DATA_SIZE = -1;
+
+    private static final long MINIMUM_HEADER_LENGTH = 24;
+
+    /**
+     * A long that contains the AU header identifier constant.  This can be
+     * either SUN_MAGIC_NUMBER (the one defined by the AU specification) or
+     * DEC_MAGIC_NUMBER (done in the spirit of compatibility).
+     */
+    public final long magicNumber;
+
+    /**
+     * A long that contains the offset, in bytes, from the start of the file
+     * to the beginning of the audio data.
+     */
+    public final long offset;
+
+    /**
+     * A long that contains the length, in bytes, of the audio data.  If this
+     * length is unknown when the header is written, then it will be set to
+     * UNKNOWN_DATA_SIZE.
+     */
+    public final long data_size;
+
+    /**
+     * A long that is set to one of the ISDN, LINEAR, IEEE or CCITT constants
+     * defined in this file.  The linear formats are signed integers, centered
+     * at zero.  The floating-point formats are signed, zero-centered and
+     * normalized to the unit value (-1.0 &amp;lt;= x &amp;lt;= 1.0).
+     */
+    public final long encoding;
+
+    /**
+     * A long that contains the audio sampling rate in samples per second.
+     */
+    public final long sampleRate;
+
+    /**
+     * A long that contains the number of interleaved data channels.
+     */
+    public final long numberOfChannels;
+
+    /**
+     * A ByteIla containing the optional annotation bytes.
+     */
+    public final ByteIla annotation;
+
+    /**
+     * A ByteIla containing the AU formatted bytes (i.e. AU header and audio
+     * data).
+     */
+    public final ByteIla auByteData;
+
+    /**
+     * A ByteIla containing only the audio data bytes.
+     */
+    public final ByteIla audioData;
+
+    /**
+     * Constructs a newly allocated Au object from a ByteIla.
+     *
+     * @param byteIla the byteIla containing the AU formatted bytes.
+     * @throws IOException if the byteIla has invalid data.
+     * @throws IOException if a valid AU header is not found.
+     */
+<span class="nc" id="L115">    public Au(ByteIla byteIla) throws IOException {</span>
+<span class="nc" id="L116">        Argument.assertNotNull(byteIla, &quot;byteIla&quot;);</span>
+
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (byteIla.length() &lt; MINIMUM_HEADER_LENGTH) {</span>
+<span class="nc" id="L119">            throw new IOException(&quot;length &lt; &quot; + MINIMUM_HEADER_LENGTH + &quot; not allowed!&quot;);</span>
+        }
+<span class="nc" id="L121">        Argument.assertNotLessThan(byteIla.length(), MINIMUM_HEADER_LENGTH, &quot;byteIla.length()&quot;);</span>
+
+<span class="nc" id="L123">        auByteData = byteIla;</span>
+
+<span class="nc" id="L125">        magicNumber = unsignedIntFromBytes(ByteIlaUtil.toArray(byteIla, 0, 4), 0, SUN_MAGIC_NUMBER);</span>
+
+<span class="nc bnc" id="L127" title="All 8 branches missed.">        if (magicNumber != SUN_MAGIC_NUMBER</span>
+                &amp;&amp; magicNumber != DEC_MAGIC_NUMBER
+                &amp;&amp; magicNumber != REV_SUN_MAGIC_NUMBER
+                &amp;&amp; magicNumber != REV_DEC_MAGIC_NUMBER) {
+<span class="nc" id="L131">            throw new IOException(&quot;Unrecognized AU Magic Number!&quot;);</span>
+        }
+
+<span class="nc" id="L134">        byte[] header = ByteIlaUtil.toArray(byteIla, 4, 20);</span>
+
+<span class="nc" id="L136">        offset = unsignedIntFromBytes(header, 0, magicNumber);</span>
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (offset &lt; MINIMUM_HEADER_LENGTH) {</span>
+<span class="nc" id="L139">            throw new IOException(&quot;offset(&quot; + offset + &quot;) &lt; &quot; + MINIMUM_HEADER_LENGTH + &quot; not allowed!&quot;);</span>
+        }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (offset &gt; byteIla.length()) {</span>
+<span class="nc" id="L142">            throw new IOException(&quot;offset(&quot; + offset + &quot;) &gt; length(&quot; + byteIla.length() + &quot;) not allowed!&quot;);</span>
+        }
+
+<span class="nc" id="L145">        data_size = unsignedIntFromBytes(header, 4, magicNumber);</span>
+<span class="nc" id="L146">        encoding = unsignedIntFromBytes(header, 8, magicNumber);</span>
+<span class="nc" id="L147">        sampleRate = unsignedIntFromBytes(header, 12, magicNumber);</span>
+<span class="nc" id="L148">        numberOfChannels = unsignedIntFromBytes(header, 16, magicNumber);</span>
+<span class="nc" id="L149">        annotation = ByteIlaSegment.create(byteIla, 24, offset - 24);</span>
+<span class="nc" id="L150">        audioData = ByteIlaSegment.create(byteIla, offset, byteIla.length() - offset);</span>
+
+<span class="nc" id="L152">        checkEncoding(encoding);</span>
+<span class="nc" id="L153">    }</span>
+
+    /**
+     * Constructs a newly created, specification complient, Au object from
+     * header information and audio data.
+     * @param encoding encoding type as defined in Au class.
+     * @param sampleRate audio sample rate in samples per second.
+     * @param numberOfChannels number of interleaved channels.
+     * @param annotation annotation bytes (length must be a multiple of 8).
+     * @param audioData audio bytes.
+     */
+    public Au(long encoding, long sampleRate, long numberOfChannels, ByteIla annotation, ByteIla audioData)
+<span class="nc" id="L165">            throws IOException {</span>
+<span class="nc" id="L166">        checkEncoding(encoding);</span>
+<span class="nc" id="L167">        Argument.assertGreaterThanOrEqualTo(sampleRate, 0, &quot;sampleRate&quot;);</span>
+<span class="nc" id="L168">        Argument.assertGreaterThanOrEqualTo(numberOfChannels, 0, &quot;numberOfChannels&quot;);</span>
+<span class="nc" id="L169">        Argument.assertNotNull(annotation, &quot;annotation&quot;);</span>
+<span class="nc" id="L170">        Argument.assertEquals(annotation.length() % 8, 0, &quot;annotation.length() % 8&quot;, &quot;0&quot;);</span>
+<span class="nc" id="L171">        Argument.assertEquals(audioData.length() % numberOfChannels, 0, &quot;audioData.length() % numberOfChannels&quot;, &quot;0&quot;);</span>
+<span class="nc" id="L172">        Argument.assertNotNull(audioData, &quot;audioData&quot;);</span>
+
+<span class="nc" id="L174">        byte[] header = new byte[(int) MINIMUM_HEADER_LENGTH];</span>
+
+<span class="nc" id="L176">        this.magicNumber = SUN_MAGIC_NUMBER;</span>
+<span class="nc" id="L177">        bytesFromUnsignedInt(header, 0, magicNumber);</span>
+
+<span class="nc" id="L179">        this.offset = MINIMUM_HEADER_LENGTH + annotation.length();</span>
+<span class="nc" id="L180">        bytesFromUnsignedInt(header, 4, offset);</span>
+
+<span class="nc" id="L182">        this.data_size = audioData.length();</span>
+<span class="nc" id="L183">        bytesFromUnsignedInt(header, 8, data_size);</span>
+
+<span class="nc" id="L185">        this.encoding = encoding;</span>
+<span class="nc" id="L186">        bytesFromUnsignedInt(header, 12, encoding);</span>
+
+<span class="nc" id="L188">        this.sampleRate = sampleRate;</span>
+<span class="nc" id="L189">        bytesFromUnsignedInt(header, 16, sampleRate);</span>
+
+<span class="nc" id="L191">        this.numberOfChannels = numberOfChannels;</span>
+<span class="nc" id="L192">        bytesFromUnsignedInt(header, 20, numberOfChannels);</span>
+
+<span class="nc" id="L194">        this.annotation = annotation;</span>
+
+<span class="nc" id="L196">        this.auByteData = ByteIlaConcatenate.create(</span>
+<span class="nc" id="L197">                ByteIlaConcatenate.create(ByteIlaFromArray.create(header), annotation), audioData);</span>
+
+<span class="nc" id="L199">        this.audioData = audioData;</span>
+<span class="nc" id="L200">    }</span>
+
+    private static void checkEncoding(long encoding) {
+<span class="nc bnc" id="L203" title="All 24 branches missed.">        if (encoding != ISDN_U_LAW_8_BIT</span>
+                &amp;&amp; encoding != LINEAR_8_BIT
+                &amp;&amp; encoding != LINEAR_16_BIT
+                &amp;&amp; encoding != LINEAR_24_BIT
+                &amp;&amp; encoding != LINEAR_32_BIT
+                &amp;&amp; encoding != IEEE_FLOATING_POINT_32_BIT
+                &amp;&amp; encoding != IEEE_FLOATING_POINT_64_BIT
+                &amp;&amp; encoding != CCITT_G_721_4_BIT_ADPCM
+                &amp;&amp; encoding != CCITT_G_722_ADPCM
+                &amp;&amp; encoding != CCITT_G_723_3_BIT_ADPCM
+                &amp;&amp; encoding != CCITT_G_723_5_BIT_ADPCM
+                &amp;&amp; encoding != ISDN_A_LAW_8_BIT) {
+<span class="nc" id="L215">            throw new IllegalArgumentException(&quot;Unknown encoding type: &quot; + encoding);</span>
+        }
+<span class="nc" id="L217">    }</span>
+
+    private static long unsignedIntFromBytes(byte[] bytes, int offset, long magicNumber) {
+<span class="nc bnc" id="L220" title="All 4 branches missed.">        if (magicNumber == SUN_MAGIC_NUMBER || magicNumber == DEC_MAGIC_NUMBER) {</span>
+<span class="nc" id="L221">            return ((bytes[offset] &amp; 0xFF) &lt;&lt; 24)</span>
+                    | ((bytes[offset + 1] &amp; 0xFF) &lt;&lt; 16)
+                    | ((bytes[offset + 2] &amp; 0xFF) &lt;&lt; 8)
+                    | ((bytes[offset + 3] &amp; 0xFF));
+        } else {
+<span class="nc" id="L226">            return ((bytes[offset + 3] &amp; 0xFF) &lt;&lt; 24)</span>
+                    | ((bytes[offset + 2] &amp; 0xFF) &lt;&lt; 16)
+                    | ((bytes[offset + 1] &amp; 0xFF) &lt;&lt; 8)
+                    | ((bytes[offset] &amp; 0xFF));
+        }
+    }
+
+    private static void bytesFromUnsignedInt(byte[] bytes, int offset, long l) {
+<span class="nc" id="L234">        bytes[offset] = (byte) ((l &gt;&gt; 24) &amp; 0xFF);</span>
+<span class="nc" id="L235">        bytes[offset + 1] = (byte) ((l &gt;&gt; 16) &amp; 0xFF);</span>
+<span class="nc" id="L236">        bytes[offset + 2] = (byte) ((l &gt;&gt; 8) &amp; 0xFF);</span>
+<span class="nc" id="L237">        bytes[offset + 3] = (byte) (l &amp; 0xFF);</span>
+<span class="nc" id="L238">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlaFromShortIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.byteila</a> &gt; <span class="el_source">ByteIlaFromShortIla.java</span></div><h1>ByteIlaFromShortIla.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.byteila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.shortila.ShortIla;
+import tfw.immutable.ila.shortila.ShortIlaIterator;
+import tfw.immutable.ila.shortila.ShortIlaSegment;
+
+public final class ByteIlaFromShortIla {
+    private ByteIlaFromShortIla() {}
+
+    public static ByteIla create(final ShortIla shortIla, final int bufferSize) {
+<span class="nc" id="L13">        Argument.assertNotNull(shortIla, &quot;shortIla&quot;);</span>
+<span class="nc" id="L14">        Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L16">        return new ByteIlaImpl(shortIla, bufferSize);</span>
+    }
+
+    private static class ByteIlaImpl extends AbstractByteIla {
+        private final ShortIla shortIla;
+        private final int bufferSize;
+
+<span class="nc" id="L23">        private ByteIlaImpl(final ShortIla shortIla, final int bufferSize) {</span>
+<span class="nc" id="L24">            this.shortIla = shortIla;</span>
+<span class="nc" id="L25">            this.bufferSize = bufferSize;</span>
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L30">            return shortIla.length() * 2;</span>
+        }
+
+        @Override
+        protected void getImpl(byte[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L35">            ShortIlaIterator sii = new ShortIlaIterator(</span>
+<span class="nc" id="L36">                    ShortIlaSegment.create(shortIla, start / 2, shortIla.length() - start / 2), new short[bufferSize]);</span>
+<span class="nc" id="L37">            int col = (int) (start % 2);</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            for (int totalElements = 0; totalElements &lt; length; ) {</span>
+<span class="nc" id="L40">                int value = sii.next();</span>
+
+<span class="nc bnc" id="L42" title="All 4 branches missed.">                for (int c = col; c &lt; 2 &amp;&amp; totalElements &lt; length; c++) {</span>
+<span class="nc" id="L43">                    array[offset + totalElements++] = (byte) ((value &gt;&gt;&gt; (8 - (8 * c))) &amp; 0xFF);</span>
+                }
+
+<span class="nc" id="L46">                col = 0;</span>
+<span class="nc" id="L47">            }</span>
+<span class="nc" id="L48">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L52">            shortIla.close();</span>
+<span class="nc" id="L53">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

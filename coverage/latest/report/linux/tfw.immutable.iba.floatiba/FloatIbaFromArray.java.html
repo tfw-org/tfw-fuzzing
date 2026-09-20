@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FloatIbaFromArray.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iba.floatiba</a> &gt; <span class="el_source">FloatIbaFromArray.java</span></div><h1>FloatIbaFromArray.java</h1><pre class="source lang-java linenums">package tfw.immutable.iba.floatiba;
+
+import java.math.BigInteger;
+import tfw.check.Argument;
+import tfw.immutable.iba.AbstractIbaFromArray;
+
+public final class FloatIbaFromArray {
+    private FloatIbaFromArray() {
+        // non-instantiable class
+    }
+
+    public static FloatIba create(float[] array) {
+<span class="nc" id="L13">        return new FloatIbaImpl(array);</span>
+    }
+
+    private static class FloatIbaImpl extends AbstractIbaFromArray implements FloatIba {
+        private final float[] array;
+
+        private FloatIbaImpl(float[] array) {
+<span class="nc" id="L20">            super(checkAndReturnLength(array));</span>
+
+<span class="nc" id="L22">            this.array = array;</span>
+<span class="nc" id="L23">        }</span>
+
+        @Override
+        public void get(float[] array, int offset, BigInteger start, int length) {
+<span class="nc" id="L27">            System.arraycopy(this.array, (int) start.longValue(), array, offset, length);</span>
+<span class="nc" id="L28">        }</span>
+
+        private static BigInteger checkAndReturnLength(float[] array) {
+<span class="nc" id="L31">            Argument.assertNotNull(array, &quot;array&quot;);</span>
+
+<span class="nc" id="L33">            return BigInteger.valueOf(array.length);</span>
+        }
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

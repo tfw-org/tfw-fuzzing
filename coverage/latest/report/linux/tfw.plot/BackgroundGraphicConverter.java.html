@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BackgroundGraphicConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.plot</a> &gt; <span class="el_source">BackgroundGraphicConverter.java</span></div><h1>BackgroundGraphicConverter.java</h1><pre class="source lang-java linenums">package tfw.plot;
+
+import java.awt.Color;
+import tfw.awt.ecd.ColorECD;
+import tfw.awt.ecd.GraphicECD;
+import tfw.awt.graphic.FillRectGraphic;
+import tfw.awt.graphic.Graphic;
+import tfw.awt.graphic.SetColorGraphic;
+import tfw.tsm.Converter;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+
+public class BackgroundGraphicConverter extends Converter {
+    private final ColorECD colorECD;
+    private final IntegerECD widthECD;
+    private final IntegerECD heightECD;
+    private final GraphicECD graphicECD;
+
+    public BackgroundGraphicConverter(
+            String name, ColorECD colorECD, IntegerECD widthECD, IntegerECD heightECD, GraphicECD graphicECD) {
+<span class="nc" id="L21">        super(</span>
+                &quot;BackgroundConverter[&quot; + name + &quot;]&quot;,
+                new ObjectECD[] {colorECD, widthECD, heightECD},
+                null,
+                new ObjectECD[] {graphicECD});
+
+<span class="nc" id="L27">        this.colorECD = colorECD;</span>
+<span class="nc" id="L28">        this.widthECD = widthECD;</span>
+<span class="nc" id="L29">        this.heightECD = heightECD;</span>
+<span class="nc" id="L30">        this.graphicECD = graphicECD;</span>
+<span class="nc" id="L31">    }</span>
+
+    @Override
+    protected void convert() {
+<span class="nc" id="L35">        Color color = (Color) get(colorECD);</span>
+<span class="nc" id="L36">        int width = ((Integer) get(widthECD)).intValue();</span>
+<span class="nc" id="L37">        int height = ((Integer) get(heightECD)).intValue();</span>
+
+<span class="nc" id="L39">        Graphic scg = SetColorGraphic.create(null, color);</span>
+<span class="nc" id="L40">        set(graphicECD, FillRectGraphic.create(scg, 0, 0, width, height));</span>
+<span class="nc" id="L41">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

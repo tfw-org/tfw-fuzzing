@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIlaFill.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.bitila</a> &gt; <span class="el_source">BitIlaFill.java</span></div><h1>BitIlaFill.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.bitila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.bitila.BitIlaUtil.BitFunction;
+
+public final class BitIlaFill {
+<span class="nc" id="L8">    private static final BitFunction FILL_BIT_FUNCTION = new BitFunction() {</span>
+        @Override
+        public void partialLong(
+                long[] left, long leftOffsetInBits, long[] right, long rightOffsetInBits, long lengthInBits) {
+<span class="nc bnc" id="L12" title="All 2 branches missed.">            final long value = right[0] == 0 ? 0 : -1;</span>
+
+<span class="nc" id="L14">            BitIlaUtil.setPartialLong(left, leftOffsetInBits, value, lengthInBits);</span>
+<span class="nc" id="L15">        }</span>
+
+        @Override
+        public void forwardAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc bnc" id="L20" title="All 2 branches missed.">            final long value = right[0] == 0 ? 0 : -1;</span>
+
+<span class="nc bnc" id="L22" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &lt; rightOffsetInLongs + lengthInLongs; i++, j++) {</span>
+<span class="nc" id="L23">                left[j] = value;</span>
+            }
+<span class="nc" id="L25">        }</span>
+
+        @Override
+        public void forwardMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            final long value = right[0] == 0 ? 0 : -1;</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &lt; rightOffsetInLongs + lengthInLongs; i++, j++) {</span>
+<span class="nc" id="L38">                left[j] = value;</span>
+            }
+<span class="nc" id="L40">        }</span>
+
+        @Override
+        public void reverseAlignedFullLongs(
+                long[] left, int leftOffsetInLongs, long[] right, int rightOffsetInLongs, int lengthInLongs) {
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            final long value = right[0] == 0 ? 0 : -1;</span>
+
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &gt; rightOffsetInLongs - lengthInLongs; i--, j--) {</span>
+<span class="nc" id="L48">                left[j] = value;</span>
+            }
+<span class="nc" id="L50">        }</span>
+
+        @Override
+        public void reverseMisalignedFullLongs(
+                long[] left,
+                int leftOffsetInLongs,
+                long[] right,
+                int rightOffsetInLongs,
+                int lengthInLongs,
+                int rightOffsetMod64) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            final long value = right[0] == 0 ? 0 : -1;</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            for (int i = rightOffsetInLongs, j = leftOffsetInLongs; i &gt; rightOffsetInLongs - lengthInLongs; i--, j--) {</span>
+<span class="nc" id="L63">                left[j] = value;</span>
+            }
+<span class="nc" id="L65">        }</span>
+    };
+
+<span class="nc" id="L68">    private static final long[] ZERO = new long[] {0L};</span>
+<span class="nc" id="L69">    private static final long[] ONE = new long[] {1L};</span>
+
+    private BitIlaFill() {}
+
+    public static void fill(final long[] array, final long offsetInBits, final long lengthInBits, final boolean value) {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        BitIlaUtil.performBitFunction(FILL_BIT_FUNCTION, array, offsetInBits, value ? ONE : ZERO, 0, lengthInBits);</span>
+<span class="nc" id="L75">    }</span>
+
+    public static BitIla create(final boolean value, final long lengthInBits) {
+<span class="nc" id="L78">        Argument.assertNotLessThan(lengthInBits, 0, &quot;lengthInBits&quot;);</span>
+
+<span class="nc" id="L80">        return new BitIlaImpl(value, lengthInBits);</span>
+    }
+
+    private static class BitIlaImpl extends AbstractBitIla {
+        private final boolean value;
+        private final long lengthInBits;
+
+<span class="nc" id="L87">        public BitIlaImpl(final boolean value, final long lengthInBits) {</span>
+<span class="nc" id="L88">            this.value = value;</span>
+<span class="nc" id="L89">            this.lengthInBits = lengthInBits;</span>
+<span class="nc" id="L90">        }</span>
+
+        @Override
+        protected long lengthInBitsImpl() throws IOException {
+<span class="nc" id="L94">            return lengthInBits;</span>
+        }
+
+        @Override
+        protected void getImpl(long[] array, long arrayOffsetInBits, long ilaStartInBits, long lengthInBits)
+                throws IOException {
+<span class="nc" id="L100">            fill(array, arrayOffsetInBits, lengthInBits, value);</span>
+<span class="nc" id="L101">        }</span>
+
+        @Override
+        public void closeImpl() throws IOException {
+            // Nothing to do.
+<span class="nc" id="L106">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

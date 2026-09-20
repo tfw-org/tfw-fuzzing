@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JButtonBBTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JButtonBBTest.java</span></div><h1>JButtonBBTest.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.UIManager;
+import org.assertj.swing.core.BasicRobot;
+import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
+import org.assertj.swing.edt.GuiActionRunner;
+import org.assertj.swing.fixture.FrameFixture;
+import org.assertj.swing.fixture.JButtonFixture;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import tfw.awt.ecd.ColorECD;
+import tfw.awt.ecd.FontECD;
+import tfw.swing.ecd.IconECD;
+import tfw.tsm.BasicTransactionQueue;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchProxy;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Initiator;
+import tfw.tsm.Root;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+
+@DisabledIf(value = &quot;java.awt.GraphicsEnvironment#isHeadless&quot;, disabledReason = &quot;headless environment&quot;)
+<span class="nc" id="L39">final class JButtonBBTest {</span>
+<span class="nc" id="L40">    public static final StatelessTriggerECD BUTTON_ACTION_ECD = new StatelessTriggerECD(&quot;ButtonAction&quot;);</span>
+<span class="nc" id="L41">    public static final BooleanECD BUTTON_ENABLED_ECD = new BooleanECD(&quot;ButtonEnabled&quot;);</span>
+    public static final String BUTTON_ENABLED_NAME = &quot;Enabled&quot;;
+<span class="nc" id="L43">    public static final ColorECD BUTTON_BACKGROUND_ECD = new ColorECD(&quot;ButtonBackground&quot;);</span>
+    public static final String BUTTON_BACKGROUND_NAME = &quot;Background&quot;;
+<span class="nc" id="L45">    public static final Color BUTTON_BACKGROUND_TEST = new Color(255, 254, 253);</span>
+<span class="nc" id="L46">    public static final ColorECD BUTTON_FOREGROUND_ECD = new ColorECD(&quot;ButtonForeground&quot;);</span>
+    public static final String BUTTON_FOREGROUND_NAME = &quot;Foreground&quot;;
+<span class="nc" id="L48">    public static final Color BUTTON_FOREGROUND_TEST = new Color(0, 1, 2);</span>
+<span class="nc" id="L49">    public static final FontECD BUTTON_FONT_ECD = new FontECD(&quot;ButtonFont&quot;);</span>
+    public static final String BUTTON_FONT_NAME = &quot;Font&quot;;
+<span class="nc" id="L51">    public static final Font BUTTON_FONT_TEST = new Font(&quot;Helvetica&quot;, Font.PLAIN, 12);</span>
+<span class="nc" id="L52">    public static final StringECD BUTTON_TEXT_ECD = new StringECD(&quot;ButtonText&quot;);</span>
+    public static final String BUTTON_TEXT_NAME = &quot;Text&quot;;
+    public static final String BUTTON_TEXT_TEST = &quot;ButtonText&quot;;
+<span class="nc" id="L55">    public static final Icon BUTTON_ICON_DEFAULT = UIManager.getIcon(&quot;FileView.directoryIcon&quot;);</span>
+<span class="nc" id="L56">    public static final IconECD BUTTON_ICON_ECD = new IconECD(&quot;ButtonIcon&quot;);</span>
+    public static final String BUTTON_ICON_NAME = &quot;Icon&quot;;
+<span class="nc" id="L58">    public static final Icon BUTTON_ICON_TEST = UIManager.getIcon(&quot;FileView.fileIcon&quot;);</span>
+    public static final String BUTTON_NAME = &quot;TestButton&quot;;
+    public static final String FRAME_NAME = &quot;Frame&quot;;
+    public static final String INITIATOR_NAME = &quot;Initiator[&quot; + BUTTON_NAME + &quot;]&quot;;
+
+    private static Color buttonBackgroundDefault;
+    private static Color buttonForegroundDefault;
+    private static Font buttonFontDefault;
+    private static String buttonTextDefault;
+
+    private Branch branch;
+    private JButtonBBTestApplication frame;
+    private FrameFixture window;
+
+    @BeforeAll
+    static void beforeAll() {
+<span class="nc" id="L74">        FailOnThreadViolationRepaintManager.install();</span>
+
+<span class="nc" id="L76">        final JButton jb = GuiActionRunner.execute((Callable&lt;JButton&gt;) JButton::new);</span>
+<span class="nc" id="L77">        final JButtonFixture jbf = new JButtonFixture(BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock(), jb);</span>
+
+<span class="nc" id="L79">        buttonBackgroundDefault = jbf.background().target();</span>
+<span class="nc" id="L80">        buttonForegroundDefault = jbf.foreground().target();</span>
+<span class="nc" id="L81">        buttonFontDefault = jbf.font().target();</span>
+<span class="nc" id="L82">        buttonTextDefault = jbf.text();</span>
+<span class="nc" id="L83">    }</span>
+
+    @BeforeEach
+    void beforeEach() {
+<span class="nc" id="L87">        branch = new Branch(FRAME_NAME);</span>
+<span class="nc" id="L88">        frame = GuiActionRunner.execute(() -&gt; new JButtonBBTestApplication(branch));</span>
+<span class="nc" id="L89">        window = new FrameFixture(BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock(), frame);</span>
+<span class="nc" id="L90">        window.show();</span>
+<span class="nc" id="L91">    }</span>
+
+    @Test
+    void jButtonBBTest() throws Exception {
+<span class="nc" id="L95">        final BasicTransactionQueue basicTransactionQueue = new BasicTransactionQueue();</span>
+<span class="nc" id="L96">        final JButtonFixture jButton = window.button(BUTTON_NAME);</span>
+<span class="nc" id="L97">        final Root root = Root.builder()</span>
+<span class="nc" id="L98">                .setName(this.getClass().getSimpleName())</span>
+<span class="nc" id="L99">                .setTransactionQueue(new BasicTransactionQueue())</span>
+<span class="nc" id="L100">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L101">                .addStatelessTriggerECD(BUTTON_ACTION_ECD)</span>
+<span class="nc" id="L102">                .addObjectECD(BUTTON_ENABLED_ECD, Boolean.TRUE)</span>
+<span class="nc" id="L103">                .addObjectECD(BUTTON_BACKGROUND_ECD, buttonBackgroundDefault)</span>
+<span class="nc" id="L104">                .addObjectECD(BUTTON_FOREGROUND_ECD, buttonForegroundDefault)</span>
+<span class="nc" id="L105">                .addObjectECD(BUTTON_FONT_ECD, buttonFontDefault)</span>
+<span class="nc" id="L106">                .addObjectECD(BUTTON_TEXT_ECD, buttonTextDefault)</span>
+<span class="nc" id="L107">                .addObjectECD(BUTTON_ICON_ECD, BUTTON_ICON_DEFAULT)</span>
+<span class="nc" id="L108">                .setTransactionQueue(basicTransactionQueue)</span>
+<span class="nc" id="L109">                .build();</span>
+<span class="nc" id="L110">        final Initiator initiator = Initiator.builder()</span>
+<span class="nc" id="L111">                .setName(INITIATOR_NAME)</span>
+<span class="nc" id="L112">                .addEventChannelDescription(BUTTON_ENABLED_ECD)</span>
+<span class="nc" id="L113">                .addEventChannelDescription(BUTTON_BACKGROUND_ECD)</span>
+<span class="nc" id="L114">                .addEventChannelDescription(BUTTON_FOREGROUND_ECD)</span>
+<span class="nc" id="L115">                .addEventChannelDescription(BUTTON_FONT_ECD)</span>
+<span class="nc" id="L116">                .addEventChannelDescription(BUTTON_TEXT_ECD)</span>
+<span class="nc" id="L117">                .addEventChannelDescription(BUTTON_ICON_ECD)</span>
+<span class="nc" id="L118">                .build();</span>
+<span class="nc" id="L119">        final TestCommit testCommit = TestCommit.builder()</span>
+<span class="nc" id="L120">                .setName(BUTTON_NAME)</span>
+<span class="nc" id="L121">                .addTriggeringEcd(BUTTON_ENABLED_ECD)</span>
+<span class="nc" id="L122">                .addTriggeringEcd(BUTTON_BACKGROUND_ECD)</span>
+<span class="nc" id="L123">                .addTriggeringEcd(BUTTON_FOREGROUND_ECD)</span>
+<span class="nc" id="L124">                .addTriggeringEcd(BUTTON_FONT_ECD)</span>
+<span class="nc" id="L125">                .addTriggeringEcd(BUTTON_TEXT_ECD)</span>
+<span class="nc" id="L126">                .addTriggeringEcd(BUTTON_ICON_ECD)</span>
+<span class="nc" id="L127">                .build();</span>
+<span class="nc" id="L128">        final TestTriggeredCommit testTriggeredCommit = TestTriggeredCommit.builder()</span>
+<span class="nc" id="L129">                .setName(BUTTON_NAME)</span>
+<span class="nc" id="L130">                .setTriggeringEcd(BUTTON_ACTION_ECD)</span>
+<span class="nc" id="L131">                .build();</span>
+
+<span class="nc" id="L133">        root.add(branch);</span>
+<span class="nc" id="L134">        root.add(initiator);</span>
+<span class="nc" id="L135">        root.add(testCommit);</span>
+<span class="nc" id="L136">        root.add(testTriggeredCommit);</span>
+
+<span class="nc" id="L138">        compareWidgetAndTfwState(jButton, testCommit, 1, basicTransactionQueue);</span>
+
+<span class="nc" id="L140">        assertThat(testTriggeredCommit.getCount()).isZero();</span>
+
+<span class="nc" id="L142">        window.button(BUTTON_NAME).click();</span>
+
+<span class="nc" id="L144">        compareWidgetAndTfwState(jButton, testCommit, 1, basicTransactionQueue);</span>
+<span class="nc" id="L145">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L147">        initiator.set(BUTTON_BACKGROUND_ECD, BUTTON_BACKGROUND_TEST);</span>
+
+<span class="nc" id="L149">        compareWidgetAndTfwState(jButton, testCommit, 2, basicTransactionQueue);</span>
+<span class="nc" id="L150">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L152">        initiator.set(BUTTON_FOREGROUND_ECD, BUTTON_FOREGROUND_TEST);</span>
+
+<span class="nc" id="L154">        compareWidgetAndTfwState(jButton, testCommit, 3, basicTransactionQueue);</span>
+<span class="nc" id="L155">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L157">        initiator.set(BUTTON_ENABLED_ECD, Boolean.FALSE);</span>
+
+<span class="nc" id="L159">        compareWidgetAndTfwState(jButton, testCommit, 4, basicTransactionQueue);</span>
+<span class="nc" id="L160">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L162">        initiator.set(BUTTON_FONT_ECD, BUTTON_FONT_TEST);</span>
+
+<span class="nc" id="L164">        compareWidgetAndTfwState(jButton, testCommit, 5, basicTransactionQueue);</span>
+<span class="nc" id="L165">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L167">        initiator.set(BUTTON_TEXT_ECD, BUTTON_TEXT_TEST);</span>
+
+<span class="nc" id="L169">        compareWidgetAndTfwState(jButton, testCommit, 6, basicTransactionQueue);</span>
+<span class="nc" id="L170">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+
+<span class="nc" id="L172">        initiator.set(BUTTON_ICON_ECD, BUTTON_ICON_TEST);</span>
+
+<span class="nc" id="L174">        compareWidgetAndTfwState(jButton, testCommit, 7, basicTransactionQueue);</span>
+<span class="nc" id="L175">        assertThat(testTriggeredCommit.getCount()).isEqualTo(1);</span>
+<span class="nc" id="L176">    }</span>
+
+    @Test
+    void emptyJButtonBuilderTest() {
+<span class="nc" id="L180">        final JButtonBB jButtonBB = GuiActionRunner.execute(</span>
+<span class="nc" id="L181">                () -&gt; JButtonBB.builder().setName(BUTTON_NAME).build());</span>
+
+<span class="nc" id="L183">        assertThat(new BranchProxy(jButtonBB.getBranch()).getChildProxies()).isEmpty();</span>
+
+<span class="nc" id="L185">        final TestActionListenerBranchBox testActionListenerBranchBox = new TestActionListenerBranchBox();</span>
+
+<span class="nc" id="L187">        GuiActionRunner.execute(() -&gt; jButtonBB.addActionListenerToBoth(testActionListenerBranchBox));</span>
+<span class="nc" id="L188">        GuiActionRunner.execute(() -&gt; jButtonBB.removeActionListenerFromBoth(testActionListenerBranchBox));</span>
+
+<span class="nc" id="L190">        final TestActionListenerTreeComponent testActionListenerTreeComponent =</span>
+                new TestActionListenerTreeComponent(BUTTON_ACTION_ECD);
+
+<span class="nc" id="L193">        GuiActionRunner.execute(() -&gt; jButtonBB.addActionListenerToBoth(testActionListenerTreeComponent));</span>
+<span class="nc" id="L194">        GuiActionRunner.execute(() -&gt; jButtonBB.removeActionListenerFromBoth(testActionListenerTreeComponent));</span>
+
+<span class="nc" id="L196">        final TestActionListener testActionListener = new TestActionListener();</span>
+
+<span class="nc" id="L198">        assertThatThrownBy(() -&gt; GuiActionRunner.execute(() -&gt; jButtonBB.addActionListenerToBoth(testActionListener)))</span>
+<span class="nc" id="L199">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L200">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+
+<span class="nc" id="L202">        assertThatThrownBy(</span>
+<span class="nc" id="L203">                        () -&gt; GuiActionRunner.execute(() -&gt; jButtonBB.removeActionListenerFromBoth(testActionListener)))</span>
+<span class="nc" id="L204">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L205">                .hasMessage(&quot;object != (BranchBox || TreeComponent) not allowed!&quot;);</span>
+<span class="nc" id="L206">    }</span>
+
+    @AfterEach
+    void tearDown() {
+<span class="nc" id="L210">        window.cleanUp();</span>
+<span class="nc" id="L211">    }</span>
+
+    private static void compareWidgetAndTfwState(
+            final JButtonFixture jButtonFixture,
+            final TestCommit testCommit,
+            final int expectedTestCommitCount,
+            final BasicTransactionQueue basicTransactionQueue)
+            throws InvocationTargetException, InterruptedException {
+<span class="nc" id="L219">        SwingTestUtil.waitForTfwAndSwing(basicTransactionQueue);</span>
+
+<span class="nc" id="L221">        final Color widgetBackground = jButtonFixture.background().target();</span>
+<span class="nc" id="L222">        final boolean widgetEnabled = jButtonFixture.isEnabled();</span>
+<span class="nc" id="L223">        final Font widgetFont = jButtonFixture.font().target();</span>
+<span class="nc" id="L224">        final Color widgetForeground = jButtonFixture.foreground().target();</span>
+<span class="nc" id="L225">        final Icon widgetIcon =</span>
+<span class="nc" id="L226">                GuiActionRunner.execute(() -&gt; jButtonFixture.target().getIcon());</span>
+<span class="nc" id="L227">        final String widgetText = jButtonFixture.text();</span>
+<span class="nc" id="L228">        final Map&lt;ObjectECD, Object&gt; tfwState = testCommit.getState();</span>
+<span class="nc" id="L229">        final Color tfwBackground = (Color) tfwState.get(BUTTON_BACKGROUND_ECD);</span>
+<span class="nc" id="L230">        final boolean tfwEnabled = (Boolean) tfwState.get(BUTTON_ENABLED_ECD);</span>
+<span class="nc" id="L231">        final Font tfwFont = (Font) tfwState.get(BUTTON_FONT_ECD);</span>
+<span class="nc" id="L232">        final Color tfwForeground = (Color) tfwState.get(BUTTON_FOREGROUND_ECD);</span>
+<span class="nc" id="L233">        final Icon tfwIcon = (Icon) tfwState.get(BUTTON_ICON_ECD);</span>
+<span class="nc" id="L234">        final String tfwText = (String) tfwState.get(BUTTON_TEXT_ECD);</span>
+
+<span class="nc" id="L236">        assertThat(expectedTestCommitCount).isEqualTo(testCommit.getCount());</span>
+
+<span class="nc" id="L238">        assertThat(widgetBackground).isEqualTo(tfwBackground);</span>
+<span class="nc" id="L239">        assertThat(widgetEnabled).isEqualTo(tfwEnabled);</span>
+<span class="nc" id="L240">        assertThat(widgetFont).isEqualTo(tfwFont);</span>
+<span class="nc" id="L241">        assertThat(widgetForeground).isEqualTo(tfwForeground);</span>
+<span class="nc" id="L242">        assertThat(widgetIcon).isEqualTo(tfwIcon);</span>
+<span class="nc" id="L243">        assertThat(widgetText).isEqualTo(tfwText);</span>
+<span class="nc" id="L244">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinearShortIlaFromMuLawByteIla.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.audio.shortila</a> &gt; <span class="el_source">LinearShortIlaFromMuLawByteIla.java</span></div><h1>LinearShortIlaFromMuLawByteIla.java</h1><pre class="source lang-java linenums">package tfw.audio.shortila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaIterator;
+import tfw.immutable.ila.byteila.ByteIlaSegment;
+import tfw.immutable.ila.shortila.AbstractShortIla;
+import tfw.immutable.ila.shortila.ShortIla;
+
+public final class LinearShortIlaFromMuLawByteIla {
+    private static final int BIAS = 0x84;
+    private static final int QUANT_MASK = 0xf;
+    private static final int SEG_MASK = 0x70;
+    private static final int SEG_SHIFT = 4;
+    private static final int SIGN_BIT = 0x80;
+
+    private LinearShortIlaFromMuLawByteIla() {}
+
+    public static ShortIla create(final ByteIla byteIla, final int bufferSize) {
+<span class="nc" id="L21">        Argument.assertNotNull(byteIla, &quot;byteIla&quot;);</span>
+<span class="nc" id="L22">        Argument.assertNotLessThan(bufferSize, 1, &quot;bufferSize&quot;);</span>
+
+<span class="nc" id="L24">        return new ShortIlaImpl(byteIla, bufferSize);</span>
+    }
+
+    private static class ShortIlaImpl extends AbstractShortIla {
+        private final ByteIla byteIla;
+        private final int bufferSize;
+
+<span class="nc" id="L31">        private ShortIlaImpl(final ByteIla byteIla, final int bufferSize) {</span>
+<span class="nc" id="L32">            this.byteIla = byteIla;</span>
+<span class="nc" id="L33">            this.bufferSize = bufferSize;</span>
+<span class="nc" id="L34">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L38">            return byteIla.length();</span>
+        }
+
+        @Override
+        protected void getImpl(short[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L43">            ByteIlaIterator bi =</span>
+<span class="nc" id="L44">                    new ByteIlaIterator(ByteIlaSegment.create(byteIla, start, length), new byte[bufferSize]);</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            for (int i = offset; bi.hasNext(); i++) {</span>
+                /*
+                 * The following algorithm is from the file g711.c from
+                 * Sun Microsystems which has no use restrictions.  It is
+                 * available from the following location:
+                 * ftp://svr-ftp.eng.cam.ac.uk/pub/comp.speech/coding/G711_G721_G723.tar.gz
+                 */
+<span class="nc" id="L53">                int u_val = ~bi.next();</span>
+
+<span class="nc" id="L55">                int t = ((u_val &amp; QUANT_MASK) &lt;&lt; 3) + BIAS;</span>
+
+<span class="nc" id="L57">                t &lt;&lt;= (u_val &amp; SEG_MASK) &gt;&gt; SEG_SHIFT;</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                if ((u_val &amp; SIGN_BIT) == 0) {</span>
+<span class="nc" id="L60">                    array[i] = (short) (t - BIAS);</span>
+                } else {
+<span class="nc" id="L62">                    array[i] = (short) (BIAS - t);</span>
+                }
+            }
+<span class="nc" id="L65">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L69">            byteIla.close();</span>
+<span class="nc" id="L70">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

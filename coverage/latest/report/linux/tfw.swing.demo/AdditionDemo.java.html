@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdditionDemo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing.demo</a> &gt; <span class="el_source">AdditionDemo.java</span></div><h1>AdditionDemo.java</h1><pre class="source lang-java linenums">package tfw.swing.demo;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.GridLayout;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import tfw.component.TriggeredEventChannelCopy;
+import tfw.swing.JButtonBB;
+import tfw.swing.JFrameBB;
+import tfw.swing.JPanelBB;
+import tfw.swing.JTextFieldBB;
+import tfw.tsm.BasicTransactionQueue;
+import tfw.tsm.Commit;
+import tfw.tsm.Converter;
+import tfw.tsm.DefaultCheckDependencies;
+import tfw.tsm.Root;
+import tfw.tsm.Synchronizer;
+import tfw.tsm.ecd.BooleanECD;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.StringRollbackECD;
+
+public class AdditionDemo {
+    private AdditionDemo() {}
+
+    public static void main(String[] args) {
+<span class="nc" id="L31">        final BooleanECD CALCULATE_ENABLED_ECD = new BooleanECD(&quot;calculateEnabled&quot;);</span>
+<span class="nc" id="L32">        final StatelessTriggerECD CALCULATE_TRIGGER_ECD = new StatelessTriggerECD(&quot;calculateTrigger&quot;);</span>
+<span class="nc" id="L33">        final StringRollbackECD ERROR_TEXT_ECD = new StringRollbackECD(&quot;errorText&quot;);</span>
+<span class="nc" id="L34">        final IntegerECD SUM_ECD = new IntegerECD(&quot;sum&quot;);</span>
+<span class="nc" id="L35">        final BooleanECD SUM_ENABLED_ECD = new BooleanECD(&quot;sumEnabled&quot;);</span>
+<span class="nc" id="L36">        final StringECD SUM_TEXT_ECD = new StringECD(&quot;sumText&quot;);</span>
+<span class="nc" id="L37">        final IntegerECD VALUE_ONE_ECD = new IntegerECD(&quot;valueOne&quot;);</span>
+<span class="nc" id="L38">        final BooleanECD VALUE_ONE_ENABLED_ECD = new BooleanECD(&quot;valueOneEnabled&quot;);</span>
+<span class="nc" id="L39">        final StringECD VALUE_ONE_TEXT_ECD = new StringECD(&quot;valueOneText&quot;);</span>
+<span class="nc" id="L40">        final StringECD VALUE_ONE_TEXT_ADJ_ECD = new StringECD(&quot;valueOneTextAdj&quot;);</span>
+<span class="nc" id="L41">        final IntegerECD VALUE_TWO_ECD = new IntegerECD(&quot;valueTwo&quot;);</span>
+<span class="nc" id="L42">        final BooleanECD VALUE_TWO_ENABLED_ECD = new BooleanECD(&quot;valueTwoEnabled&quot;);</span>
+<span class="nc" id="L43">        final StringECD VALUE_TWO_TEXT_ECD = new StringECD(&quot;valueTwoText&quot;);</span>
+<span class="nc" id="L44">        final StringECD VALUE_TWO_TEXT_ADJ_ECD = new StringECD(&quot;valueTwoTextAdj&quot;);</span>
+
+<span class="nc" id="L46">        final Root root = Root.builder()</span>
+<span class="nc" id="L47">                .setName(&quot;AdditionDemo&quot;)</span>
+<span class="nc" id="L48">                .setTransactionQueue(new BasicTransactionQueue())</span>
+<span class="nc" id="L49">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L50">                .addObjectECD(CALCULATE_ENABLED_ECD, Boolean.TRUE)</span>
+<span class="nc" id="L51">                .addStatelessTriggerECD(CALCULATE_TRIGGER_ECD)</span>
+<span class="nc" id="L52">                .addObjectECD(ERROR_TEXT_ECD, null)</span>
+<span class="nc" id="L53">                .addObjectECD(SUM_ECD, null)</span>
+<span class="nc" id="L54">                .addObjectECD(SUM_ENABLED_ECD, Boolean.FALSE)</span>
+<span class="nc" id="L55">                .addObjectECD(SUM_TEXT_ECD, &quot;&quot;)</span>
+<span class="nc" id="L56">                .addObjectECD(VALUE_ONE_ECD, null)</span>
+<span class="nc" id="L57">                .addObjectECD(VALUE_ONE_ENABLED_ECD, Boolean.TRUE)</span>
+<span class="nc" id="L58">                .addObjectECD(VALUE_ONE_TEXT_ECD, &quot;&quot;)</span>
+<span class="nc" id="L59">                .addObjectECD(VALUE_ONE_TEXT_ADJ_ECD, &quot;&quot;)</span>
+<span class="nc" id="L60">                .addObjectECD(VALUE_TWO_ECD, null)</span>
+<span class="nc" id="L61">                .addObjectECD(VALUE_TWO_ENABLED_ECD, Boolean.TRUE)</span>
+<span class="nc" id="L62">                .addObjectECD(VALUE_TWO_TEXT_ECD, &quot;&quot;)</span>
+<span class="nc" id="L63">                .addObjectECD(VALUE_TWO_TEXT_ADJ_ECD, &quot;&quot;)</span>
+<span class="nc" id="L64">                .build();</span>
+
+<span class="nc" id="L66">        JFrameBB frame = new JFrameBB(root);</span>
+
+<span class="nc" id="L68">        JLabel valueOneL = new JLabel(&quot;Value One:&quot;);</span>
+<span class="nc" id="L69">        valueOneL.setHorizontalAlignment(JLabel.RIGHT);</span>
+<span class="nc" id="L70">        JLabel valueTwoL = new JLabel(&quot;Value Two:&quot;);</span>
+<span class="nc" id="L71">        valueTwoL.setHorizontalAlignment(JLabel.RIGHT);</span>
+<span class="nc" id="L72">        JLabel sumL = new JLabel(&quot;Sum:&quot;);</span>
+<span class="nc" id="L73">        sumL.setHorizontalAlignment(JLabel.RIGHT);</span>
+
+<span class="nc" id="L75">        JPanel labelPanel = new JPanel();</span>
+<span class="nc" id="L76">        labelPanel.setLayout(new GridLayout(3, 1));</span>
+<span class="nc" id="L77">        labelPanel.add(valueOneL);</span>
+<span class="nc" id="L78">        labelPanel.add(valueTwoL);</span>
+<span class="nc" id="L79">        labelPanel.add(sumL);</span>
+
+<span class="nc" id="L81">        JTextFieldBB valueOneTF = JTextFieldBB.builder()</span>
+<span class="nc" id="L82">                .setName(&quot;valueOne&quot;)</span>
+<span class="nc" id="L83">                .setTextInputOutputECD(VALUE_ONE_TEXT_ADJ_ECD)</span>
+<span class="nc" id="L84">                .setEnabledInputECD(VALUE_ONE_ENABLED_ECD)</span>
+<span class="nc" id="L85">                .build();</span>
+<span class="nc" id="L86">        valueOneTF.setColumns(10);</span>
+<span class="nc" id="L87">        JTextFieldBB valueTwoTF = JTextFieldBB.builder()</span>
+<span class="nc" id="L88">                .setName(&quot;valueTwo&quot;)</span>
+<span class="nc" id="L89">                .setTextInputOutputECD(VALUE_TWO_TEXT_ADJ_ECD)</span>
+<span class="nc" id="L90">                .setEnabledInputECD(VALUE_TWO_ENABLED_ECD)</span>
+<span class="nc" id="L91">                .build();</span>
+<span class="nc" id="L92">        valueTwoTF.setColumns(10);</span>
+<span class="nc" id="L93">        JTextFieldBB sumTF = JTextFieldBB.builder()</span>
+<span class="nc" id="L94">                .setName(&quot;sum&quot;)</span>
+<span class="nc" id="L95">                .setTextInputOutputECD(SUM_TEXT_ECD)</span>
+<span class="nc" id="L96">                .setEnabledInputECD(SUM_ENABLED_ECD)</span>
+<span class="nc" id="L97">                .build();</span>
+<span class="nc" id="L98">        sumTF.setColumns(10);</span>
+
+<span class="nc" id="L100">        JPanelBB textFieldPanel = new JPanelBB(&quot;textField&quot;);</span>
+<span class="nc" id="L101">        textFieldPanel.setLayout(new GridLayout(3, 1));</span>
+<span class="nc" id="L102">        textFieldPanel.addToBoth(valueOneTF);</span>
+<span class="nc" id="L103">        textFieldPanel.addToBoth(valueTwoTF);</span>
+<span class="nc" id="L104">        textFieldPanel.addToBoth(sumTF);</span>
+
+<span class="nc" id="L106">        JPanelBB centerPanel = new JPanelBB(&quot;center&quot;);</span>
+<span class="nc" id="L107">        centerPanel.setLayout(new BorderLayout());</span>
+<span class="nc" id="L108">        centerPanel.add(labelPanel, BorderLayout.WEST);</span>
+<span class="nc" id="L109">        centerPanel.addToBoth(textFieldPanel, BorderLayout.EAST);</span>
+
+<span class="nc" id="L111">        JButtonBB calculateB = JButtonBB.builder()</span>
+<span class="nc" id="L112">                .setName(&quot;calculate&quot;)</span>
+<span class="nc" id="L113">                .setEnabledInput(CALCULATE_ENABLED_ECD)</span>
+<span class="nc" id="L114">                .setActionOutput(CALCULATE_TRIGGER_ECD)</span>
+<span class="nc" id="L115">                .build();</span>
+<span class="nc" id="L116">        calculateB.setText(&quot;Calculate&quot;);</span>
+
+<span class="nc" id="L118">        JPanelBB southPanel = new JPanelBB(&quot;south&quot;);</span>
+<span class="nc" id="L119">        southPanel.addToBoth(calculateB);</span>
+
+<span class="nc" id="L121">        JPanelBB contentPane = new JPanelBB(&quot;contentPane&quot;);</span>
+<span class="nc" id="L122">        contentPane.setLayout(new BorderLayout());</span>
+<span class="nc" id="L123">        contentPane.addToBoth(centerPanel, BorderLayout.CENTER);</span>
+<span class="nc" id="L124">        contentPane.addToBoth(southPanel, BorderLayout.SOUTH);</span>
+
+<span class="nc" id="L126">        root.add(new TriggeredEventChannelCopy(</span>
+                &quot;ValueOne&quot;, CALCULATE_TRIGGER_ECD, VALUE_ONE_TEXT_ADJ_ECD, VALUE_ONE_TEXT_ECD));
+<span class="nc" id="L128">        root.add(new TriggeredEventChannelCopy(</span>
+                &quot;ValueTwo&quot;, CALCULATE_TRIGGER_ECD, VALUE_TWO_TEXT_ADJ_ECD, VALUE_TWO_TEXT_ECD));
+<span class="nc" id="L130">        root.add(new IntegerSynchronizer(&quot;sum&quot;, SUM_ECD, SUM_TEXT_ECD, ERROR_TEXT_ECD));</span>
+<span class="nc" id="L131">        root.add(new IntegerSynchronizer(&quot;valueOne&quot;, VALUE_ONE_ECD, VALUE_ONE_TEXT_ECD, ERROR_TEXT_ECD));</span>
+<span class="nc" id="L132">        root.add(new IntegerSynchronizer(&quot;valueTwo&quot;, VALUE_TWO_ECD, VALUE_TWO_TEXT_ECD, ERROR_TEXT_ECD));</span>
+<span class="nc" id="L133">        root.add(new AdditionConverter(VALUE_ONE_ECD, VALUE_TWO_ECD, SUM_ECD));</span>
+<span class="nc" id="L134">        root.add(new ErrorMessageCommit(frame, ERROR_TEXT_ECD));</span>
+
+<span class="nc" id="L136">        frame.setContentPaneForBoth(contentPane);</span>
+<span class="nc" id="L137">        frame.setTitle(&quot;AdditionDemo&quot;);</span>
+<span class="nc" id="L138">        frame.setDefaultCloseOperation(JFrameBB.DISPOSE_ON_CLOSE);</span>
+<span class="nc" id="L139">        frame.pack();</span>
+<span class="nc" id="L140">        frame.setVisible(true);</span>
+<span class="nc" id="L141">    }</span>
+
+    private static class IntegerSynchronizer extends Synchronizer {
+        private final String name;
+        private final IntegerECD integerECD;
+        private final StringECD textECD;
+        private final StringRollbackECD errorECD;
+
+        public IntegerSynchronizer(String name, IntegerECD integerECD, StringECD textECD, StringRollbackECD errorECD) {
+<span class="nc" id="L150">            super(</span>
+                    &quot;IntegerSynchronizer[&quot; + name + &quot;]&quot;,
+                    new ObjectECD[] {integerECD},
+                    new ObjectECD[] {textECD},
+                    null,
+                    new ObjectECD[] {errorECD});
+
+<span class="nc" id="L157">            this.name = name;</span>
+<span class="nc" id="L158">            this.integerECD = integerECD;</span>
+<span class="nc" id="L159">            this.textECD = textECD;</span>
+<span class="nc" id="L160">            this.errorECD = errorECD;</span>
+<span class="nc" id="L161">        }</span>
+
+        @Override
+        protected void convertAToB() {
+<span class="nc" id="L165">            int i = ((Integer) get(integerECD)).intValue();</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (i == -Integer.MAX_VALUE - 1) {</span>
+<span class="nc" id="L168">                set(textECD, &quot;&quot;);</span>
+            } else {
+<span class="nc" id="L170">                set(textECD, Integer.toString(i));</span>
+            }
+<span class="nc" id="L172">        }</span>
+
+        @Override
+        protected void convertBToA() {
+<span class="nc" id="L176">            String s = (String) get(textECD);</span>
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (s.length() == 0) {</span>
+<span class="nc" id="L179">                set(integerECD, Integer.MIN_VALUE);</span>
+            } else {
+                try {
+<span class="nc" id="L182">                    set(integerECD, Integer.parseInt(s));</span>
+<span class="nc" id="L183">                } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L184">                    rollback(errorECD, &quot;Bad Value for &quot; + name + &quot; (&quot; + s + &quot;)&quot;);</span>
+<span class="nc" id="L185">                }</span>
+            }
+<span class="nc" id="L187">        }</span>
+    }
+
+    private static class AdditionConverter extends Converter {
+        private final IntegerECD valueOneECD;
+        private final IntegerECD valueTwoECD;
+        private final IntegerECD sumECD;
+
+        public AdditionConverter(IntegerECD valueOneECD, IntegerECD valueTwoECD, IntegerECD sumECD) {
+<span class="nc" id="L196">            super(&quot;AdditionConverter&quot;, new ObjectECD[] {valueOneECD, valueTwoECD}, null, new ObjectECD[] {sumECD});</span>
+
+<span class="nc" id="L198">            this.valueOneECD = valueOneECD;</span>
+<span class="nc" id="L199">            this.valueTwoECD = valueTwoECD;</span>
+<span class="nc" id="L200">            this.sumECD = sumECD;</span>
+<span class="nc" id="L201">        }</span>
+
+        @Override
+        protected void convert() {
+<span class="nc" id="L205">            int v1 = ((Integer) get(valueOneECD)).intValue();</span>
+<span class="nc" id="L206">            int v2 = ((Integer) get(valueTwoECD)).intValue();</span>
+
+<span class="nc" id="L208">            set(sumECD, v1 + v2);</span>
+<span class="nc" id="L209">        }</span>
+    }
+
+    private static class ErrorMessageCommit extends Commit {
+        private final Component component;
+        private final StringRollbackECD errorMessageECD;
+
+        public ErrorMessageCommit(Component component, StringRollbackECD errorMessageECD) {
+<span class="nc" id="L217">            super(&quot;ErrorMessageConverter&quot;, new ObjectECD[] {errorMessageECD});</span>
+
+<span class="nc" id="L219">            this.component = component;</span>
+<span class="nc" id="L220">            this.errorMessageECD = errorMessageECD;</span>
+<span class="nc" id="L221">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L225">            JOptionPane.showMessageDialog(component, get(errorMessageECD), &quot;Error&quot;, JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L226">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

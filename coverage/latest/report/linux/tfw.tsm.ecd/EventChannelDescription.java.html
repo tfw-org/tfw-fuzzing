@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventChannelDescription.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm.ecd</a> &gt; <span class="el_source">EventChannelDescription.java</span></div><h1>EventChannelDescription.java</h1><pre class="source lang-java linenums">package tfw.tsm.ecd;
+
+import java.util.function.Predicate;
+import tfw.check.Argument;
+
+/**
+ * Describes an event channel, including the predicate used to validate
+ * values sent through the event channel.
+ *
+ * &lt;p&gt;The predicate is also used when comparing event channel descriptions.
+ * Predicates that represent value-based validation should therefore override
+ * {@link Object#equals(Object)} and {@link Object#hashCode()} so that
+ * independently created predicates with equivalent validation semantics
+ * compare equal.&lt;/p&gt;
+ */
+public abstract class EventChannelDescription {
+    /** The name of the event channel. */
+    private final String eventChannelName;
+
+    /**
+     * The predicate used to validate values for this event channel.
+     */
+    private final Predicate&lt;Object&gt; predicate;
+
+    /** A flag indicating whether the event channel fires on connection. */
+    private final boolean fireOnConnect;
+
+    /** A flag indicating whether the event channel participates in rollbacks. */
+    private final boolean rollbackParticipant;
+
+    /**
+     * Creates an event channel description.
+     *
+     * @param name the name of the event channel.
+     * @param predicate the predicate used to validate values for the event channel.
+     */
+    EventChannelDescription(String eventChannelName, Predicate&lt;Object&gt; predicate) {
+<span class="nc" id="L38">        this(eventChannelName, predicate, true, true);</span>
+<span class="nc" id="L39">    }</span>
+
+    /**
+     * Creates an event channel description with the specified attributes.
+     *
+     * @param eventChannelName the name of the event channel.
+     * @param predicate the predicate used to validate values for the event channel.
+     * @param fireOnConnect flag indicating whether the event channel fires state when a new sink is connected.
+     * @param rollbackParticipant flag indicating whether the event channel participates in transaction rollbacks.
+     */
+    EventChannelDescription(
+<span class="nc" id="L50">            String eventChannelName, Predicate&lt;Object&gt; predicate, boolean fireOnConnect, boolean rollbackParticipant) {</span>
+<span class="nc" id="L51">        Argument.assertNotNull(eventChannelName, &quot;eventChannelName&quot;);</span>
+<span class="nc" id="L52">        Argument.assertNotNull(predicate, &quot;predicate&quot;);</span>
+        // CheckArgument.checkNull(codec, &quot;codec&quot;);
+
+<span class="nc" id="L55">        this.eventChannelName = eventChannelName.trim();</span>
+<span class="nc" id="L56">        this.predicate = predicate;</span>
+<span class="nc" id="L57">        this.fireOnConnect = fireOnConnect;</span>
+<span class="nc" id="L58">        this.rollbackParticipant = rollbackParticipant;</span>
+
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (this.eventChannelName.length() == 0) {</span>
+<span class="nc" id="L61">            throw new IllegalArgumentException(&quot;eventChannelName.trim().length() == 0 not allowed!&quot;);</span>
+        }
+<span class="nc" id="L63">    }</span>
+
+    /**
+     * Returns the event channel name.
+     *
+     * @return the event channel name.
+     */
+    public final String getEventChannelName() {
+<span class="nc" id="L71">        return eventChannelName;</span>
+    }
+
+    /**
+     * Returns the predicate used to validate values for this event channel.
+     *
+     * @return the validation predicate.
+     */
+    public final Predicate&lt;Object&gt; getPredicate() {
+<span class="nc" id="L80">        return predicate;</span>
+    }
+
+    /**
+     * Returns true if the event channel fires on connection, false otherwise.
+     *
+     * @return true if the event channel fires on connection, false otherwise.
+     */
+    public boolean isFireOnConnect() {
+<span class="nc" id="L89">        return fireOnConnect;</span>
+    }
+
+    /**
+     * Returns true if the event channel participates in rollbacks, false
+     * otherwise.
+     *
+     * @return true if the event channel participates in rollbacks, false
+     *         otherwise.
+     */
+    public boolean isRollBackParticipant() {
+<span class="nc" id="L100">        return rollbackParticipant;</span>
+    }
+
+    /**
+     * Returns a hash value for this ecd.
+     */
+    @Override
+    public int hashCode() {
+<span class="nc" id="L108">        return this.eventChannelName.hashCode();</span>
+    }
+
+    /**
+     * Returns whether this event channel description is equal to another.
+     *
+     * &lt;p&gt;Two event channel descriptions are equal when they have the same name
+     * and their validation predicates are equal. Predicate implementations used
+     * by event channel descriptions should implement value-based
+     * {@code equals()} and {@code hashCode()} when independently created
+     * predicates can represent equivalent validation rules.&lt;/p&gt;
+     *
+     * @param obj the object to compare with.
+     * @return {@code true} if the descriptions are equal.
+     */
+    @Override
+    public boolean equals(Object object) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (!(object instanceof EventChannelDescription)) {</span>
+<span class="nc" id="L126">            return false;</span>
+        }
+
+<span class="nc" id="L129">        EventChannelDescription ecd = (EventChannelDescription) object;</span>
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        return ecd.eventChannelName.equals(this.eventChannelName)</span>
+<span class="nc bnc" id="L132" title="All 6 branches missed.">                &amp;&amp; ecd.predicate.equals(this.predicate)</span>
+                &amp;&amp; ecd.fireOnConnect == this.fireOnConnect
+                &amp;&amp; ecd.rollbackParticipant == this.rollbackParticipant;
+    }
+
+    /**
+     * Returns a string representation of the event channel description.
+     */
+    @Override
+    public String toString() {
+<span class="nc" id="L142">        return super.toString() + &quot;[eventChannelName = &quot; + this.eventChannelName + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

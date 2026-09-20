@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Multiplexer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Multiplexer.java</span></div><h1>Multiplexer.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import tfw.check.Argument;
+import tfw.tsm.MultiplexerStrategy.MultiStateAccessor;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+
+public class Multiplexer implements EventChannel {
+    private final MultiplexerStrategy multiStrategy;
+
+    /** The branch associated with this terminator. */
+<span class="nc" id="L16">    private MultiplexedBranch component = null;</span>
+
+    /** The description of the single value event channel. */
+    final ObjectECD valueECD;
+
+    /** The state change rule for the sub-channels. */
+    private final StateChangeRule stateChangeRule;
+
+    /** The multiplexed value sink. */
+    final Sink multiSink;
+
+    /** The multiplexed value initiator source. */
+    public final MultiSource processorMultiSource;
+
+    /** The set of demultiplexing event channels. */
+<span class="nc" id="L31">    private final Map&lt;Object, DemultiplexedEventChannel&gt; demultiplexedEventChannels =</span>
+            new HashMap&lt;Object, DemultiplexedEventChannel&gt;();
+
+    /**
+     * Creates a multiplexer with the specified value and multi-value event channels.
+     *
+     * @param multiplexerBranchName the name of the multiplexer branch this multiplexer is associated with.
+     * @param valueECD the event channel description of the individual multiplexed elements.
+     * @param multiValueECD the event channel description of the entire multiplexed element.
+     * @param stateChangeRule the state change rule that determines when state has changed.
+     * @param multiStrategy the strategy responsible for managing the multiplexed elements.
+     */
+    Multiplexer(
+            String multiplexerBranchName,
+            ObjectECD valueECD,
+            ObjectECD multiValueECD,
+            StateChangeRule stateChangeRule,
+<span class="nc" id="L48">            MultiplexerStrategy multiStrategy) {</span>
+<span class="nc" id="L49">        Argument.assertNotNull(valueECD, &quot;valueECD&quot;);</span>
+<span class="nc" id="L50">        Argument.assertNotNull(multiValueECD, &quot;multiValueECD&quot;);</span>
+<span class="nc" id="L51">        Argument.assertNotNull(multiStrategy, &quot;multiStrategy&quot;);</span>
+
+<span class="nc" id="L53">        this.valueECD = valueECD;</span>
+<span class="nc" id="L54">        this.stateChangeRule = stateChangeRule;</span>
+<span class="nc" id="L55">        this.multiSink = new MultiSink(multiValueECD);</span>
+<span class="nc" id="L56">        this.processorMultiSource = new MultiSource(&quot;Multiplexer Source[&quot; + multiplexerBranchName + &quot;]&quot;, multiValueECD);</span>
+<span class="nc" id="L57">        this.multiStrategy = multiStrategy;</span>
+<span class="nc" id="L58">    }</span>
+
+    public class MultiSink extends Sink {
+<span class="nc" id="L61">        public MultiSink(ObjectECD ecd) {</span>
+<span class="nc" id="L62">            super(&quot;MultiplexSink[&quot; + ecd.getEventChannelName() + &quot;]&quot;, ecd, true);</span>
+<span class="nc" id="L63">        }</span>
+
+        /**
+         * @see co2.ui.fw.Sink#stateChange()
+         */
+        @Override
+        void stateChange() {
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (processorMultiSource.isStateSource()) {</span>
+<span class="nc" id="L71">                return;</span>
+            }
+
+<span class="nc" id="L74">            MultiStateAccessor stateAccessor = multiStrategy.toMultiStateAccessor(getState());</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            for (DemultiplexedEventChannel dm : Multiplexer.this.demultiplexedEventChannels.values()) {</span>
+<span class="nc" id="L77">                Object state = stateAccessor.getState(dm.demultiplexSlotId);</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                if (state != null &amp;&amp; stateChangeRule.isChange(dm.getPreviousCycleState(), state)) {</span>
+<span class="nc" id="L79">                    dm.setDeMultiState(state);</span>
+                }
+<span class="nc" id="L81">            }</span>
+<span class="nc" id="L82">        }</span>
+
+        public Iterator&lt;DemultiplexedEventChannel&gt; getDemultiplexedEventChannels() {
+<span class="nc" id="L85">            return demultiplexedEventChannels.values().iterator();</span>
+        }
+    }
+
+    class MultiSource extends ProcessorSource {
+<span class="nc" id="L90">        ArrayList&lt;DemultiplexedEventChannel&gt; pendingStateChanges = new ArrayList&lt;DemultiplexedEventChannel&gt;();</span>
+
+<span class="nc" id="L92">        MultiSource(String name, EventChannelDescription ecd) {</span>
+<span class="nc" id="L93">            super(name, ecd);</span>
+<span class="nc" id="L94">        }</span>
+
+        void setState(DemultiplexedEventChannel deMultiplexer) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (!pendingStateChanges.contains(deMultiplexer)) {</span>
+<span class="nc" id="L98">                pendingStateChanges.add(deMultiplexer);</span>
+            }
+<span class="nc" id="L100">            fire();</span>
+<span class="nc" id="L101">        }</span>
+
+<span class="nc" id="L103">        private int keyValueArraySize = 0;</span>
+<span class="nc" id="L104">        private Object[] keys = new Object[keyValueArraySize];</span>
+<span class="nc" id="L105">        private Object[] values = new Object[keyValueArraySize];</span>
+
+        @Override
+        Object fire() {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (pendingStateChanges.size() == 0) {</span>
+<span class="nc" id="L110">                throw new IllegalStateException(&quot;No pending state changes to fire.&quot;);</span>
+            }
+
+<span class="nc" id="L113">            keyValueArraySize = pendingStateChanges.size();</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (keys.length &lt; keyValueArraySize) {</span>
+<span class="nc" id="L115">                keys = new Object[keyValueArraySize];</span>
+<span class="nc" id="L116">                values = new Object[keyValueArraySize];</span>
+            }
+
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            for (int i = 0; i &lt; keyValueArraySize; i++) {</span>
+<span class="nc" id="L120">                DemultiplexedEventChannel dec = pendingStateChanges.get(i);</span>
+
+<span class="nc" id="L122">                keys[i] = dec.demultiplexSlotId;</span>
+<span class="nc" id="L123">                values[i] = dec.getState();</span>
+            }
+<span class="nc" id="L125">            pendingStateChanges.clear();</span>
+
+<span class="nc" id="L127">            Object multiState = null;</span>
+
+            try {
+<span class="nc" id="L130">                multiState = Multiplexer.this.multiStrategy.addToMultiState(</span>
+<span class="nc" id="L131">                        eventChannel.getState(), keys, values, keyValueArraySize);</span>
+<span class="nc" id="L132">            } catch (Exception e) {</span>
+<span class="nc" id="L133">                throw new RuntimeException(&quot;ECD=&quot; + ecd.getEventChannelName(), e);</span>
+<span class="nc" id="L134">            }</span>
+
+<span class="nc" id="L136">            eventChannel.setState(this, multiState, null);</span>
+
+<span class="nc" id="L138">            getTreeComponent().getTransactionManager().addChangedEventChannel(eventChannel);</span>
+
+<span class="nc" id="L140">            return multiState;</span>
+        }
+    }
+
+    private EventChannel getDemultiplexedEventChannel(Object slotId) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (slotId == null) {</span>
+<span class="nc" id="L146">            throw new IllegalArgumentException(&quot;slotId == null not allowed&quot;);</span>
+        }
+
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (!demultiplexedEventChannels.containsKey(slotId)) {</span>
+<span class="nc" id="L150">            Object currentSlotState = null;</span>
+            /*
+             * TODO: If the multiSink is not connected, initial state is not
+             * handled properly.
+             */
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (this.multiSink.isConnected()) {</span>
+<span class="nc" id="L156">                Object multiState = getState();</span>
+<span class="nc" id="L157">                MultiStateAccessor msa = this.multiStrategy.toMultiStateAccessor(multiState);</span>
+<span class="nc" id="L158">                currentSlotState = msa.getState(slotId);</span>
+            }
+<span class="nc" id="L160">            final Object defaultSlotState = this.multiStrategy.getDefaultSlotState();</span>
+<span class="nc" id="L161">            Object initialSlotState = currentSlotState;</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (initialSlotState == null) {</span>
+<span class="nc" id="L163">                initialSlotState = defaultSlotState;</span>
+            }
+
+<span class="nc" id="L166">            DemultiplexedEventChannel dm =</span>
+                    new DemultiplexedEventChannel(this, slotId, initialSlotState, stateChangeRule);
+            /*
+             * if the initial slot state is non-null, make sure the state gets
+             * added to the multiplexed state.
+             */
+<span class="nc bnc" id="L172" title="All 6 branches missed.">            if (this.multiSink.isConnected() &amp;&amp; currentSlotState == null &amp;&amp; defaultSlotState != null) {</span>
+<span class="nc" id="L173">                this.processorMultiSource.setState(dm);</span>
+            }
+
+<span class="nc" id="L176">            dm.setTreeComponent(this.component);</span>
+<span class="nc" id="L177">            demultiplexedEventChannels.put(slotId, dm);</span>
+        }
+
+<span class="nc" id="L180">        return demultiplexedEventChannels.get(slotId);</span>
+    }
+
+    TreeComponent getTreeComponent() {
+<span class="nc" id="L184">        return this.component;</span>
+    }
+
+    void remove(DemultiplexedEventChannel deMultiplexer) {
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (demultiplexedEventChannels.remove(deMultiplexer.demultiplexSlotId) == null) {</span>
+<span class="nc" id="L189">            throw new IllegalStateException(&quot;Demultiplexer not found attempting to remove demultiplexer for &quot;</span>
+<span class="nc" id="L190">                    + valueECD.getEventChannelName() + &quot;[&quot;</span>
+                    + deMultiplexer.demultiplexSlotId + &quot;]&quot;);
+        }
+<span class="nc" id="L193">    }</span>
+
+    /**
+     * @see tfw.tsm.EventChannel#add(tfw.tsm.Port)
+     */
+    @Override
+    public void add(Port port) {
+        // Search for the multiplexed component...
+<span class="nc" id="L201">        Object slotId = component.getSlotId(port.getTreeComponent());</span>
+<span class="nc" id="L202">        TreeComponent tc = port.getTreeComponent().getParent();</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        while (slotId == null &amp;&amp; tc != null) {</span>
+<span class="nc" id="L204">            slotId = component.getSlotId(tc);</span>
+<span class="nc" id="L205">            tc = tc.getParent();</span>
+        }
+
+        // if we didn't find a multiplexed component...
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (slotId == null) {</span>
+<span class="nc" id="L210">            throw new IllegalArgumentException(&quot;The specified port, '&quot;</span>
+<span class="nc" id="L211">                    + port.ecd.getEventChannelName()</span>
+                    + &quot;', is not from a multiplexed component.\n&quot; + &quot; p.tc=&quot;
+<span class="nc" id="L213">                    + port.getTreeComponent() + &quot; p.fqn=&quot;</span>
+<span class="nc" id="L214">                    + port.getFullyQualifiedName());</span>
+        }
+
+<span class="nc" id="L217">        getDemultiplexedEventChannel(slotId).add(port);</span>
+<span class="nc" id="L218">    }</span>
+
+    /**
+     * @see tfw.tsm.EventChannel#addDeferredStateChange(tfw.tsm.ProcessorSource)
+     */
+    @Override
+    public void addDeferredStateChange(ProcessorSource source) {
+<span class="nc" id="L225">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#fire()
+     */
+    @Override
+    public Object fire() {
+<span class="nc" id="L233">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getParent()
+     */
+    @Override
+    public TreeComponent getParent() {
+<span class="nc" id="L241">        return this.component;</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getCurrentStateSource()
+     */
+    @Override
+    public Source getCurrentStateSource() {
+<span class="nc" id="L249">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getECD()
+     */
+    @Override
+    public EventChannelDescription getECD() {
+<span class="nc" id="L257">        return valueECD;</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getPreviousCycleState()
+     */
+    @Override
+    public Object getPreviousCycleState() {
+<span class="nc" id="L265">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getPreviousTransactionState()
+     */
+    @Override
+    public Object getPreviousTransactionState() {
+<span class="nc" id="L273">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    @Override
+    public boolean isStateChanged() {
+<span class="nc" id="L278">        return false;</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#getState()
+     */
+    @Override
+    public Object getState() {
+<span class="nc" id="L286">        return this.multiSink.eventChannel.getState();</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#isFireOnConnect()
+     */
+    @Override
+    public boolean isFireOnConnect() {
+<span class="nc" id="L294">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#isRollbackParticipant()
+     */
+    @Override
+    public boolean isRollbackParticipant() {
+<span class="nc" id="L302">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#remove(tfw.tsm.Port)
+     */
+    @Override
+    public void remove(Port port) {
+<span class="nc" id="L310">        port.eventChannel.remove(port);</span>
+<span class="nc" id="L311">    }</span>
+
+    /**
+     * @see tfw.tsm.EventChannel#setState(tfw.tsm.Source, java.lang.Object,
+     *      tfw.tsm.EventChannel)
+     */
+    @Override
+    public void setState(Source source, Object state, EventChannel forwardingEventChannel) {
+<span class="nc" id="L319">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#setTreeComponent(tfw.tsm.TreeComponent)
+     */
+    @Override
+    public void setTreeComponent(TreeComponent component) {
+<span class="nc" id="L327">        this.component = (MultiplexedBranch) component;</span>
+<span class="nc" id="L328">        this.multiSink.setTreeComponent(component);</span>
+<span class="nc" id="L329">        this.processorMultiSource.setTreeComponent(component);</span>
+<span class="nc" id="L330">    }</span>
+
+    /**
+     * @see tfw.tsm.EventChannel#synchronizeCycleState()
+     */
+    @Override
+    public void synchronizeCycleState() {
+<span class="nc" id="L337">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+
+    /**
+     * @see tfw.tsm.EventChannel#synchronizeTransactionState()
+     */
+    @Override
+    public void synchronizeTransactionState() {
+<span class="nc" id="L345">        throw new UnsupportedOperationException(&quot;Multiplexer does not participate directly in transactions.&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

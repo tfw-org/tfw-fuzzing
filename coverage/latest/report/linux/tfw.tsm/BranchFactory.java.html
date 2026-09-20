@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BranchFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">BranchFactory.java</span></div><h1>BranchFactory.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+
+/**
+ * A factory for creating an {@link Branch}.
+ */
+<span class="nc" id="L13">public class BranchFactory extends BaseBranchFactory {</span>
+    /** The set of translators. */
+<span class="nc" id="L15">    private final HashMap&lt;String, Translator&gt; translators = new HashMap&lt;String, Translator&gt;();</span>
+
+    @Override
+    EventChannel[] getTerminators() {
+<span class="nc" id="L19">        ArrayList&lt;EventChannel&gt; list = new ArrayList&lt;EventChannel&gt;();</span>
+<span class="nc" id="L20">        list.addAll(Arrays.asList(super.getTerminators()));</span>
+<span class="nc" id="L21">        list.addAll(translators.values());</span>
+
+<span class="nc" id="L23">        return list.toArray(new EventChannel[list.size()]);</span>
+    }
+
+    private Sink[] getSinks() {
+<span class="nc" id="L27">        HashSet&lt;Sink&gt; ports = new HashSet&lt;Sink&gt;();</span>
+
+        // add all translator ports to the ports hash set.
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        for (Translator translator : translators.values()) {</span>
+<span class="nc" id="L31">            ports.add(translator.getParentSink());</span>
+<span class="nc" id="L32">        }</span>
+
+<span class="nc" id="L34">        return ports.toArray(new Sink[ports.size()]);</span>
+    }
+
+    private Source[] getSources() {
+<span class="nc" id="L38">        HashSet&lt;Source&gt; ports = new HashSet&lt;Source&gt;();</span>
+
+        // add all translator ports to the ports hash set.
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        for (Translator translator : translators.values()) {</span>
+<span class="nc" id="L42">            ports.add(translator.getParentSource());</span>
+<span class="nc" id="L43">        }</span>
+
+<span class="nc" id="L45">        return ports.toArray(new Source[ports.size()]);</span>
+    }
+
+    /**
+     * Adds translator between the specified parent and child event channels.
+     *
+     * @param childEventChannel
+     *            the child event channel.
+     * @param parentEventChannel
+     *            the parent event channel.
+     */
+    public void addTranslation(EventChannelDescription childEventChannel, EventChannelDescription parentEventChannel) {
+<span class="nc" id="L57">        Argument.assertNotNull(childEventChannel, &quot;childEventChannel&quot;);</span>
+<span class="nc" id="L58">        Argument.assertNotNull(parentEventChannel, &quot;parentEventChannel&quot;);</span>
+
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (isTerminated(childEventChannel)) {</span>
+<span class="nc" id="L61">            throw new IllegalStateException(&quot;Attempt to translate the event channel '&quot;</span>
+<span class="nc" id="L62">                    + childEventChannel.getEventChannelName()</span>
+                    + &quot;' which is already terminated.&quot;);
+        }
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (isTranslated(childEventChannel)) {</span>
+<span class="nc" id="L67">            throw new IllegalStateException(&quot;Attempt to translate the event channel '&quot;</span>
+<span class="nc" id="L68">                    + childEventChannel.getEventChannelName()</span>
+                    + &quot;' which is already translated.&quot;);
+        }
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (!childEventChannel.getPredicate().equals(parentEventChannel.getPredicate())) {</span>
+<span class="nc" id="L73">            throw new IllegalArgumentException(&quot;Incompatible event channels, values from the parent event channel '&quot;</span>
+<span class="nc" id="L74">                    + parentEventChannel.getEventChannelName()</span>
+                    + &quot;' are not assignable to the child event channel '&quot;
+<span class="nc" id="L76">                    + childEventChannel.getEventChannelName() + &quot;'&quot;);</span>
+        }
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (!parentEventChannel.getPredicate().equals(childEventChannel.getPredicate())) {</span>
+<span class="nc" id="L79">            throw new IllegalArgumentException(&quot;Incompatible event channels values from the child event channel '&quot;</span>
+<span class="nc" id="L80">                    + childEventChannel.getEventChannelName()</span>
+                    + &quot;' are not assignable to the parent event channel '&quot;
+<span class="nc" id="L82">                    + parentEventChannel.getEventChannelName() + &quot;'&quot;);</span>
+        }
+
+<span class="nc" id="L85">        translators.put(childEventChannel.getEventChannelName(), new Translator(childEventChannel, parentEventChannel));</span>
+<span class="nc" id="L86">    }</span>
+
+    /**
+     * Adds a terminator for the specified event channel. A terminator is the
+     * point within the component tree structure where an event channel stops.
+     * Events from sources or publishers move up through the component hierarchy
+     * until they reach the terminator. If the event represents a state change
+     * as defined by the {@link StateChangeRule} the terminator reflects the
+     * event back down through the component tree structure to the sinks or
+     * subscribers.
+     *
+     * @param eventChannelDescription
+     *            The event channel to be terminated.
+     * @param initialState
+     *            The initial value to be assigned to the event channel.
+     * @param rule
+     *            The state change rule for the event channel.
+     * @param exportTags
+     *            The list of export tags for this event channel.
+     */
+    @Override
+    public void addEventChannel(
+            EventChannelDescription eventChannelDescription,
+            Object initialState,
+            StateChangeRule rule,
+            String[] exportTags) {
+<span class="nc bnc" id="L112" title="All 4 branches missed.">        if (eventChannelDescription != null &amp;&amp; isTranslated(eventChannelDescription)) {</span>
+<span class="nc" id="L113">            throw new IllegalStateException(&quot;Attemp to terminate an event channel, '&quot;</span>
+<span class="nc" id="L114">                    + eventChannelDescription.getEventChannelName()</span>
+                    + &quot;', which is already transalated.&quot;);
+        }
+
+<span class="nc" id="L118">        super.addEventChannel(eventChannelDescription, initialState, rule, exportTags);</span>
+<span class="nc" id="L119">    }</span>
+
+    private boolean isTranslated(EventChannelDescription ecd) {
+<span class="nc" id="L122">        return translators.containsKey(ecd.getEventChannelName());</span>
+    }
+
+    /**
+     * Removes all previously specified translators and terminators.
+     */
+    @Override
+    public void clear() {
+<span class="nc" id="L130">        this.translators.clear();</span>
+<span class="nc" id="L131">        super.clear();</span>
+<span class="nc" id="L132">    }</span>
+
+    /**
+     * Creates a {@link Branch} with the previously specified translators and
+     * terminators. Note that this method calls {@link #clear()}.
+     *
+     * @param name
+     *            The name of the branch.
+     * @return A branch with the previously specified translators and
+     *         terminators.
+     */
+    public Branch create(String name) {
+<span class="nc" id="L144">        Branch branch = new Branch(name, getSinks(), getSources(), getTerminators());</span>
+
+<span class="nc" id="L146">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

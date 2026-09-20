@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntegerColorConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.demo</a> &gt; <span class="el_source">IntegerColorConverter.java</span></div><h1>IntegerColorConverter.java</h1><pre class="source lang-java linenums">package tfw.demo;
+
+import java.awt.Color;
+import tfw.awt.ecd.ColorECD;
+import tfw.tsm.Synchronizer;
+import tfw.tsm.ecd.ObjectECD;
+
+/**
+ * Converts back and forth between red, green, and blue &lt;code&gt;
+ * java.lang.Integer&lt;/code&gt; values and &lt;code&gt;java.awt.Color&lt;/code&gt;.
+ */
+public class IntegerColorConverter extends Synchronizer {
+    private final RedGreenBlueECD redInteger;
+    private final RedGreenBlueECD greenInteger;
+    private final RedGreenBlueECD blueInteger;
+    private final ColorECD color;
+
+    /**
+     * Creates an instance of &lt;code&gt;IntegerColorConverter&lt;/code&gt;.
+     *
+     * @param name the name of this &lt;code&gt;LeafNode&lt;/code&gt;
+     * @param redInteger the name of the red event channel, which will
+     * carry &lt;code&gt;java.lang.Integer&lt;/code&gt; events.
+     * @param greenInteger the name of the green event channel, which will
+     * carry &lt;code&gt;java.lang.Integer&lt;/code&gt; events.
+     * @param blueInteger the name of the blue event channel, which will
+     * carry &lt;code&gt;java.lang.Integer&lt;/code&gt; events.
+     * @param color the name of the color event channel, which will
+     * carry &lt;/code&gt;java.awt.Color&lt;/code&gt; events.
+     */
+    public IntegerColorConverter(
+            String name,
+            RedGreenBlueECD redInteger,
+            RedGreenBlueECD greenInteger,
+            RedGreenBlueECD blueInteger,
+            ColorECD color) {
+<span class="nc" id="L37">        super(name, createSinks(redInteger, blueInteger, greenInteger), createSources(color), null, null);</span>
+<span class="nc" id="L38">        this.redInteger = redInteger;</span>
+<span class="nc" id="L39">        this.greenInteger = greenInteger;</span>
+<span class="nc" id="L40">        this.blueInteger = blueInteger;</span>
+<span class="nc" id="L41">        this.color = color;</span>
+
+        //		System.out.println(&quot;IntegerColorCovernter[&quot;+redInteger
+        //				+&quot;, &quot;+greenInteger+&quot;, &quot;+blueInteger+
+        //				&quot;, &quot;+color+&quot;]&quot;);
+<span class="nc" id="L46">    }</span>
+
+    private static ObjectECD[] createSinks(RedGreenBlueECD red, RedGreenBlueECD green, RedGreenBlueECD blue) {
+<span class="nc" id="L49">        return new ObjectECD[] {red, green, blue};</span>
+    }
+
+    private static ObjectECD[] createSources(ColorECD color) {
+<span class="nc" id="L53">        return new ObjectECD[] {color};</span>
+    }
+
+    @Override
+    protected final void convertAToB() {
+        //		System.out.println(&quot;IntegerColorConverter.convertAToB() = &quot; + get());
+<span class="nc" id="L59">        int red = ((Integer) get(redInteger)).intValue();</span>
+<span class="nc" id="L60">        int green = ((Integer) get(greenInteger)).intValue();</span>
+<span class="nc" id="L61">        int blue = ((Integer) get(blueInteger)).intValue();</span>
+<span class="nc" id="L62">        set(color, new Color(red, green, blue));</span>
+<span class="nc" id="L63">    }</span>
+
+    @Override
+    protected void debugConvertAToB() {
+        //		System.out.println(&quot;IntegerColorConverter.debugConvertAToB() = &quot; + get());
+<span class="nc" id="L68">    }</span>
+
+    @Override
+    protected void debugConvertBToA() {
+        //		System.out.println(&quot;IntegerColorConverter.debugConvertBToA() = &quot; + get());
+<span class="nc" id="L73">    }</span>
+
+    @Override
+    protected final void convertBToA() {
+        //		System.out.println(&quot;IntegerColorConverter.convertBToA() = &quot; + get());
+<span class="nc" id="L78">        Color c = (Color) get(color);</span>
+<span class="nc" id="L79">        set(redInteger, c.getRed());</span>
+<span class="nc" id="L80">        set(greenInteger, c.getGreen());</span>
+<span class="nc" id="L81">        set(blueInteger, c.getBlue());</span>
+<span class="nc" id="L82">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

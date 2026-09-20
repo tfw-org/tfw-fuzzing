@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InitiatorTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">InitiatorTest.java</span></div><h1>InitiatorTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L11">final class InitiatorTest {</span>
+<span class="nc" id="L12">    ObjectECD channel1 = new StringECD(&quot;aaa&quot;);</span>
+<span class="nc" id="L13">    ObjectECD channel2 = new StringECD(&quot;bbb&quot;);</span>
+<span class="nc" id="L14">    ObjectECD[] channels = new ObjectECD[] {channel1, channel2};</span>
+
+    @Test
+    void initiatorConstructionTest() {
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; new Initiator(null, channel1))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; new Initiator(&quot;test&quot;, (ObjectECD) null))</span>
+<span class="nc" id="L22">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L23">                .hasMessage(&quot;sources[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L24">        assertThatThrownBy(() -&gt; new Initiator(&quot;test&quot;, (ObjectECD[]) null))</span>
+<span class="nc" id="L25">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L26">                .hasMessage(&quot;sources == null not allowed!&quot;);</span>
+<span class="nc" id="L27">    }</span>
+
+    @Test
+    void initatorSetMehtodsTest() throws InterruptedException {
+<span class="nc" id="L31">        Initiator initiator = new Initiator(&quot;test&quot;, channels);</span>
+<span class="nc" id="L32">        Object object = new Object();</span>
+
+<span class="nc" id="L34">        assertThatThrownBy(() -&gt; initiator.set((ObjectECD) null, object))</span>
+<span class="nc" id="L35">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L36">                .hasMessage(&quot;sourceEventChannel == null not allowed!&quot;);</span>
+
+<span class="nc" id="L38">        assertThatThrownBy(() -&gt; initiator.set((StringECD) null, object))</span>
+<span class="nc" id="L39">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L40">                .hasMessage(&quot;sourceEventChannel == null not allowed!&quot;);</span>
+
+<span class="nc" id="L42">        assertThatThrownBy(() -&gt; initiator.set(channel1, null))</span>
+<span class="nc" id="L43">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L44">                .hasMessage(&quot;value == null does not meet the constraints on this value&quot;);</span>
+
+<span class="nc" id="L46">        assertThatThrownBy(() -&gt; initiator.set(null))</span>
+<span class="nc" id="L47">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L48">                .hasMessage(&quot;state == null not allowed!&quot;);</span>
+
+<span class="nc" id="L50">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L51">        final Root root = Root.builder()</span>
+<span class="nc" id="L52">                .setName(&quot;test&quot;)</span>
+<span class="nc" id="L53">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L54">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L55">                .setTransactionExceptionHandler(new TransactionExceptionHandler() {</span>
+                    @Override
+                    public void handle(Exception exception) {
+<span class="nc" id="L58">                        assertThat(exception).isNull();</span>
+<span class="nc" id="L59">                    }</span>
+                })
+<span class="nc" id="L61">                .addEventChannel(channel1, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L62">                .addEventChannel(channel2, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L63">                .build();</span>
+
+<span class="nc" id="L65">        root.add(initiator);</span>
+
+<span class="nc" id="L67">        TestCommit commit = new TestCommit(&quot;testcommit&quot;, channels);</span>
+<span class="nc" id="L68">        root.add(commit);</span>
+
+<span class="nc" id="L70">        String state1 = &quot;Hello&quot;;</span>
+<span class="nc" id="L71">        String state2 = &quot;World&quot;;</span>
+
+<span class="nc" id="L73">        initiator.set(channel1, state1);</span>
+<span class="nc" id="L74">        queue.waitTilEmpty();</span>
+<span class="nc" id="L75">        assertThat(commit.debugCommitState).isNotNull();</span>
+<span class="nc" id="L76">        assertThat(state1).isEqualTo(commit.debugCommitState.get(channel1));</span>
+<span class="nc" id="L77">        commit.debugCommitState = null;</span>
+<span class="nc" id="L78">        initiator.set(channel2, state2);</span>
+<span class="nc" id="L79">        queue.waitTilEmpty();</span>
+<span class="nc" id="L80">        assertThat(commit.commitState).isNotNull();</span>
+<span class="nc" id="L81">        assertThat(state1).isEqualTo(commit.commitState.get(channel1));</span>
+<span class="nc" id="L82">        assertThat(state2).isEqualTo(commit.commitState.get(channel2));</span>
+
+<span class="nc" id="L84">        assertThat(commit.debugCommitState).isNull();</span>
+
+        // reset all of the infrastructure...
+<span class="nc" id="L87">        root.remove(initiator);</span>
+<span class="nc" id="L88">        root.remove(commit);</span>
+<span class="nc" id="L89">        commit.commitState = null;</span>
+<span class="nc" id="L90">        commit.debugCommitState = null;</span>
+        // rf = new RootFactory();
+        // rf.addTerminator(channel1);
+        // rf.addTerminator(channel2);
+<span class="nc" id="L94">        root.add(initiator);</span>
+<span class="nc" id="L95">        root.add(commit);</span>
+
+<span class="nc" id="L97">        EventChannelStateBuffer stateBuff = new EventChannelStateBuffer();</span>
+<span class="nc" id="L98">        stateBuff.put(channel1, state1);</span>
+<span class="nc" id="L99">        stateBuff.put(channel2, state2);</span>
+<span class="nc" id="L100">        queue.waitTilEmpty();</span>
+<span class="nc" id="L101">        initiator.set(stateBuff.toArray());</span>
+<span class="nc" id="L102">        queue.waitTilEmpty();</span>
+<span class="nc" id="L103">        assertThat(commit.commitState).isNotNull();</span>
+<span class="nc" id="L104">        assertThat(state1).isEqualTo(commit.commitState.get(channel1));</span>
+<span class="nc" id="L105">        assertThat(state2).isEqualTo(commit.commitState.get(channel2));</span>
+
+<span class="nc" id="L107">        assertThat(commit.debugCommitState).isNull();</span>
+        ;
+
+        // Test set(Map) before connection...
+        //        commit.commitState = null;
+        //        commit.debugCommitState = null;
+        //        root.remove(initiator);
+        ////        initiator = new Initiator(&quot;test&quot;, channels);
+        //        initiator.set(stateBuff.toArray());
+        //        queue.waitTilEmpty();
+        //        root.add(initiator);
+        //        queue.waitTilEmpty();
+        //        assertNotNull(&quot;commit() not called&quot;, commit.commitState);
+        //        assertEquals(&quot;commit() received wrong state1&quot;, state1,
+        //                commit.commitState.get(channel1));
+        //        assertEquals(&quot;commit() received wrong state2&quot;, state2,
+        //                commit.commitState.get(channel2));
+
+<span class="nc" id="L125">        assertThat(commit.debugCommitState).isNull();</span>
+
+        // Test set(EventChannelName, State) before connection...
+        // This tests the delay fire requirement for an intiator.
+        //        commit.commitState = null;
+        //        commit.debugCommitState = null;
+        //        root.remove(initiator);
+        //        queue.waitTilEmpty();
+        ////        initiator = new Initiator(&quot;test&quot;, channels);
+        //        initiator.set(channel1, state1);
+        //        initiator.set(channel2, state2);
+        //
+        //        root.add(initiator);
+        //        queue.waitTilEmpty();
+        //
+        //        assertNotNull(&quot;commit() not called&quot;, commit.commitState);
+        //        assertEquals(&quot;commit() received wrong state1&quot;, state1,
+        //                commit.commitState.get(channel1));
+        //        assertEquals(&quot;commit() received wrong state2&quot;, state2,
+        //                commit.commitState.get(channel2));
+        //
+        //        assertNull(&quot;debugCommit() was called&quot;, commit.debugCommitState);
+
+<span class="nc" id="L148">        root.remove(initiator);</span>
+<span class="nc" id="L149">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L151">        commit.commitState = null;</span>
+<span class="nc" id="L152">        commit.debugCommitState = null;</span>
+<span class="nc" id="L153">        root.add(initiator);</span>
+<span class="nc" id="L154">        initiator.set(channel1, state1);</span>
+<span class="nc" id="L155">        initiator.set(channel2, state2);</span>
+<span class="nc" id="L156">        root.remove(initiator);</span>
+<span class="nc" id="L157">        queue.waitTilEmpty();</span>
+<span class="nc" id="L158">        assertThat(commit.commitState).isNotNull();</span>
+<span class="nc" id="L159">        assertThat(state1).isEqualTo(commit.commitState.get(channel1));</span>
+<span class="nc" id="L160">        assertThat(state2).isEqualTo(commit.commitState.get(channel2));</span>
+
+<span class="nc" id="L162">        assertThat(commit.debugCommitState).isNull();</span>
+
+<span class="nc" id="L164">        Root.builder()</span>
+<span class="nc" id="L165">                .setName(&quot;test2&quot;)</span>
+<span class="nc" id="L166">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L167">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L168">                .setTransactionExceptionHandler(new TransactionExceptionHandler() {</span>
+                    @Override
+                    public void handle(Exception exception) {
+<span class="nc" id="L171">                        assertThat(exception).isNull();</span>
+<span class="nc" id="L172">                    }</span>
+                })
+<span class="nc" id="L174">                .addEventChannel(channel1, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L175">                .addEventChannel(channel2, AlwaysChangeRule.RULE, null, null)</span>
+<span class="nc" id="L176">                .build();</span>
+
+        //        Root root2 = rf.create(&quot;Root2&quot;, queue);
+        //        initiator.set(channel1, state1);
+        //        initiator.set(channel2, state2);
+        //
+        //        commit.commitState = null;
+        //        commit.debugCommitState = null;
+        //        root.add(initiator);
+        //        root.remove(initiator);
+        //        root2.add(initiator);
+        //        queue.waitTilEmpty();
+        //
+        //        assertNotNull(&quot;commit() not called&quot;, commit.commitState);
+        //        assertEquals(&quot;commit() received wrong state1&quot;, state1,
+        //                commit.commitState.get(channel1));
+        //        assertEquals(&quot;commit() received wrong state2&quot;, state2,
+        //                commit.commitState.get(channel2));
+        //
+        //        assertNull(&quot;debugCommit() was called&quot;, commit.debugCommitState);
+<span class="nc" id="L196">    }</span>
+
+    private static class TestCommit extends Commit {
+<span class="nc" id="L199">        public Map&lt;ObjectECD, Object&gt; commitState = null;</span>
+<span class="nc" id="L200">        public Map&lt;ObjectECD, Object&gt; debugCommitState = null;</span>
+
+        public TestCommit(String name, ObjectECD[] ecds) {
+<span class="nc" id="L203">            super(name, ecds);</span>
+<span class="nc" id="L204">        }</span>
+
+        @Override
+        public void commit() {
+<span class="nc" id="L208">            commitState = this.get();</span>
+<span class="nc" id="L209">        }</span>
+
+        @Override
+        public void debugCommit() {
+<span class="nc" id="L213">            debugCommitState = this.get();</span>
+<span class="nc" id="L214">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

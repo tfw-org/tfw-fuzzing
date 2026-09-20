@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StreamFactoryFromObjectIlaFactoryTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.stream</a> &gt; <span class="el_source">StreamFactoryFromObjectIlaFactoryTest.java</span></div><h1>StreamFactoryFromObjectIlaFactoryTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.immutable.ilaf.objectilaf.ObjectIlaFactory;
+import tfw.immutable.ilaf.objectilaf.ObjectIlaFactoryFromArray;
+
+<span class="nc" id="L15">final class StreamFactoryFromObjectIlaFactoryTest {</span>
+    @Test
+    void successTest() throws IOException {
+<span class="nc" id="L18">        final String[] array = new String[] {&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;};</span>
+<span class="nc" id="L19">        final ObjectIlaFactory&lt;String&gt; o = ObjectIlaFactoryFromArray.create(array);</span>
+<span class="nc" id="L20">        final StreamFactory&lt;String&gt; sf = StreamFactoryFromObjectIlaFactory.create(o, String.class);</span>
+<span class="nc" id="L21">        final Stream&lt;String&gt; s = sf.create();</span>
+<span class="nc" id="L22">        final List&lt;String&gt; list = s.collect(Collectors.toList());</span>
+
+<span class="nc" id="L24">        assertThat(list.toArray()).isEqualTo(array);</span>
+<span class="nc" id="L25">    }</span>
+
+    @Test
+    void badIlaLengthTest() {
+<span class="nc" id="L29">        ObjectIlaFactory&lt;Object&gt; o = new ObjectIlaFactory&lt;Object&gt;() {</span>
+            @Override
+            public ObjectIla&lt;Object&gt; create() {
+<span class="nc" id="L32">                return new ObjectIla&lt;Object&gt;() {</span>
+                    @Override
+                    public long length() throws IOException {
+<span class="nc" id="L35">                        throw new IOException(&quot;Test ObjectIla that only throws IOExceptions!&quot;);</span>
+                    }
+
+                    @Override
+                    public void get(Object[] array, int arrayOffset, long ilaStart, int length) throws IOException {
+<span class="nc" id="L40">                        throw new IOException(&quot;Test ObjectIla that only throws IOExceptions!&quot;);</span>
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+<span class="nc" id="L45">                        throw new IOException(&quot;Test ObjectIla that only throws IOExceptions!&quot;);</span>
+                    }
+                };
+            }
+        };
+<span class="nc" id="L50">        final StreamFactory&lt;Object&gt; osf = StreamFactoryFromObjectIlaFactory.create(o, Object.class);</span>
+
+<span class="nc" id="L52">        assertThatThrownBy(osf::create)</span>
+<span class="nc" id="L53">                .isInstanceOf(IOException.class)</span>
+<span class="nc" id="L54">                .hasMessage(&quot;Test ObjectIla that only throws IOExceptions!&quot;);</span>
+<span class="nc" id="L55">    }</span>
+
+    @Test
+    void badIlaGetTest() throws IOException {
+<span class="nc" id="L59">        ObjectIlaFactory&lt;String&gt; o = new ObjectIlaFactory&lt;String&gt;() {</span>
+            @Override
+            public ObjectIla&lt;String&gt; create() {
+<span class="nc" id="L62">                return new ObjectIla&lt;String&gt;() {</span>
+                    @Override
+                    public long length() throws IOException {
+<span class="nc" id="L65">                        return 5;</span>
+                    }
+
+                    @Override
+                    public void get(String[] array, int arrayOffset, long ilaStart, int length) throws IOException {
+<span class="nc" id="L70">                        throw new IOException(&quot;Test DoubleIla whose get() only throws IOExceptions!&quot;);</span>
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+<span class="nc" id="L75">                        throw new IOException(&quot;Test DoubleIla whose close() only throws IOExceptions!&quot;);</span>
+                    }
+                };
+            }
+        };
+<span class="nc" id="L80">        final StreamFactory&lt;String&gt; osf = StreamFactoryFromObjectIlaFactory.create(o, String.class);</span>
+<span class="nc" id="L81">        final Stream&lt;String&gt; s = osf.create();</span>
+
+<span class="nc" id="L83">        assertThatThrownBy(s::toArray)</span>
+<span class="nc" id="L84">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L85">                .hasMessage(&quot;End size 0 is less than fixed size 5&quot;);</span>
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

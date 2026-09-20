@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FloatIlaInvert.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.floatila</a> &gt; <span class="el_source">FloatIlaInvert.java</span></div><h1>FloatIlaInvert.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.floatila;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public final class FloatIlaInvert {
+    private FloatIlaInvert() {
+        // non-instantiable class
+    }
+
+    public static FloatIla create(FloatIla ila) {
+<span class="nc" id="L12">        Argument.assertNotNull(ila, &quot;ila&quot;);</span>
+
+<span class="nc" id="L14">        return new FloatIlaImpl(ila);</span>
+    }
+
+    private static class FloatIlaImpl extends AbstractFloatIla {
+        private final FloatIla ila;
+
+<span class="nc" id="L20">        private FloatIlaImpl(FloatIla ila) {</span>
+<span class="nc" id="L21">            this.ila = ila;</span>
+<span class="nc" id="L22">        }</span>
+
+        @Override
+        protected long lengthImpl() throws IOException {
+<span class="nc" id="L26">            return ila.length();</span>
+        }
+
+        @Override
+        protected void getImpl(float[] array, int offset, long start, int length) throws IOException {
+<span class="nc" id="L31">            ila.get(array, offset, start, length);</span>
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
+<span class="nc" id="L34">                array[ii] = (float) 1 / array[ii];</span>
+            }
+<span class="nc" id="L36">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L40">            ila.close();</span>
+<span class="nc" id="L41">        }</span>
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeStateBufferTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">TreeStateBufferTest.java</span></div><h1>TreeStateBufferTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L9">final class TreeStateBufferTest {</span>
+    @Test
+    void bufferTest() throws Exception {
+<span class="nc" id="L12">        TreeStateBuffer tsb = new TreeStateBuffer();</span>
+<span class="nc" id="L13">        StringECD strECD = new StringECD(&quot;mystring&quot;);</span>
+
+<span class="nc" id="L15">        assertThatThrownBy(tsb::toTreeState)</span>
+<span class="nc" id="L16">                .isInstanceOf(IllegalStateException.class)</span>
+<span class="nc" id="L17">                .hasMessage(&quot;The 'setName(String)' method must be called before this method.&quot;);</span>
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; tsb.setName(null))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; tsb.addState(null))</span>
+<span class="nc" id="L22">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L23">                .hasMessage(&quot;state == null not allowed!&quot;);</span>
+<span class="nc" id="L24">        assertThatThrownBy(() -&gt; tsb.addChild(null))</span>
+<span class="nc" id="L25">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L26">                .hasMessage(&quot;child == null not allowed!&quot;);</span>
+
+<span class="nc" id="L28">        String name = &quot;TestTreeState&quot;;</span>
+<span class="nc" id="L29">        tsb.setName(name);</span>
+
+<span class="nc" id="L31">        TreeState tstate = tsb.toTreeState();</span>
+<span class="nc" id="L32">        assertThat(tstate).isNotNull();</span>
+<span class="nc" id="L33">        assertThat(name).isEqualTo(tstate.getName());</span>
+
+<span class="nc" id="L35">        TreeState[] children = tstate.getChildren();</span>
+<span class="nc" id="L36">        assertThat(children).isNotNull();</span>
+<span class="nc" id="L37">        assertThat(children.length).isEqualTo(0);</span>
+
+<span class="nc" id="L39">        EventChannelState[] ecds = tstate.getState();</span>
+<span class="nc" id="L40">        assertThat(ecds).isNotNull();</span>
+<span class="nc" id="L41">        assertThat(ecds.length).isEqualTo(0);</span>
+
+<span class="nc" id="L43">        EventChannelState state = new EventChannelState(strECD, &quot;Hello World&quot;);</span>
+<span class="nc" id="L44">        tsb.addState(state);</span>
+<span class="nc" id="L45">        tstate = tsb.toTreeState();</span>
+<span class="nc" id="L46">        ecds = tstate.getState();</span>
+<span class="nc" id="L47">        assertThat(ecds.length).isEqualTo(1);</span>
+<span class="nc" id="L48">        assertThat(state).isEqualTo(tstate.getState()[0]);</span>
+
+<span class="nc" id="L50">        tsb.setName(&quot;Parent&quot;);</span>
+<span class="nc" id="L51">        tsb.addChild(tstate);</span>
+
+<span class="nc" id="L53">        TreeState parent = tsb.toTreeState();</span>
+<span class="nc" id="L54">        children = parent.getChildren();</span>
+<span class="nc" id="L55">        assertThat(children.length).isEqualTo(1);</span>
+<span class="nc" id="L56">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

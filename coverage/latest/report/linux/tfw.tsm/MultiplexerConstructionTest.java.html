@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiplexerConstructionTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">MultiplexerConstructionTest.java</span></div><h1>MultiplexerConstructionTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.objectila.ObjectIlaFromArray;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+<span class="nc" id="L11">final class MultiplexerConstructionTest {</span>
+<span class="nc" id="L12">    private static final StringECD VALUE_ECD = new StringECD(&quot;value&quot;);</span>
+<span class="nc" id="L13">    private static final ObjectIlaECD MULTIVALUE_ECD = new ObjectIlaECD(&quot;multiValue&quot;);</span>
+<span class="nc" id="L14">    private static final StatelessTriggerECD TRIGGER_ECD = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+
+<span class="nc" id="L16">    private final ValueCommit vc1 = new ValueCommit(&quot;vc1&quot;);</span>
+<span class="nc" id="L17">    private final ValueCommit vc2 = new ValueCommit(&quot;vc2&quot;);</span>
+
+    @Test
+    void dynamicConstructionTest() throws InterruptedException {
+<span class="nc" id="L21">        String value = &quot;bob&quot;;</span>
+<span class="nc" id="L22">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L23">        mbf.addMultiplexer(VALUE_ECD, MULTIVALUE_ECD);</span>
+<span class="nc" id="L24">        MultiplexedBranch multiBranch = mbf.create(&quot;multiBranch&quot;);</span>
+<span class="nc" id="L25">        multiBranch.add(vc1, 0);</span>
+
+<span class="nc" id="L27">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L28">        final Root root = Root.builder()</span>
+<span class="nc" id="L29">                .setName(&quot;Test&quot;)</span>
+<span class="nc" id="L30">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L31">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L32">                .addObjectECD(MULTIVALUE_ECD, ObjectIlaFromArray.create(new String[] {value}))</span>
+<span class="nc" id="L33">                .addStatelessTriggerECD(TRIGGER_ECD)</span>
+<span class="nc" id="L34">                .build();</span>
+
+<span class="nc" id="L36">        root.add(multiBranch);</span>
+<span class="nc" id="L37">        queue.waitTilEmpty();</span>
+<span class="nc" id="L38">    }</span>
+
+    @Test
+    void nameSpaceSeparationTest() throws InterruptedException {
+<span class="nc" id="L42">        String value0 = &quot;bob&quot;;</span>
+<span class="nc" id="L43">        String value1 = &quot;sally&quot;;</span>
+<span class="nc" id="L44">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L45">        mbf.addMultiplexer(VALUE_ECD, MULTIVALUE_ECD);</span>
+<span class="nc" id="L46">        MultiplexedBranch multiBranch = mbf.create(&quot;multiBranch&quot;);</span>
+<span class="nc" id="L47">        ValueCommit vc0 = new ValueCommit(&quot;vc&quot;);</span>
+<span class="nc" id="L48">        ValueCommit vc1 = new ValueCommit(&quot;vc&quot;);</span>
+<span class="nc" id="L49">        multiBranch.add(vc0, 0);</span>
+<span class="nc" id="L50">        multiBranch.add(vc1, 1);</span>
+
+<span class="nc" id="L52">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L53">        final Root root = Root.builder()</span>
+<span class="nc" id="L54">                .setName(&quot;Test&quot;)</span>
+<span class="nc" id="L55">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L56">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L57">                .addObjectECD(MULTIVALUE_ECD, ObjectIlaFromArray.create(new String[] {value0, value1}))</span>
+<span class="nc" id="L58">                .build();</span>
+
+<span class="nc" id="L60">        root.add(multiBranch);</span>
+<span class="nc" id="L61">        queue.waitTilEmpty();</span>
+<span class="nc" id="L62">        assertThat(value0).isEqualTo(vc0.value);</span>
+<span class="nc" id="L63">        assertThat(value1).isEqualTo(vc1.value);</span>
+<span class="nc" id="L64">    }</span>
+
+    private static class ValueCommit extends Commit {
+<span class="nc" id="L67">        String value = null;</span>
+
+        public ValueCommit(String name) {
+<span class="nc" id="L70">            super(name, new StringECD[] {VALUE_ECD});</span>
+<span class="nc" id="L71">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L75">            this.value = (String) get(VALUE_ECD);</span>
+<span class="nc" id="L76">        }</span>
+    }
+
+    private class ComponentSwitchCommit extends TriggeredCommit {
+        public final MultiplexedBranch mb;
+
+<span class="nc" id="L82">        public ComponentSwitchCommit(MultiplexedBranch mb) {</span>
+<span class="nc" id="L83">            super(&quot;ComponentSwitchCommit&quot;, TRIGGER_ECD);</span>
+<span class="nc" id="L84">            this.mb = mb;</span>
+<span class="nc" id="L85">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L89">            mb.remove(vc1);</span>
+<span class="nc" id="L90">            mb.add(vc2, 0);</span>
+<span class="nc" id="L91">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

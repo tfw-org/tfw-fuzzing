@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchAndReplace.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.build</a> &gt; <span class="el_source">SearchAndReplace.java</span></div><h1>SearchAndReplace.java</h1><pre class="source lang-java linenums">package tfw.build;
+
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public final class SearchAndReplace {
+    private static final Logger LOGGER;
+
+    static {
+<span class="nc" id="L20">        System.setProperty(&quot;java.util.logging.SimpleFormatter.format&quot;, &quot;[%1$tF %1$tT] [%4$-7s] %5$s %n&quot;);</span>
+<span class="nc" id="L21">        LOGGER = LoggerFactory.getLogger(SearchAndReplace.class);</span>
+<span class="nc" id="L22">    }</span>
+
+    private SearchAndReplace() {}
+
+    public static void main(final String[] args) throws Exception {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (args.length &lt; 1) {</span>
+<span class="nc" id="L28">            LOGGER.error(&quot;Usage: SearchAndReplace &lt;template/mapping root directory&gt;&quot;);</span>
+
+<span class="nc" id="L30">            System.exit(-1);</span>
+        }
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        for (int a = 0; a &lt; args.length; a++) {</span>
+            List&lt;Path&gt; templateList;
+<span class="nc" id="L35">            try (Stream&lt;Path&gt; paths =</span>
+<span class="nc" id="L36">                    Files.find(Paths.get(args[a]), Integer.MAX_VALUE, (p, basicFileAttributes) -&gt; p.getFileName()</span>
+<span class="nc" id="L37">                            .toString()</span>
+<span class="nc" id="L38">                            .endsWith(&quot;.template&quot;)); ) {</span>
+<span class="nc" id="L39">                templateList = paths.collect(Collectors.toList());</span>
+            }
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            for (final Path p : templateList) {</span>
+<span class="nc" id="L43">                LOGGER.info(&quot;Template Path ={}&quot;, p);</span>
+
+<span class="nc" id="L45">                final String templateString = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L46">                final String[] mappingTemplate = templateString.split(&quot;\\R&quot;, 2);</span>
+
+<span class="nc" id="L48">                LOGGER.info(&quot;  mapping = {}&quot;, mappingTemplate[0]);</span>
+<span class="nc" id="L49">                LOGGER.debug(&quot;  template.l = \n{}&quot;, mappingTemplate[1].length());</span>
+
+<span class="nc" id="L51">                final int commentIndex = mappingTemplate[0].indexOf(&quot;//&quot;);</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                if (commentIndex != 0) {</span>
+<span class="nc" id="L54">                    LOGGER.error(&quot;Mapping comment not at beginning of first line!&quot;);</span>
+
+<span class="nc" id="L56">                    System.exit(-1);</span>
+                }
+
+<span class="nc" id="L59">                final String mapping = mappingTemplate[0].substring(2).trim();</span>
+
+<span class="nc" id="L61">                LOGGER.debug(&quot;  mapping = {}&quot;, mapping);</span>
+
+<span class="nc" id="L63">                final String[] mappings = mapping.split(&quot;,&quot;);</span>
+
+<span class="nc" id="L65">                LOGGER.info(&quot;  mappings = {}&quot;, mappings.length);</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                for (int i = 0; i &lt; mappings.length; i++) {</span>
+<span class="nc" id="L68">                    final Path mappingPath = Paths.get(p.getParent().toString(), mappings[i] + &quot;.mapping&quot;);</span>
+
+<span class="nc" id="L70">                    LOGGER.debug(&quot;  mappingPath = {}&quot;, mappingPath);</span>
+
+<span class="nc" id="L72">                    final String mappingString = new String(Files.readAllBytes(mappingPath), StandardCharsets.UTF_8);</span>
+
+<span class="nc" id="L74">                    LOGGER.debug(&quot;  mappingString = \n{}&quot;, mappingString);</span>
+
+<span class="nc" id="L76">                    final Properties properties = new Properties();</span>
+<span class="nc" id="L77">                    properties.load(new StringReader(mappingString));</span>
+
+<span class="nc" id="L79">                    String template = mappingTemplate[1];</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                    for (final Enumeration&lt;?&gt; e = properties.propertyNames(); e.hasMoreElements(); ) {</span>
+<span class="nc" id="L81">                        final String propertyName = (String) e.nextElement();</span>
+
+<span class="nc" id="L83">                        template = template.replaceAll(propertyName, properties.getProperty(propertyName));</span>
+<span class="nc" id="L84">                    }</span>
+<span class="nc" id="L85">                    template = template + &quot;// AUTO GENERATED FROM TEMPLATE\n&quot;;</span>
+
+                    // DELETE THIS!!!
+<span class="nc" id="L88">                    template = template.replace(&quot;\r\n&quot;, System.lineSeparator());</span>
+
+<span class="nc" id="L90">                    LOGGER.debug(&quot;  template = \n{}&quot;, template);</span>
+
+<span class="nc" id="L92">                    final Path outputPath = Paths.get(</span>
+<span class="nc" id="L93">                            p.getParent().toString().replace(&quot;template&quot;, &quot;java&quot;),</span>
+                            mappings[i],
+<span class="nc" id="L95">                            p.getName(p.getNameCount() - 1)</span>
+<span class="nc" id="L96">                                    .toString()</span>
+<span class="nc" id="L97">                                    .replace(&quot;template&quot;, &quot;java&quot;)</span>
+<span class="nc" id="L98">                                    .replace(&quot;__&quot;, properties.getProperty(&quot;%%NAME%%&quot;))</span>
+<span class="nc" id="L99">                                    .replaceAll(&quot;\\.\\..+\\.&quot;, &quot;.&quot;));</span>
+
+<span class="nc" id="L101">                    LOGGER.debug(&quot;  outputPath = {}&quot;, outputPath);</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                    if (outputPath.toFile().exists()) {</span>
+<span class="nc" id="L104">                        final String originalFileString =</span>
+<span class="nc" id="L105">                                new String(Files.readAllBytes(outputPath), StandardCharsets.UTF_8);</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                        if (originalFileString.equals(template)) {</span>
+<span class="nc" id="L108">                            LOGGER.info(&quot;  same as {}&quot;, outputPath);</span>
+                        } else {
+<span class="nc" id="L110">                            Files.write(outputPath, template.getBytes(StandardCharsets.UTF_8));</span>
+
+<span class="nc" id="L112">                            LOGGER.info(&quot;  writing {}&quot;, outputPath);</span>
+                        }
+<span class="nc" id="L114">                    } else {</span>
+<span class="nc" id="L115">                        Files.write(outputPath, template.getBytes(StandardCharsets.UTF_8));</span>
+
+<span class="nc" id="L117">                        LOGGER.info(&quot;  writing {}&quot;, outputPath);</span>
+                    }
+                }
+<span class="nc" id="L120">            }</span>
+        }
+<span class="nc" id="L122">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

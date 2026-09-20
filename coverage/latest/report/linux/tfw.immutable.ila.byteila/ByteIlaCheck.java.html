@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIlaCheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.byteila</a> &gt; <span class="el_source">ByteIlaCheck.java</span></div><h1>ByteIlaCheck.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.byteila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+
+public final class ByteIlaCheck {
+    private ByteIlaCheck() {
+        // non-instantiable class
+    }
+
+    public static void checkGetArguments(final ByteIla ila) throws IOException {
+<span class="nc" id="L15">        final long ilaLength = ila.length();</span>
+<span class="nc" id="L16">        final byte[] array = new byte[10];</span>
+
+<span class="nc" id="L18">        assertThatThrownBy(() -&gt; ila.get(null, 0, 0, 1))</span>
+<span class="nc" id="L19">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L20">                .hasMessage(&quot;array == null not allowed!&quot;);</span>
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; ila.get(array, -1, 0, 1))</span>
+<span class="nc" id="L22">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L23">                .hasMessage(&quot;offset (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L24">        assertThatThrownBy(() -&gt; ila.get(array, 0, -1, 1))</span>
+<span class="nc" id="L25">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L26">                .hasMessage(&quot;start (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L27">        assertThatThrownBy(() -&gt; ila.get(array, 0, 0, -1))</span>
+<span class="nc" id="L28">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L29">                .hasMessage(&quot;length (=-1) &lt; 0 not allowed!&quot;);</span>
+<span class="nc" id="L30">        assertThatThrownBy(() -&gt; ila.get(array, array.length, 0, 1))</span>
+<span class="nc" id="L31">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L32">                .hasMessage(&quot;offset (=10) &gt;= array.length (=10) not allowed!&quot;);</span>
+<span class="nc" id="L33">        assertThatThrownBy(() -&gt; ila.get(array, 0, ilaLength, 1))</span>
+<span class="nc" id="L34">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L35">                .hasMessage(&quot;start (=%s) &gt;= ila.length() (=%s) not allowed!&quot;, ilaLength, ilaLength);</span>
+<span class="nc" id="L36">        assertThatThrownBy(() -&gt; ila.get(array, array.length - 1, 0, 2))</span>
+<span class="nc" id="L37">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L38">                .hasMessage(&quot;offset+length (=11) &gt; array.length (=10) not allowed!&quot;);</span>
+<span class="nc" id="L39">        assertThatThrownBy(() -&gt; ila.get(array, 0, ilaLength - 1, 2))</span>
+<span class="nc" id="L40">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L41">                .hasMessage(&quot;start+length (=%s) &gt; ila.length() (=%s) not allowed!&quot;, ilaLength + 1, ilaLength);</span>
+<span class="nc" id="L42">    }</span>
+
+    public static void checkGetExhaustively(final ByteIla ila1, final ByteIla ila2) throws IOException {
+<span class="nc" id="L45">        final int length1 = (int) Math.min(ila1.length(), Integer.MAX_VALUE);</span>
+<span class="nc" id="L46">        final int length2 = (int) Math.min(ila2.length(), Integer.MAX_VALUE);</span>
+
+<span class="nc" id="L48">        assertThat(length2).isEqualTo(length1);</span>
+
+<span class="nc" id="L50">        final byte[] a1 = new byte[length1];</span>
+<span class="nc" id="L51">        final byte[] a2 = new byte[length1];</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        for (int s = 0; s &lt; length1; s++) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            for (int l = 0; l &lt; length1 - s; l++) {</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">                for (int o = 0; o &lt; length1 - l; o++) {</span>
+<span class="nc" id="L56">                    ila1.get(a1, o, s, l);</span>
+<span class="nc" id="L57">                    ila2.get(a2, o, s, l);</span>
+
+<span class="nc" id="L59">                    assertThat(a2).isEqualTo(a1);</span>
+                }
+            }
+        }
+<span class="nc" id="L63">    }</span>
+
+    public static void check(final ByteIla expectedIla, final ByteIla actualIla) throws IOException {
+<span class="nc" id="L66">        checkGetArguments(actualIla);</span>
+<span class="nc" id="L67">        checkGetExhaustively(expectedIla, actualIla);</span>
+<span class="nc" id="L68">    }</span>
+
+    public static void checkAll(
+            final ByteIla target, final ByteIla actual, int addlOffsetLength, int maxAbsStride, byte epsilon)
+            throws Exception {
+<span class="nc" id="L73">        checkGetArguments(actual);</span>
+<span class="nc" id="L74">        ByteIlaUtilCheck.checkAll(actual, epsilon);</span>
+<span class="nc" id="L75">        checkFourFiveEquivalence(actual, addlOffsetLength, epsilon);</span>
+<span class="nc" id="L76">        checkCorrectness(target, actual, addlOffsetLength, maxAbsStride, epsilon);</span>
+<span class="nc" id="L77">    }</span>
+
+    public static void checkWithoutCorrectness(ByteIla ila, int offsetLength, byte epsilon) throws Exception {
+<span class="nc" id="L80">        checkGetArguments(ila);</span>
+<span class="nc" id="L81">        ByteIlaUtilCheck.checkAll(ila, epsilon);</span>
+<span class="nc" id="L82">        checkFourFiveEquivalence(ila, offsetLength, epsilon);</span>
+<span class="nc" id="L83">    }</span>
+
+    public static void checkFourFiveEquivalence(ByteIla ila, int offsetLength, byte epsilon) throws Exception {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (offsetLength &lt; 0) throw new Exception(&quot;offsetLength &lt; 0 not allowed&quot;);</span>
+
+<span class="nc" id="L88">        final StridedByteIla stridedByteIla = StridedByteIlaFromByteIla.create(ila, new byte[1000]);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        final byte eps = epsilon &lt; 0.0 ? (byte) -epsilon : epsilon;</span>
+<span class="nc" id="L90">        final byte neps = (byte) -eps;</span>
+<span class="nc" id="L91">        final Random random = new Random(0);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        final int ilaLength = ila.length() + offsetLength &lt;= Integer.MAX_VALUE</span>
+<span class="nc" id="L93">                ? (int) ila.length()</span>
+<span class="nc" id="L94">                : Integer.MAX_VALUE - offsetLength;</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        for (int offset = 0; offset &lt; offsetLength; ++offset) {</span>
+<span class="nc" id="L96">            final byte[] four = new byte[ilaLength + offsetLength];</span>
+<span class="nc" id="L97">            final byte[] five = new byte[ilaLength + offsetLength];</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                    for (int ii = 0; ii &lt; four.length; ++ii) {</span>
+<span class="nc" id="L101">                        five[ii] = four[ii] = (byte) random.nextInt();</span>
+                    }
+<span class="nc" id="L103">                    ila.get(four, offset, start, length);</span>
+<span class="nc" id="L104">                    stridedByteIla.get(five, offset, 1, start, length);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                    for (int ii = 0; ii &lt; length; ++ii) {</span>
+<span class="nc" id="L106">                        byte delta = (byte) (four[ii] - five[ii]);</span>
+<span class="nc bnc" id="L107" title="All 4 branches missed.">                        if (!(neps &lt;= delta &amp;&amp; delta &lt;= eps))</span>
+<span class="nc" id="L108">                            throw new Exception(&quot;four[&quot; + ii + &quot;] (&quot;</span>
+                                    + four[ii] + &quot;) !~ five[&quot;
+                                    + ii + &quot;] (&quot;
+                                    + five[ii]
+                                    + &quot;) {length=&quot; + length
+                                    + &quot;,start=&quot; + start
+                                    + &quot;,offset=&quot; + offset
+                                    + &quot;}&quot;);
+                    }
+                }
+            }
+        }
+<span class="nc" id="L120">    }</span>
+
+    public static void checkCorrectness(
+            final ByteIla target, final ByteIla actual, int addlOffsetLength, int maxAbsStride, byte epsilon)
+            throws Exception {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (addlOffsetLength &lt; 0) throw new Exception(&quot;addlOffsetLength &lt; 0 not allowed&quot;);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (maxAbsStride &lt; 1) throw new Exception(&quot;maxAbsStride &lt; 1 not allowed&quot;);</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (target.length() != actual.length()) throw new Exception(&quot;target.length() != actual.length()&quot;);</span>
+
+<span class="nc" id="L129">        final StridedByteIla stridedTarget = StridedByteIlaFromByteIla.create(target, new byte[1000]);</span>
+<span class="nc" id="L130">        final StridedByteIla stridedActual = StridedByteIlaFromByteIla.create(target, new byte[1000]);</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        final byte eps = epsilon &lt; 0.0 ? (byte) -epsilon : epsilon;</span>
+<span class="nc" id="L132">        final byte neps = (byte) -eps;</span>
+<span class="nc" id="L133">        final Random random = new Random(0);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        final int ilaLength = stridedTarget.length() + addlOffsetLength &lt;= Integer.MAX_VALUE</span>
+<span class="nc" id="L135">                ? (int) stridedTarget.length()</span>
+<span class="nc" id="L136">                : Integer.MAX_VALUE - addlOffsetLength;</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        for (int stride = -maxAbsStride; stride &lt;= maxAbsStride; ++stride) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (stride != 0) {</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                int absStride = stride &lt; 0 ? -stride : stride;</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                int offsetStart = stride &lt; 0 ? (ilaLength - 1) * absStride : 0;</span>
+<span class="nc" id="L141">                int offsetEnd = offsetStart + addlOffsetLength;</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                for (int offset = offsetStart; offset &lt; offsetEnd; ++offset) {</span>
+<span class="nc" id="L143">                    final int arraySize = (ilaLength - 1) * absStride + 1 + addlOffsetLength;</span>
+<span class="nc" id="L144">                    final byte[] targetBase = new byte[arraySize];</span>
+<span class="nc" id="L145">                    final byte[] actualBase = new byte[arraySize];</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                    for (int length = 1; length &lt;= ilaLength; ++length) {</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                        for (long start = 0; start &lt; ilaLength - length + 1; ++start) {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; targetBase.length; ++ii) {</span>
+<span class="nc" id="L149">                                targetBase[ii] = actualBase[ii] = (byte) random.nextInt();</span>
+                            }
+<span class="nc" id="L151">                            stridedTarget.get(targetBase, offset, stride, start, length);</span>
+<span class="nc" id="L152">                            stridedActual.get(actualBase, offset, stride, start, length);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                            for (int ii = 0; ii &lt; arraySize; ++ii) {</span>
+<span class="nc" id="L154">                                byte delta = (byte) (actualBase[ii] - targetBase[ii]);</span>
+<span class="nc bnc" id="L155" title="All 4 branches missed.">                                if (!(neps &lt;= delta &amp;&amp; delta &lt;= eps))</span>
+<span class="nc" id="L156">                                    throw new Exception(&quot;actual[&quot; + ii</span>
+                                            + &quot;] (&quot;
+                                            + actualBase[ii]
+                                            + &quot;) !~ target[&quot;
+                                            + ii + &quot;] (&quot;
+                                            + targetBase[ii]
+                                            + &quot;) {length=&quot;
+                                            + length
+                                            + &quot;,start=&quot; + start
+                                            + &quot;,offset=&quot;
+                                            + offset
+                                            + &quot;,stride=&quot;
+                                            + stride
+                                            + &quot;}&quot;);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+<span class="nc" id="L176">    }</span>
+
+    public static void dump(String msg, byte[] array) {
+<span class="nc" id="L179">        System.out.println(msg + &quot;:&quot;);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        for (int ii = 0; ii &lt; array.length; ++ii) {</span>
+<span class="nc" id="L181">            System.out.print(&quot; &quot; + array[ii]);</span>
+        }
+<span class="nc" id="L183">        System.out.println();</span>
+<span class="nc" id="L184">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

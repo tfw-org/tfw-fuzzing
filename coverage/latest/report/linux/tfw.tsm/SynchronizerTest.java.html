@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SynchronizerTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">SynchronizerTest.java</span></div><h1>SynchronizerTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.CharacterECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StringECD;
+
+<span class="nc" id="L10">final class SynchronizerTest {</span>
+<span class="nc" id="L11">    private ObjectECD source = new StringECD(&quot;source&quot;);</span>
+<span class="nc" id="L12">    private ObjectECD sink = new StringECD(&quot;sink&quot;);</span>
+<span class="nc" id="L13">    private ObjectECD a1Port = new CharacterECD(&quot;a1&quot;);</span>
+<span class="nc" id="L14">    private ObjectECD a2Port = new CharacterECD(&quot;a2&quot;);</span>
+<span class="nc" id="L15">    private ObjectECD b1Port = new CharacterECD(&quot;b1&quot;);</span>
+<span class="nc" id="L16">    private ObjectECD b2Port = new CharacterECD(&quot;b2&quot;);</span>
+<span class="nc" id="L17">    private ObjectECD[] aChans = new ObjectECD[] {a1Port, a2Port};</span>
+<span class="nc" id="L18">    private ObjectECD[] bChans = new ObjectECD[] {b1Port, b2Port};</span>
+<span class="nc" id="L19">    private ObjectECD[] sinks = new ObjectECD[] {sink};</span>
+<span class="nc" id="L20">    private ObjectECD[] sources = new ObjectECD[] {source};</span>
+<span class="nc" id="L21">    private char commitA1 = ' ';</span>
+<span class="nc" id="L22">    private char commitA2 = ' ';</span>
+<span class="nc" id="L23">    private char commitB1 = ' ';</span>
+<span class="nc" id="L24">    private char commitB2 = ' ';</span>
+<span class="nc" id="L25">    private boolean aToBFired = false;</span>
+<span class="nc" id="L26">    private boolean bToAFired = false;</span>
+<span class="nc" id="L27">    private Initiator initiator = new Initiator(&quot;Initiator&quot;, new ObjectECD[] {a1Port, a2Port, b1Port, b2Port, source});</span>
+<span class="nc" id="L28">    private Synchronizer converter =</span>
+            new Synchronizer(
+<span class="nc" id="L30">                    &quot;TwoWay&quot;, new ObjectECD[] {a1Port, a2Port}, new ObjectECD[] {b1Port, b2Port}, sinks, sources) {</span>
+
+                @Override
+                protected void convertAToB() {
+<span class="nc" id="L34">                    aToBFired = true;</span>
+
+<span class="nc" id="L36">                    Character ch = (Character) get(a1Port);</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">                    if (ch != null) {</span>
+<span class="nc" id="L39">                        set(b1Port, Character.toUpperCase(ch.charValue()));</span>
+                    }
+
+<span class="nc" id="L42">                    ch = (Character) get(a2Port);</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                    if (ch != null) {</span>
+<span class="nc" id="L45">                        set(b2Port, Character.toUpperCase(ch.charValue()));</span>
+                    }
+
+<span class="nc" id="L48">                    set(source, &quot;cause an error&quot;);</span>
+<span class="nc" id="L49">                }</span>
+
+                @Override
+                protected void convertBToA() {
+<span class="nc" id="L53">                    bToAFired = true;</span>
+
+<span class="nc" id="L55">                    Character ch = (Character) get(b1Port);</span>
+
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                    if (ch != null) {</span>
+<span class="nc" id="L58">                        set(a1Port, Character.toLowerCase(ch.charValue()));</span>
+                    }
+
+<span class="nc" id="L61">                    ch = (Character) get(b2Port);</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                    if (ch != null) {</span>
+<span class="nc" id="L64">                        set(a2Port, Character.toLowerCase(ch.charValue()));</span>
+                    }
+
+<span class="nc" id="L67">                    set(source, &quot;cause an error&quot;);</span>
+<span class="nc" id="L68">                }</span>
+            };
+
+<span class="nc" id="L71">    private Commit commit = new Commit(&quot;Commit&quot;, new ObjectECD[] {a1Port, a2Port, b1Port, b2Port}) {</span>
+        @Override
+        protected void commit() {
+<span class="nc" id="L74">            commitA1 = ((Character) get(a1Port)).charValue();</span>
+<span class="nc" id="L75">            commitA2 = ((Character) get(a2Port)).charValue();</span>
+<span class="nc" id="L76">            commitB1 = ((Character) get(b1Port)).charValue();</span>
+<span class="nc" id="L77">            commitB2 = ((Character) get(b2Port)).charValue();</span>
+<span class="nc" id="L78">        }</span>
+
+        @Override
+        protected void debugCommit() {
+<span class="nc" id="L82">            Character ch = (Character) get(a1Port);</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (ch != null) {</span>
+<span class="nc" id="L85">                commitA1 = ((Character) get(a1Port)).charValue();</span>
+            }
+
+<span class="nc" id="L88">            ch = (Character) get(a2Port);</span>
+
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (ch != null) {</span>
+<span class="nc" id="L91">                commitA2 = ((Character) get(a2Port)).charValue();</span>
+            }
+
+<span class="nc" id="L94">            ch = (Character) get(b1Port);</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (ch != null) {</span>
+<span class="nc" id="L97">                commitB1 = ((Character) get(b1Port)).charValue();</span>
+            }
+
+<span class="nc" id="L100">            ch = (Character) get(b2Port);</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (ch != null) {</span>
+<span class="nc" id="L103">                commitB2 = ((Character) get(b2Port)).charValue();</span>
+            }
+<span class="nc" id="L105">        }</span>
+    };
+
+<span class="nc" id="L108">    private Converter rollback = new Converter(&quot;rollback&quot;, new ObjectECD[] {a1Port}, new ObjectECD[] {b1Port}) {</span>
+        @Override
+        protected void convert() {
+<span class="nc" id="L111">            initiator.set(b1Port, 'b');</span>
+<span class="nc" id="L112">            rollback();</span>
+<span class="nc" id="L113">        }</span>
+    };
+
+<span class="nc" id="L116">    private Exception exception = null;</span>
+<span class="nc" id="L117">    private boolean fired = false;</span>
+<span class="nc" id="L118">    private Converter causeAtoBtoAError =</span>
+<span class="nc" id="L119">            new Converter(&quot;causeAtoBToAerror&quot;, new ObjectECD[] {source}, new ObjectECD[] {b1Port}) {</span>
+                @Override
+                protected void convert() {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                    if (fired) {</span>
+<span class="nc" id="L123">                        return;</span>
+                    }
+
+<span class="nc" id="L126">                    fired = true;</span>
+
+<span class="nc" id="L128">                    set(b1Port, 'E');</span>
+<span class="nc" id="L129">                }</span>
+            };
+
+<span class="nc" id="L132">    private Converter causeBtoAtoBError =</span>
+<span class="nc" id="L133">            new Converter(&quot;causeAtoBToAerror&quot;, new ObjectECD[] {source}, new ObjectECD[] {a1Port}) {</span>
+                @Override
+                protected void convert() {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                    if (fired) {</span>
+<span class="nc" id="L137">                        return;</span>
+                    }
+
+<span class="nc" id="L140">                    fired = true;</span>
+
+<span class="nc" id="L142">                    set(a1Port, 'e');</span>
+<span class="nc" id="L143">                }</span>
+            };
+
+<span class="nc" id="L146">    private BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+
+    public Root initializeRoot(TransactionExceptionHandler handler) throws InterruptedException {
+<span class="nc" id="L149">        final Root root = Root.builder()</span>
+<span class="nc" id="L150">                .setName(&quot;Root&quot;)</span>
+<span class="nc" id="L151">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L152">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L153">                .setTransactionExceptionHandler(handler)</span>
+<span class="nc" id="L154">                .addObjectECD(a1Port, null)</span>
+<span class="nc" id="L155">                .addObjectECD(a2Port, null)</span>
+<span class="nc" id="L156">                .addObjectECD(b1Port, null)</span>
+<span class="nc" id="L157">                .addObjectECD(b2Port, null)</span>
+<span class="nc" id="L158">                .addObjectECD(source, null)</span>
+<span class="nc" id="L159">                .addObjectECD(sink, null)</span>
+<span class="nc" id="L160">                .build();</span>
+
+<span class="nc" id="L162">        root.add(initiator);</span>
+<span class="nc" id="L163">        root.add(converter);</span>
+<span class="nc" id="L164">        root.add(commit);</span>
+<span class="nc" id="L165">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L167">        return root;</span>
+    }
+
+    @Test
+    void constructionTest() {
+<span class="nc" id="L172">        assertThatThrownBy(() -&gt; new TestTwoWay(null, aChans, bChans, sinks, sources))</span>
+<span class="nc" id="L173">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L174">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L175">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, null, bChans, sinks, sources))</span>
+<span class="nc" id="L176">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L177">                .hasMessage(&quot;aPortDescriptions == null not allowed!&quot;);</span>
+<span class="nc" id="L178">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, new ObjectECD[0], bChans, sinks, sources))</span>
+<span class="nc" id="L179">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L180">                .hasMessage(&quot;aPortDescriptions.length == 0 not allowed&quot;);</span>
+<span class="nc" id="L181">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, new ObjectECD[] {null}, bChans, sinks, sources))</span>
+<span class="nc" id="L182">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L183">                .hasMessage(&quot;aPortDescription[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L184">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, aChans, null, sinks, sources))</span>
+<span class="nc" id="L185">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L186">                .hasMessage(&quot;bPortDescriptions == null not allowed!&quot;);</span>
+<span class="nc" id="L187">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, aChans, new ObjectECD[0], sinks, sources))</span>
+<span class="nc" id="L188">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L189">                .hasMessage(&quot;bPortDescriptions.length == 0 not allowed&quot;);</span>
+<span class="nc" id="L190">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, aChans, new ObjectECD[] {null}, sinks, sources))</span>
+<span class="nc" id="L191">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L192">                .hasMessage(&quot;bPortDescription[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L193">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, aChans, bChans, new ObjectECD[] {null}, sources))</span>
+<span class="nc" id="L194">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L195">                .hasMessage(&quot;sinkEventChannels[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L196">        assertThatThrownBy(() -&gt; new TestTwoWay(&quot;Test&quot;, aChans, bChans, sinks, new ObjectECD[] {null}))</span>
+<span class="nc" id="L197">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L198">                .hasMessage(&quot;sources[4] == null not allowed!&quot;);</span>
+<span class="nc" id="L199">    }</span>
+
+    /*
+        public void testConvertAToB() throws Exception
+        {
+            this.aToBFired = false;
+            initializeRoot(null);
+            initiator.set(a1Port, new Character('a'));
+            queue.waitTilEmpty();
+            assertEquals(&quot;CommitA1&quot;, 'a', commitA1);
+            assertEquals(&quot;CommitA2&quot;, ' ', commitA2);
+            assertEquals(&quot;CommitB1&quot;, ' ', commitB1);
+            assertEquals(&quot;CommitB2&quot;, ' ', commitB2);
+            assertFalse(&quot;convertAToB() called with a2 not set&quot;, this.aToBFired);
+
+            initiator.set(a2Port, new Character('b'));
+            queue.waitTilEmpty();
+            assertEquals(&quot;CommitA1&quot;, 'a', commitA1);
+            assertEquals(&quot;CommitA2&quot;, 'b', commitA2);
+            assertEquals(&quot;CommitB1&quot;, 'A', commitB1);
+            assertEquals(&quot;CommitB2&quot;, 'B', commitB2);
+            assertTrue(&quot;convertAToB() not called with both channels set&quot;,
+                this.aToBFired);
+            this.aToBFired = false;
+            initiator.set(source, &quot;alskjf&quot;);
+            queue.waitTilEmpty();
+            assertFalse(&quot;convertAToB() called on non-triggering channel&quot;,
+                this.aToBFired);
+        }
+
+        public void testConvertBToA()
+        {
+            this.bToAFired = false;
+            initializeRoot(null);
+            initiator.set(b1Port, new Character('A'));
+            queue.waitTilEmpty();
+            assertEquals(&quot;CommitA1&quot;, ' ', commitA1);
+            assertEquals(&quot;CommitA2&quot;, ' ', commitA2);
+            assertEquals(&quot;CommitB1&quot;, 'A', commitB1);
+            assertEquals(&quot;CommitB2&quot;, ' ', commitB2);
+            assertFalse(&quot;convertBToA() called with b2 not set&quot;, this.bToAFired);
+
+            initiator.set(b2Port, new Character('B'));
+            queue.waitTilEmpty();
+            assertEquals(&quot;CommitA1&quot;, 'a', commitA1);
+            assertEquals(&quot;CommitA2&quot;, 'b', commitA2);
+            assertEquals(&quot;CommitB1&quot;, 'A', commitB1);
+            assertEquals(&quot;CommitB2&quot;, 'B', commitB2);
+            assertTrue(&quot;convertBToA() not called with both channels set&quot;,
+                this.bToAFired);
+            this.bToAFired = false;
+            initiator.set(source, &quot;alskjf&quot;);
+            queue.waitTilEmpty();
+            assertFalse(&quot;convertAToB() called on non-triggering channel&quot;,
+                this.bToAFired);
+        }
+    */
+    //    	 This test doesn't work because it doesn't cause the state to
+    //    	 change in the same transaction.
+    /*   public void testAtoBtoAError() throws Exception
+        {
+            initiator.set(a1Port, new Character('a'));
+            initiator.set(a2Port, new Character('b'));
+            Root root = initializeRoot(new TransactionExceptionHandler()
+    		{
+    			public void handle(Exception exception)
+    			{
+    				SynchronizerTest.this.exception = exception;
+
+    				//exception.printStackTrace();
+    			}
+    		});
+            root.add(causeAtoBtoAError);
+            this.exception = null;
+
+
+            queue.waitTilEmpty();
+            fired = false;
+
+            //System.out.println(&quot;initiate error&quot;);
+            initiator.set(a1Port, new Character('g'));
+            queue.waitTilEmpty();
+
+            if (exception == null)
+            {
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+
+            //System.out.println(exception);
+            assertNotNull(&quot;Failed to detect 'a' to 'b' to 'a' conversion&quot;, exception);
+        }
+    */
+    /*    public void testBtoAtoBError() throws Exception
+        {
+            initiator.set(b1Port, new Character('A'));
+            initiator.set(b2Port, new Character('B'));
+            Root root = initializeRoot(new TransactionExceptionHandler()
+    		{
+    			public void handle(Exception exception)
+    			{
+    				SynchronizerTest.this.exception = exception;
+
+    				//exception.printStackTrace();
+    			}
+    		});
+            root.add(causeBtoAtoBError);
+
+            queue.waitTilEmpty();
+            this.exception = null;
+            fired = false;
+
+            //System.out.println(&quot;initiator error&quot;);
+            initiator.set(b1Port, new Character('G'));
+            queue.waitTilEmpty();
+
+            if (exception == null)
+            {
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+
+            //System.out.println(exception);
+            assertNotNull(&quot;Failed to detect 'b' to 'a' to 'b' conversion&quot;, exception);
+        }
+    */
+    //    public void testRollback()
+    //    {
+    //        branch.add(rollback);
+    //        SynchronizeThread.sync();
+    //        initiator.set(a1Port, new Character('a'));
+    //        SynchronizeThread.sync();
+    //
+    //        try
+    //        {
+    //            initiator.set(b2Port, new Character('B'));
+    //            SynchronizeThread.sync();
+    //        }
+    //        catch (IllegalStateException unexpected)
+    //        {
+    //            fail(
+    //                &quot;Synchronizer didn't clean up it's internal state on rollback&quot;);
+    //        }
+    //    }
+    //    /* this test does not work because exception is thrown in another thread
+    //            public void testConvertConflict()
+    //                    throws InterruptedException, InvocationTargetException
+    //            {
+    //                    BranchFactory nf = new BranchFactory();
+    //                    nf.addTerminator(a1Port);
+    //                    nf.addTerminator(a2Port);
+    //                    nf.addTerminator(b1Port);
+    //                    nf.addTerminator(b2Port);
+    //                    nf.setRoot(true);
+    //                    Branch branch = nf.create(&quot;Test branch&quot;);
+    //                    branch.add(initiator);
+    //                    branch.add(converter);
+    //                    branch.add(commit);
+    //                    SynchronizeThread.sync();
+    //
+    //                    initiator.set(a1Port, new Character('a'));
+    //                    try
+    //                    {
+    //                            initiator.set(b1Port, new Character('A'));
+    //                            fail(&quot;Synchronizer accept state change in both&quot;
+    //                                            +&quot; A and B event set&quot;);
+    //                    }
+    //                    catch(IllegalStateException expected)
+    //                    {
+    //                    }
+    //            }
+    //    */
+
+    private static class TestTwoWay extends Synchronizer {
+        public TestTwoWay(String name, ObjectECD[] aChans, ObjectECD[] bChans, ObjectECD[] sinks, ObjectECD[] sources) {
+<span class="nc" id="L386">            super(name, aChans, bChans, sinks, sources);</span>
+<span class="nc" id="L387">        }</span>
+
+        @Override
+<span class="nc" id="L390">        public void convertAToB() {}</span>
+
+        @Override
+<span class="nc" id="L393">        public void convertBToA() {}</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JPanelBB.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.swing</a> &gt; <span class="el_source">JPanelBB.java</span></div><h1>JPanelBB.java</h1><pre class="source lang-java linenums">package tfw.swing;
+
+import java.awt.Component;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import javax.swing.JPanel;
+import tfw.tsm.Branch;
+import tfw.tsm.BranchBox;
+import tfw.tsm.TreeComponent;
+
+public class JPanelBB extends JPanel implements BranchBox {
+    private static final long serialVersionUID = 1L;
+    private final Branch branch;
+
+    public JPanelBB(String name) {
+<span class="nc" id="L16">        this(new Branch(&quot;JPanelBB[&quot; + name + &quot;]&quot;));</span>
+<span class="nc" id="L17">    }</span>
+
+<span class="nc" id="L19">    public JPanelBB(Branch branch) {</span>
+<span class="nc" id="L20">        this.branch = branch;</span>
+<span class="nc" id="L21">    }</span>
+
+    public final Component addToBoth(Component comp) {
+<span class="nc" id="L24">        branch.add((BranchBox) comp);</span>
+<span class="nc" id="L25">        return add(comp);</span>
+    }
+
+    public final Component addToBoth(Component comp, int index) {
+<span class="nc" id="L29">        branch.add((BranchBox) comp);</span>
+<span class="nc" id="L30">        return add(comp, index);</span>
+    }
+
+    public final void addToBoth(Component comp, Object constraints) {
+<span class="nc" id="L34">        branch.add((BranchBox) comp);</span>
+<span class="nc" id="L35">        add(comp, constraints);</span>
+<span class="nc" id="L36">    }</span>
+
+    public final void addToBoth(Component comp, Object constraints, int index) {
+<span class="nc" id="L39">        branch.add((BranchBox) comp);</span>
+<span class="nc" id="L40">        add(comp, constraints, index);</span>
+<span class="nc" id="L41">    }</span>
+
+    public final Component addToBoth(String name, Component comp) {
+<span class="nc" id="L44">        branch.add((BranchBox) comp);</span>
+<span class="nc" id="L45">        return add(name, comp);</span>
+    }
+
+    public final void removeFromBoth(Component comp) {
+<span class="nc" id="L49">        branch.remove((BranchBox) comp);</span>
+<span class="nc" id="L50">        remove(comp);</span>
+<span class="nc" id="L51">    }</span>
+
+    public final void removeFromBoth(int index) {
+<span class="nc" id="L54">        branch.remove((BranchBox) getComponent(index));</span>
+<span class="nc" id="L55">        remove(index);</span>
+<span class="nc" id="L56">    }</span>
+
+    public final void removeAllFromBoth() {
+        //		branch.removeAll();
+<span class="nc" id="L60">        removeAll();</span>
+<span class="nc" id="L61">    }</span>
+
+    public final void addMouseListenerToBoth(MouseListener listener) {
+<span class="nc" id="L64">        addMouseListener(listener);</span>
+<span class="nc" id="L65">        branch.add((TreeComponent) listener);</span>
+<span class="nc" id="L66">    }</span>
+
+    public final void removeMouseListenerFromBoth(MouseListener listener) {
+<span class="nc" id="L69">        removeMouseListener(listener);</span>
+<span class="nc" id="L70">        branch.remove((TreeComponent) listener);</span>
+<span class="nc" id="L71">    }</span>
+
+    public final void addMouseMotionListenerToBoth(MouseMotionListener listener) {
+<span class="nc" id="L74">        addMouseMotionListener(listener);</span>
+<span class="nc" id="L75">        branch.add((TreeComponent) listener);</span>
+<span class="nc" id="L76">    }</span>
+
+    public final void removeMouseMotionListenerFromBoth(MouseMotionListener listener) {
+<span class="nc" id="L79">        removeMouseMotionListener(listener);</span>
+<span class="nc" id="L80">        branch.remove((TreeComponent) listener);</span>
+<span class="nc" id="L81">    }</span>
+
+    @Override
+    public final Branch getBranch() {
+<span class="nc" id="L85">        return branch;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

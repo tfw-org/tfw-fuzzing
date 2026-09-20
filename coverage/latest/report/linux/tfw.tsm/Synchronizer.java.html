@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Synchronizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Synchronizer.java</span></div><h1>Synchronizer.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import tfw.check.Argument;
+import tfw.tsm.ecd.ECDUtility;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+
+/**
+ * A base class for components which convert one set of events, 'setA', into
+ * another, 'setB' and visa versa. This component is active in the processing
+ * phase of a state change cycle within a transaction. Note that it is only
+ * legal to convert in one direction within a single transaction. Therefore,
+ * converting from 'setA' to 'setB' and then from 'setB' to 'setA' within a
+ * transaction is not allowed and will result in a
+ * &lt;code&gt;java.lang.IllegalStateException&lt;/code&gt; being thrown.
+ */
+public abstract class Synchronizer extends Processor {
+    private final List&lt;ObjectECD&gt; aEventList;
+    private final List&lt;ObjectECD&gt; bEventList;
+    private final List&lt;ObjectECD&gt; additionalList;
+<span class="nc" id="L26">    private HashSet&lt;EventChannel&gt; aToBConvert = new HashSet&lt;EventChannel&gt;();</span>
+<span class="nc" id="L27">    private HashSet&lt;EventChannel&gt; bToAConvert = new HashSet&lt;EventChannel&gt;();</span>
+<span class="nc" id="L28">    private CommitRollbackListener crListener = new CommitRollbackListener() {</span>
+        @Override
+        public void rollback() {
+<span class="nc" id="L31">            aToBConvert.clear();</span>
+<span class="nc" id="L32">            bToAConvert.clear();</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+<span class="nc" id="L36">        public void commit() {}</span>
+
+        @Override
+        public String getName() {
+<span class="nc" id="L40">            return Synchronizer.this.getName();</span>
+        }
+    };
+
+    /**
+     * Creates a synchronizer.
+     *
+     * @param name
+     *            The name of the component.
+     * @param aPortInputDescriptions
+     *            The 'A' set of event channels.
+     * @param bPortInputDescriptions
+     *            The 'B' set of event channels.
+     * @param additionalInputDescriptions
+     *            The &quot;additional&quot; set of event channels.
+     * @param outputDescriptions
+     *            The array of EventChannelDescriptions for output.
+     */
+    public Synchronizer(
+            String name,
+            ObjectECD[] aPortInputDescriptions,
+            ObjectECD[] bPortInputDescriptions,
+            ObjectECD[] additionalInputDescriptions,
+            EventChannelDescription[] outputDescriptions) {
+<span class="nc" id="L64">        super(</span>
+                name,
+<span class="nc" id="L66">                checkTriggeringSinks(aPortInputDescriptions, bPortInputDescriptions),</span>
+<span class="nc" id="L67">                checkAdditionalSinks(additionalInputDescriptions),</span>
+<span class="nc" id="L68">                ECDUtility.concat(</span>
+<span class="nc" id="L69">                        aPortInputDescriptions, ECDUtility.concat(bPortInputDescriptions, outputDescriptions)));</span>
+
+<span class="nc" id="L71">        this.aEventList = Collections.unmodifiableList(Arrays.asList(aPortInputDescriptions));</span>
+<span class="nc" id="L72">        this.bEventList = Collections.unmodifiableList(Arrays.asList(bPortInputDescriptions));</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        this.additionalList = (additionalInputDescriptions == null)</span>
+<span class="nc" id="L74">                ? Collections.unmodifiableList(new ArrayList&lt;ObjectECD&gt;())</span>
+<span class="nc" id="L75">                : Collections.unmodifiableList(Arrays.asList(additionalInputDescriptions));</span>
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * This method is called during the processing phase of a transaction when
+     * one or more of the event channels in set 'A' has it's state changed and
+     * all of the dependent event channels have non-null state.
+     */
+    protected abstract void convertAToB();
+
+    /**
+     * This method is called during the processing phase of a transaction when
+     * one or more of the event channels in set 'B' has it's state changed and
+     * all of the dependent event channels have non-null state.
+     */
+    protected abstract void convertBToA();
+
+    /**
+     * This method is called during the processing phase of a transaction when
+     * one or more of the event channels in set 'A' has it's state changed and
+     * one or more it's dependent event channels have null state. This method
+     * can be overridden for debugging purposes to determine what event channels
+     * are null.
+     */
+<span class="nc" id="L99">    protected void debugConvertAToB() {}</span>
+
+    /**
+     * This method is called during the processing phase of a transaction when
+     * one or more of the event channels in set 'B' has it's state changed and
+     * one or more its dependent event channels have null state. This method
+     * can be overridden for debugging purposes to determine what event channels
+     * are null.
+     */
+<span class="nc" id="L108">    protected void debugConvertBToA() {}</span>
+
+    @Override
+    void process() {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (!aToBConvert.isEmpty()) {</span>
+            //        	if (bToAConvert.isEmpty() ||
+            //        		getTransactionManager().isComponentChangeTransactionExecuting())
+            //        	{
+<span class="nc bnc" id="L116" title="All 4 branches missed.">            if (isStateNonNull(aEventList) &amp;&amp; isStateNonNull(additionalList)) {</span>
+<span class="nc" id="L117">                convertAToB();</span>
+            } else {
+<span class="nc" id="L119">                debugConvertAToB();</span>
+            }
+            //        	}
+            //        	else
+            //        	{
+            //        		throwBothSetsChangedException();
+            //        	}
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        } else if (!bToAConvert.isEmpty()) {</span>
+            //        	if (aToBConvert.isEmpty())
+            //        	{
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            if (isStateNonNull(bEventList) &amp;&amp; isStateNonNull(additionalList)) {</span>
+<span class="nc" id="L130">                convertBToA();</span>
+            } else {
+<span class="nc" id="L132">                debugConvertBToA();</span>
+            }
+            //        	}
+            //        	else
+            //        	{
+            //        		throwBothSetsChangedException();
+            //        	}
+        }
+
+<span class="nc" id="L141">        aToBConvert.clear();</span>
+<span class="nc" id="L142">        bToAConvert.clear();</span>
+<span class="nc" id="L143">    }</span>
+
+    @Override
+    void stateChange(EventChannel eventChannel) {
+<span class="nc" id="L147">        getTransactionManager().addCommitRollbackListener(crListener);</span>
+        // call super to get added to the transaction processors...
+<span class="nc" id="L149">        super.stateChange(eventChannel);</span>
+
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (aEventList.contains(eventChannel.getECD())) {</span>
+<span class="nc" id="L152">            aToBConvert.add(eventChannel);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        } else if (bEventList.contains(eventChannel.getECD())) {</span>
+<span class="nc" id="L154">            bToAConvert.add(eventChannel);</span>
+        }
+<span class="nc" id="L156">    }</span>
+
+    private static ObjectECD[] checkAdditionalSinks(ObjectECD[] sinkEventChannels) {
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (sinkEventChannels != null) {</span>
+<span class="nc" id="L160">            Argument.assertElementNotNull(sinkEventChannels, &quot;sinkEventChannels&quot;);</span>
+        }
+<span class="nc" id="L162">        return sinkEventChannels;</span>
+    }
+
+    /**
+     * Validates the arguments and returns a concatinated list of sinks.
+     *
+     * @param aPortDescriptions the 'setA' list of event channels.
+     * @param bPortDescriptions the 'setB' list of event channels.
+     * @return an aggregation of &lt;code&gt;sinks&lt;/code&gt;,
+     *         &lt;code&gt;aPortDescriptions&lt;/code&gt; and
+     *         &lt;code&gt;bPortDescriptions&lt;/code&gt;
+     */
+    private static ObjectECD[] checkTriggeringSinks(ObjectECD[] aPortDescriptions, ObjectECD[] bPortDescriptions) {
+<span class="nc" id="L175">        Argument.assertNotNull(aPortDescriptions, &quot;aPortDescriptions&quot;);</span>
+<span class="nc" id="L176">        Argument.assertNotNull(bPortDescriptions, &quot;bPortDescriptions&quot;);</span>
+<span class="nc" id="L177">        Argument.assertElementNotNull(aPortDescriptions, &quot;aPortDescription&quot;);</span>
+<span class="nc" id="L178">        Argument.assertElementNotNull(bPortDescriptions, &quot;bPortDescription&quot;);</span>
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (aPortDescriptions.length == 0) {</span>
+<span class="nc" id="L181">            throw new IllegalArgumentException(&quot;aPortDescriptions.length == 0 not allowed&quot;);</span>
+        }
+
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (bPortDescriptions.length == 0) {</span>
+<span class="nc" id="L185">            throw new IllegalArgumentException(&quot;bPortDescriptions.length == 0 not allowed&quot;);</span>
+        }
+
+<span class="nc" id="L188">        return ECDUtility.concat(aPortDescriptions, bPortDescriptions);</span>
+    }
+
+    private void throwBothSetsChangedException() {
+<span class="nc" id="L192">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L193">        sb.append(getFullyQualifiedName());</span>
+<span class="nc" id="L194">        sb.append(&quot; - Cannot convert AToB and BToA in the same transaction!\n&quot;);</span>
+<span class="nc" id="L195">        sb.append(&quot;A changes:\n&quot;);</span>
+
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        for (EventChannel ec : aToBConvert) {</span>
+<span class="nc" id="L198">            sb.append(ec.getECD().getEventChannelName());</span>
+<span class="nc" id="L199">            sb.append(&quot; by &quot;);</span>
+<span class="nc" id="L200">            sb.append(ec.getCurrentStateSource());</span>
+<span class="nc" id="L201">            sb.append(&quot;\n&quot;);</span>
+<span class="nc" id="L202">        }</span>
+
+<span class="nc" id="L204">        sb.append(&quot;B Changes:\n&quot;);</span>
+
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        for (EventChannel ec : bToAConvert) {</span>
+<span class="nc" id="L207">            sb.append(ec.getECD().getEventChannelName());</span>
+<span class="nc" id="L208">            sb.append(&quot; by &quot;);</span>
+<span class="nc" id="L209">            sb.append(ec.getCurrentStateSource());</span>
+<span class="nc" id="L210">            sb.append(&quot;\n&quot;);</span>
+<span class="nc" id="L211">        }</span>
+
+<span class="nc" id="L213">        throw new IllegalStateException(sb.toString());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

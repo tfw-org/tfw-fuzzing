@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DoubleIlmRound.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilm.doubleilm</a> &gt; <span class="el_source">DoubleIlmRound.java</span></div><h1>DoubleIlmRound.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilm.doubleilm;
+
+import java.io.IOException;
+import tfw.check.Argument;
+
+public class DoubleIlmRound {
+    private DoubleIlmRound() {}
+
+    public static DoubleIlm create(DoubleIlm doubleIlm) throws IOException {
+<span class="nc" id="L10">        Argument.assertNotNull(doubleIlm, &quot;doubleIlm&quot;);</span>
+
+<span class="nc" id="L12">        return new DoubleIlmImpl(doubleIlm);</span>
+    }
+
+    private static class DoubleIlmImpl extends AbstractDoubleIlm {
+        private final DoubleIlm doubleIlm;
+        private final double[] buffer;
+
+<span class="nc" id="L19">        private DoubleIlmImpl(DoubleIlm doubleIlm) throws IOException {</span>
+<span class="nc" id="L20">            this.doubleIlm = doubleIlm;</span>
+<span class="nc" id="L21">            this.buffer = new double[(int) doubleIlm.width()];</span>
+<span class="nc" id="L22">        }</span>
+
+        @Override
+        protected long widthImpl() throws IOException {
+<span class="nc" id="L26">            return doubleIlm.width();</span>
+        }
+
+        @Override
+        protected long heightImpl() throws IOException {
+<span class="nc" id="L31">            return doubleIlm.height();</span>
+        }
+
+        @Override
+        protected void getImpl(double[] array, int offset, long rowStart, long colStart, int rowCount, int colCount)
+                throws IOException {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            for (int i = 0; i &lt; rowCount; i++) {</span>
+<span class="nc" id="L38">                doubleIlm.get(buffer, 0, rowStart + i, colStart, 1, colCount);</span>
+
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                for (int j = 0; j &lt; colCount; j++) {</span>
+<span class="nc" id="L41">                    array[offset + (i * colCount) + j] = (double) (long) (buffer[j] + 0.5);</span>
+                }
+            }
+<span class="nc" id="L44">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

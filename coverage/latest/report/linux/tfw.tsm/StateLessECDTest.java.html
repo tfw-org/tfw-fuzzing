@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateLessECDTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">StateLessECDTest.java</span></div><h1>StateLessECDTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+<span class="nc" id="L10">final class StateLessECDTest {</span>
+    @Test
+    void getStateTest() throws InterruptedException {
+<span class="nc" id="L13">        final StatelessTriggerECD trigger = new StatelessTriggerECD(&quot;test&quot;);</span>
+<span class="nc" id="L14">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L15">        final Root root = Root.builder()</span>
+<span class="nc" id="L16">                .setName(&quot;getStateTest&quot;)</span>
+<span class="nc" id="L17">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L18">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L19">                .addStatelessTriggerECD(trigger)</span>
+<span class="nc" id="L20">                .build();</span>
+
+<span class="nc" id="L22">        TestTriggeredCommit commit = new TestTriggeredCommit(trigger);</span>
+<span class="nc" id="L23">        Initiator initiator = new Initiator(&quot;TestInitiator&quot;, trigger);</span>
+<span class="nc" id="L24">        root.add(commit);</span>
+<span class="nc" id="L25">        root.add(initiator);</span>
+<span class="nc" id="L26">        initiator.trigger(trigger);</span>
+<span class="nc" id="L27">        queue.waitTilEmpty();</span>
+<span class="nc" id="L28">        assertThat(commit.setException).isNotNull();</span>
+<span class="nc" id="L29">        assertThat(commit.map).isNotNull();</span>
+<span class="nc" id="L30">        assertThat(commit.map.size()).isEqualTo(0);</span>
+<span class="nc" id="L31">    }</span>
+
+    private static class TestTriggeredCommit extends TriggeredConverter {
+        final StatelessTriggerECD trigger;
+<span class="nc" id="L35">        IllegalArgumentException setException = null;</span>
+<span class="nc" id="L36">        Map&lt;ObjectECD, Object&gt; map = null;</span>
+
+        public TestTriggeredCommit(StatelessTriggerECD trigger) {
+<span class="nc" id="L39">            super(&quot;Test&quot;, trigger, null, null);</span>
+<span class="nc" id="L40">            this.trigger = trigger;</span>
+<span class="nc" id="L41">        }</span>
+
+        @Override
+        public void convert() {
+            try {
+<span class="nc" id="L46">                set(trigger, new Object());</span>
+<span class="nc" id="L47">            } catch (IllegalArgumentException expected) {</span>
+<span class="nc" id="L48">                this.setException = expected;</span>
+<span class="nc" id="L49">            }</span>
+
+<span class="nc" id="L51">            this.map = get();</span>
+<span class="nc" id="L52">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

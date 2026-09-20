@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TriggeredEventChannelCopy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.component</a> &gt; <span class="el_source">TriggeredEventChannelCopy.java</span></div><h1>TriggeredEventChannelCopy.java</h1><pre class="source lang-java linenums">package tfw.component;
+
+import tfw.tsm.TriggeredConverter;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+/**
+ * A component which copies the state of the input channel to the output channel
+ * based on a trigger.
+ */
+public class TriggeredEventChannelCopy extends TriggeredConverter {
+    private final ObjectECD inputECD;
+
+    private final ObjectECD outputECD;
+
+    /**
+     * Creates a component with specified attributes.
+     *
+     * @param name
+     *            The name of this component.
+     * @param triggerECD
+     *            The description of the triggering event channel that causes
+     *            the copy to be performed.
+     * @param inputECD
+     *            The description of the input channel to be copied.
+     * @param outputECD
+     *            The description of the output channel into which the input
+     *            channels state is to be copied.
+     */
+    public TriggeredEventChannelCopy(
+            String name, StatelessTriggerECD triggerECD, ObjectECD inputECD, ObjectECD outputECD) {
+<span class="nc" id="L32">        super(&quot;TriggeredEventChannelCopy[&quot; + name + &quot;]&quot;, triggerECD, new ObjectECD[] {inputECD}, new ObjectECD[] {</span>
+            outputECD
+        });
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (outputECD.getPredicate().equals(inputECD.getPredicate()) == false) {</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(</span>
+                    &quot;outputECD.getConstraint().isCompatible(inputECD.getConstraint()) == false not allowed&quot;);
+        }
+
+<span class="nc" id="L40">        this.inputECD = inputECD;</span>
+<span class="nc" id="L41">        this.outputECD = outputECD;</span>
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    protected void convert() {
+<span class="nc" id="L46">        set(outputECD, get(inputECD));</span>
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

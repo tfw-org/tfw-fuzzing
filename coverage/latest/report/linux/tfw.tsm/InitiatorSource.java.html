@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InitiatorSource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">InitiatorSource.java</span></div><h1>InitiatorSource.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.tsm.ecd.EventChannelDescription;
+
+/**
+ *
+ */
+class InitiatorSource extends Source {
+    private final StateQueue stateQueue;
+
+    InitiatorSource(String name, EventChannelDescription ecd, StateQueue stateQueue) {
+<span class="nc" id="L12">        super(name, ecd);</span>
+<span class="nc" id="L13">        this.stateQueue = stateQueue;</span>
+<span class="nc" id="L14">    }</span>
+
+    /**
+     * Connects this &lt;code&gt;Source&lt;/code&gt; to the specified event channel. If
+     * the deferred state is set, the &lt;code&gt;eventChannel&lt;/code&gt; will be set
+     * the deferred state asynchronously. This method should only be called
+     * during the branch construction phase of a transaction.
+     *
+     * @param eventChannel
+     *            the event channel for this &lt;code&gt;Source&lt;/code&gt;.
+     */
+    @Override
+    public synchronized void setEventChannel(EventChannel eventChannel) {
+        /*
+         * TODO: This needs to be re-thought. It was put here to make sure the
+         * deferred state of an initiator gets fired after it has been removed.
+         */
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (eventChannel == null) {</span>
+<span class="nc" id="L32">            return;</span>
+        }
+<span class="nc" id="L34">        super.setEventChannel(eventChannel);</span>
+<span class="nc" id="L35">    }</span>
+
+    /**
+     * This method asynchronously causes the event channel state to be changed
+     * to the specified state value. If this &lt;code&gt;Source&lt;/code&gt; is not
+     * connected to an event channel it will cause a state change to the event
+     * channel when it is connected.
+     *
+     * @param state
+     *            the new event channel value.
+     */
+    @Override
+    synchronized void setState(Object state) {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (!this.getTreeComponent().isRooted()) {</span>
+<span class="nc" id="L49">            throw new IllegalStateException(</span>
+<span class="nc" id="L50">                    &quot;Attempt to set state on disconnected event channel (&quot; + eventChannel.getECD() + &quot;).&quot;);</span>
+        }
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (!ecd.getPredicate().test(state)) {</span>
+<span class="nc" id="L53">            throw new IllegalArgumentException(&quot;FIX THIS MESSAGE&quot;);</span>
+        }
+<span class="nc" id="L55">        this.stateQueue.push(new EventChannelNState(this.eventChannel, state));</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Sets the state of the event channel. This method should only be called by
+     * {@link TransactionMgr}.
+     */
+    @Override
+    synchronized Object fire() {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (!stateQueue.isEmpty()) {</span>
+<span class="nc" id="L65">            EventChannelNState ecs = (EventChannelNState) stateQueue.pop();</span>
+<span class="nc" id="L66">            TreeComponent component = ecs.ec.getParent();</span>
+            /*
+             * if the event channel is rooted and is rooted to the same
+             * transaction manager as is running the current transaction, then
+             * set the state on the event channel.
+             */
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            if (component != null</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                    &amp;&amp; component.isRooted()</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                    &amp;&amp; component.getTransactionManager().queue.isDispatchThread()) {</span>
+<span class="nc" id="L75">                ecs.ec.setState(this, ecs.state, null);</span>
+<span class="nc" id="L76">                return ecs.state;</span>
+            }
+        }
+<span class="nc" id="L79">        return null;</span>
+    }
+
+    private static class EventChannelNState {
+        private final EventChannel ec;
+
+        private final Object state;
+
+<span class="nc" id="L87">        public EventChannelNState(EventChannel ec, Object state) {</span>
+<span class="nc" id="L88">            this.ec = ec;</span>
+<span class="nc" id="L89">            this.state = state;</span>
+<span class="nc" id="L90">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

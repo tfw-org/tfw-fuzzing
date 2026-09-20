@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Converter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Converter.java</span></div><h1>Converter.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.check.Argument;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.ObjectECD;
+
+/**
+ * The base class for event handlers that take in one set of events and
+ * produces another. Sub-classes must override the &lt;code&gt;convert&lt;/code&gt;
+ * method. &lt;code&gt;Converter&lt;/code&gt; is an event processor and participates
+ * in the processing phase of transactions.
+ */
+public abstract class Converter extends Processor {
+    /**
+     * Constructs a &lt;code&gt;Converter&lt;/code&gt; with the specified
+     * inputs and outputs.
+     *
+     * @param name the name of this converter.
+     * @param sinkDescriptions the input event channels.
+     * @param sourceDescriptions the output event channels.
+     */
+    public Converter(
+            String name, EventChannelDescription[] sinkDescriptions, EventChannelDescription[] sourceDescriptions) {
+<span class="nc" id="L24">        this(name, sinkDescriptions, null, sourceDescriptions);</span>
+<span class="nc" id="L25">    }</span>
+
+    /**
+     * Constructs a &lt;code&gt;Converter&lt;/code&gt; with the specified
+     * inputs and outputs.
+     *
+     * @param name the name of this converter.
+     * @param nonTriggeringSinks sinks which do not cause the
+     * {@link #convert()} or the {@link #debugConvert()} method
+     *  to be called.
+     * @param triggeringSinks sinks which cause the {@link #convert()}
+     * or the {@link #debugConvert()} method to be called.
+     * @param sources output event channels for this converter.
+     */
+    public Converter(
+            String name,
+            EventChannelDescription[] triggeringSinks,
+            ObjectECD[] nonTriggeringSinks,
+            EventChannelDescription[] sources) {
+<span class="nc" id="L44">        super(name, checkTriggeringSinks(triggeringSinks), nonTriggeringSinks, sources);</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    void process() {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (isStateNonNull()) {</span>
+<span class="nc" id="L50">            convert();</span>
+        } else {
+<span class="nc" id="L52">            debugConvert();</span>
+        }
+<span class="nc" id="L54">    }</span>
+
+    private static EventChannelDescription[] checkTriggeringSinks(EventChannelDescription[] triggeringSinks) {
+<span class="nc" id="L57">        Argument.assertNotNull(triggeringSinks, &quot;triggeringSinks&quot;);</span>
+<span class="nc" id="L58">        Argument.assertElementNotNull(triggeringSinks, &quot;triggeringSinks&quot;);</span>
+
+<span class="nc" id="L60">        return triggeringSinks;</span>
+    }
+
+    /**
+     * Called when one or more of the &lt;code&gt;sinkEventChannels&lt;/code&gt;
+     * specified at construction has it's state changed and all of the
+     * &lt;code&gt;sinkEventChannels&lt;/code&gt; have non-null state. The call to this
+     * method will occur in the processing phase immediately following the
+     * the state change phase in which one or more of the
+     * &lt;code&gt;sinkEventChannels&lt;/code&gt; has it's state changed.
+     */
+    protected abstract void convert();
+
+    /**
+     * Called when one or more of the &lt;code&gt;sinkEventChannels&lt;/code&gt;
+     * specified at construction has it's state changed and all of the
+     * &lt;code&gt;sinkEventChannels&lt;/code&gt; have non-null state. The call to this
+     * method will occur in the processing phase immediately following the
+     * the state change phase in which one or more of the
+     * &lt;code&gt;sinkEventChannels&lt;/code&gt; has it's state changed.
+     */
+<span class="nc" id="L81">    protected void debugConvert() {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

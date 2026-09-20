@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidatorTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">ValidatorTest.java</span></div><h1>ValidatorTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.IntegerECD;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.RollbackECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.StringRollbackECD;
+
+<span class="nc" id="L15">final class ValidatorTest {</span>
+    @Test
+    void constructionTest() {
+<span class="nc" id="L18">        ObjectECD[] sinks = new ObjectECD[] {new StringECD(&quot;Test&quot;)};</span>
+
+<span class="nc" id="L20">        assertThatThrownBy(() -&gt; new TestValidator(null, sinks, null, null))</span>
+<span class="nc" id="L21">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L22">                .hasMessage(&quot;name == null not allowed!&quot;);</span>
+<span class="nc" id="L23">        assertThatThrownBy(() -&gt; new TestValidator(&quot;Test&quot;, new ObjectECD[] {null}, null, null))</span>
+<span class="nc" id="L24">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L25">                .hasMessage(&quot;triggeringSinks[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L26">        assertThatThrownBy(() -&gt; new TestValidator(&quot;Test&quot;, sinks, new ObjectECD[] {null}, null))</span>
+<span class="nc" id="L27">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L28">                .hasMessage(&quot;nonTriggeringSinks[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L29">        assertThatThrownBy(() -&gt; new TestValidator(&quot;Test&quot;, null, null, null))</span>
+<span class="nc" id="L30">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L31">                .hasMessage(&quot;triggeringSinks == null not allowed!&quot;);</span>
+<span class="nc" id="L32">    }</span>
+
+<span class="nc" id="L34">    private final StringECD eventChannelAECD = new StringECD(&quot;ecA&quot;);</span>
+<span class="nc" id="L35">    private final StringECD eventChannelBECD = new StringECD(&quot;ecB&quot;);</span>
+
+    @Test
+    void validatorTest() throws InterruptedException {
+<span class="nc" id="L39">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L40">        final Root root = Root.builder()</span>
+<span class="nc" id="L41">                .setName(&quot;ValidatorTestRoot&quot;)</span>
+<span class="nc" id="L42">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L43">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L44">                .addObjectECD(eventChannelAECD, null)</span>
+<span class="nc" id="L45">                .addObjectECD(eventChannelBECD, null)</span>
+<span class="nc" id="L46">                .build();</span>
+
+<span class="nc" id="L48">        Initiator initiator =</span>
+                new Initiator(&quot;ValidatorTestInitiator&quot;, new StringECD[] {eventChannelAECD, eventChannelBECD});
+<span class="nc" id="L50">        root.add(initiator);</span>
+<span class="nc" id="L51">        TestValidator validator = new TestValidator(</span>
+                &quot;TestValidator&quot;, new StringECD[] {eventChannelAECD}, new StringECD[] {eventChannelBECD}, null);
+<span class="nc" id="L53">        root.add(validator);</span>
+<span class="nc" id="L54">        String valueA = &quot;valueA&quot;;</span>
+<span class="nc" id="L55">        initiator.set(eventChannelAECD, valueA);</span>
+<span class="nc" id="L56">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L58">        assertThat(validator.channelA).isNull();</span>
+<span class="nc" id="L59">        assertThat(validator.channelB).isNull();</span>
+<span class="nc" id="L60">        assertThat(valueA).isEqualTo(validator.debugChannelA);</span>
+<span class="nc" id="L61">        assertThat(validator.debugChannelB).isNull();</span>
+
+<span class="nc" id="L63">        validator.reset();</span>
+<span class="nc" id="L64">        valueA = &quot;newValueA&quot;;</span>
+<span class="nc" id="L65">        String valueB = &quot;valueB&quot;;</span>
+<span class="nc" id="L66">        initiator.set(eventChannelBECD, valueB);</span>
+<span class="nc" id="L67">        initiator.set(eventChannelAECD, valueA);</span>
+<span class="nc" id="L68">        queue.waitTilEmpty();</span>
+<span class="nc" id="L69">        assertThat(valueA).isEqualTo(validator.channelA);</span>
+<span class="nc" id="L70">        assertThat(valueB).isEqualTo(validator.channelB);</span>
+<span class="nc" id="L71">        assertThat(validator.debugChannelA).isNull();</span>
+<span class="nc" id="L72">        assertThat(validator.debugChannelB).isNull();</span>
+<span class="nc" id="L73">    }</span>
+
+    @Test
+    void triggeredValidationTest() throws InterruptedException {
+<span class="nc" id="L77">        StatelessTriggerECD trigger = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L78">        final IntegerECD minECD = new IntegerECD(&quot;min&quot;);</span>
+<span class="nc" id="L79">        final IntegerECD maxECD = new IntegerECD(&quot;max&quot;);</span>
+<span class="nc" id="L80">        final StringRollbackECD error = new StringRollbackECD(&quot;error&quot;);</span>
+<span class="nc" id="L81">        BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L82">        Root root = Root.builder()</span>
+<span class="nc" id="L83">                .setName(&quot;Test&quot;)</span>
+<span class="nc" id="L84">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L85">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L86">                .addStatelessTriggerECD(trigger)</span>
+<span class="nc" id="L87">                .addRollbackECD(error)</span>
+<span class="nc" id="L88">                .addObjectECD(minECD, 0)</span>
+<span class="nc" id="L89">                .addObjectECD(maxECD, 1)</span>
+<span class="nc" id="L90">                .build();</span>
+<span class="nc" id="L91">        Initiator initiator = new Initiator(&quot;Initiator&quot;, new EventChannelDescription[] {trigger, minECD, maxECD});</span>
+<span class="nc" id="L92">        root.add(initiator);</span>
+<span class="nc" id="L93">        root.add(new Validator(&quot;TestValidator&quot;, trigger, new ObjectECD[] {minECD, maxECD}, new RollbackECD[] {error}) {</span>
+            @Override
+            protected void validateState() {
+<span class="nc" id="L96">                int min = ((Integer) get(minECD)).intValue();</span>
+<span class="nc" id="L97">                int max = ((Integer) get(maxECD)).intValue();</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (min &gt; max) {</span>
+<span class="nc" id="L99">                    rollback(error, &quot;min must be less than or equal to max&quot;);</span>
+                }
+<span class="nc" id="L101">            }</span>
+        });
+
+<span class="nc" id="L104">        ErrorHandler errorHandler = new ErrorHandler(error);</span>
+<span class="nc" id="L105">        root.add(errorHandler);</span>
+<span class="nc" id="L106">        queue.waitTilEmpty();</span>
+<span class="nc" id="L107">        assertThat(errorHandler.errorMsg).isNull();</span>
+
+<span class="nc" id="L109">        initiator.set(minECD, 3);</span>
+<span class="nc" id="L110">        queue.waitTilEmpty();</span>
+<span class="nc" id="L111">        assertThat(errorHandler.errorMsg).isNull();</span>
+
+<span class="nc" id="L113">        initiator.trigger(trigger);</span>
+<span class="nc" id="L114">        queue.waitTilEmpty();</span>
+<span class="nc" id="L115">        assertThat(errorHandler.errorMsg).isNotNull();</span>
+
+<span class="nc" id="L117">        errorHandler.errorMsg = null;</span>
+<span class="nc" id="L118">        initiator.set(maxECD, 4);</span>
+<span class="nc" id="L119">        queue.waitTilEmpty();</span>
+<span class="nc" id="L120">        assertThat(errorHandler.errorMsg).isNull();</span>
+<span class="nc" id="L121">    }</span>
+
+    private static class ErrorHandler extends Commit {
+        private final StringRollbackECD errorECD;
+
+<span class="nc" id="L126">        String errorMsg = null;</span>
+
+        public ErrorHandler(StringRollbackECD errorECD) {
+<span class="nc" id="L129">            super(&quot;ErrorHandler&quot;, new ObjectECD[] {errorECD});</span>
+<span class="nc" id="L130">            this.errorECD = errorECD;</span>
+<span class="nc" id="L131">        }</span>
+
+        @Override
+        protected void commit() {
+<span class="nc" id="L135">            this.errorMsg = (String) get(this.errorECD);</span>
+<span class="nc" id="L136">        }</span>
+    }
+
+    private class TestValidator extends Validator {
+<span class="nc" id="L140">        private String channelA = null;</span>
+<span class="nc" id="L141">        private String channelB = null;</span>
+<span class="nc" id="L142">        private String debugChannelA = null;</span>
+<span class="nc" id="L143">        private String debugChannelB = null;</span>
+
+        public TestValidator(
+<span class="nc" id="L146">                String name, ObjectECD[] triggeringSinks, ObjectECD[] nonTriggeringSinks, RollbackECD[] initiators) {</span>
+<span class="nc" id="L147">            super(name, triggeringSinks, nonTriggeringSinks, initiators);</span>
+<span class="nc" id="L148">        }</span>
+
+        @Override
+        protected void validateState() {
+<span class="nc" id="L152">            channelA = (String) get(eventChannelAECD);</span>
+<span class="nc" id="L153">            channelB = (String) get(eventChannelBECD);</span>
+<span class="nc" id="L154">        }</span>
+
+        @Override
+        protected void debugValidateState() {
+<span class="nc" id="L158">            debugChannelA = (String) get(eventChannelAECD);</span>
+<span class="nc" id="L159">            debugChannelB = (String) get(eventChannelBECD);</span>
+<span class="nc" id="L160">        }</span>
+
+        public void reset() {
+<span class="nc" id="L163">            this.channelA = null;</span>
+<span class="nc" id="L164">            this.channelB = null;</span>
+<span class="nc" id="L165">            this.debugChannelA = null;</span>
+<span class="nc" id="L166">            this.debugChannelB = null;</span>
+<span class="nc" id="L167">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

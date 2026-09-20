@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShortIlaSubtractTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.shortila</a> &gt; <span class="el_source">ShortIlaSubtractTest.java</span></div><h1>ShortIlaSubtractTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.shortila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L11">final class ShortIlaSubtractTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L14">        final ShortIla ila1 = ShortIlaFromArray.create(new short[10]);</span>
+<span class="nc" id="L15">        final ShortIla ila2 = ShortIlaFromArray.create(new short[20]);</span>
+
+<span class="nc" id="L17">        assertThatThrownBy(() -&gt; ShortIlaSubtract.create(null, ila1, 1))</span>
+<span class="nc" id="L18">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L19">                .hasMessage(&quot;leftIla == null not allowed!&quot;);</span>
+<span class="nc" id="L20">        assertThatThrownBy(() -&gt; ShortIlaSubtract.create(ila1, null, 1))</span>
+<span class="nc" id="L21">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L22">                .hasMessage(&quot;rightIla == null not allowed!&quot;);</span>
+<span class="nc" id="L23">        assertThatThrownBy(() -&gt; ShortIlaSubtract.create(ila1, ila2, 1))</span>
+<span class="nc" id="L24">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L25">                .hasMessage(&quot;leftIla.length() (=10) != rightIla.length() (=20) not allowed!&quot;);</span>
+<span class="nc" id="L26">        assertThatThrownBy(() -&gt; ShortIlaSubtract.create(ila1, ila1, 0))</span>
+<span class="nc" id="L27">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L28">                .hasMessage(&quot;bufferSize (=0) &lt; 1 not allowed!&quot;);</span>
+<span class="nc" id="L29">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L33">        final Random random = new Random(0);</span>
+<span class="nc" id="L34">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc" id="L35">        final short[] leftArray = new short[length];</span>
+<span class="nc" id="L36">        final short[] rightArray = new short[length];</span>
+<span class="nc" id="L37">        final short[] array = new short[length];</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        for (int ii = 0; ii &lt; leftArray.length; ++ii) {</span>
+<span class="nc" id="L39">            leftArray[ii] = (short) random.nextInt();</span>
+<span class="nc" id="L40">            rightArray[ii] = (short) random.nextInt();</span>
+<span class="nc" id="L41">            array[ii] = (short) (leftArray[ii] - rightArray[ii]);</span>
+        }
+<span class="nc" id="L43">        ShortIla leftIla = ShortIlaFromArray.create(leftArray);</span>
+<span class="nc" id="L44">        ShortIla rightIla = ShortIlaFromArray.create(rightArray);</span>
+<span class="nc" id="L45">        ShortIla targetIla = ShortIlaFromArray.create(array);</span>
+<span class="nc" id="L46">        ShortIla actualIla = ShortIlaSubtract.create(leftIla, rightIla, 100);</span>
+
+<span class="nc" id="L48">        ShortIlaCheck.check(targetIla, actualIla);</span>
+<span class="nc" id="L49">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L53">        final TestCloseShortIla leftIla = new TestCloseShortIla();</span>
+<span class="nc" id="L54">        final TestCloseShortIla rightIla = new TestCloseShortIla();</span>
+
+<span class="nc" id="L56">        try (ShortIla ila = ShortIlaSubtract.create(leftIla, rightIla, 100)) {</span>
+<span class="nc" id="L57">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L60">        assertThat(leftIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L61">        assertThat(rightIla.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L62">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

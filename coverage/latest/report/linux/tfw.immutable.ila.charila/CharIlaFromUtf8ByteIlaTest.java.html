@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharIlaFromUtf8ByteIlaTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.charila</a> &gt; <span class="el_source">CharIlaFromUtf8ByteIlaTest.java</span></div><h1>CharIlaFromUtf8ByteIlaTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.charila;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.byteila.ByteIla;
+import tfw.immutable.ila.byteila.ByteIlaFromArray;
+
+<span class="nc" id="L10">final class CharIlaFromUtf8ByteIlaTest {</span>
+    @Test
+    void charIlaFromUTF8ByteIlaTest() throws Exception {
+        // Create all unicode characters, valid and invalid.
+<span class="nc" id="L14">        final int unicodeSpace = 1 &lt;&lt; 21;</span>
+<span class="nc" id="L15">        final char[] characters = new char[unicodeSpace];</span>
+
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        for (int i = 0; i &lt; characters.length; i++) {</span>
+<span class="nc" id="L18">            characters[i] = (char) i;</span>
+        }
+
+        // Create UTF-8 bytes from full unicode character space.
+<span class="nc" id="L22">        final String string = new String(characters);</span>
+<span class="nc" id="L23">        final byte[] utf8Bytes = string.getBytes(UTF_8);</span>
+
+        // Create characters from UTF-8 bytes using java.lang.String.
+<span class="nc" id="L26">        final String stringFromUtf8Bytes = new String(utf8Bytes, UTF_8);</span>
+<span class="nc" id="L27">        final char[] charactersFromString = stringFromUtf8Bytes.toCharArray();</span>
+
+        // Create characters from UTF-8 bytes using CharIlaFromUTF8Bytes.
+<span class="nc" id="L30">        final ByteIla utf8ByteIla = ByteIlaFromArray.create(utf8Bytes);</span>
+<span class="nc" id="L31">        final CharIla charIlaFromUtf8ByteIla = CharIlaFromUtf8ByteIla.create(utf8ByteIla, 0, 0);</span>
+<span class="nc" id="L32">        final int charIlaLength = (int) charIlaFromUtf8ByteIla.length();</span>
+<span class="nc" id="L33">        final char[] charactersFromCharIla = new char[charIlaLength];</span>
+
+<span class="nc" id="L35">        charIlaFromUtf8ByteIla.get(charactersFromCharIla, 0, 0, charIlaLength);</span>
+
+        // Compare the two arrays.
+<span class="nc" id="L38">        assertThat(charactersFromString).isEqualTo(charactersFromCharIla);</span>
+<span class="nc" id="L39">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

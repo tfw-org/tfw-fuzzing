@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WindowInitiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.awt.event</a> &gt; <span class="el_source">WindowInitiator.java</span></div><h1>WindowInitiator.java</h1><pre class="source lang-java linenums">package tfw.awt.event;
+
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import tfw.tsm.Initiator;
+import tfw.tsm.ecd.EventChannelDescription;
+import tfw.tsm.ecd.EventChannelDescriptionUtil;
+import tfw.tsm.ecd.StatelessTriggerECD;
+
+public class WindowInitiator extends Initiator implements WindowListener {
+    private final StatelessTriggerECD windowActivatedTriggerECD;
+    private final StatelessTriggerECD windowClosedTriggerECD;
+    private final StatelessTriggerECD windowClosingTriggerECD;
+    private final StatelessTriggerECD windowDeactivatedTriggerECD;
+    private final StatelessTriggerECD windowDeiconifiedTriggerECD;
+    private final StatelessTriggerECD windowIconifiedTriggerECD;
+    private final StatelessTriggerECD windowOpenedTriggerECD;
+
+    public WindowInitiator(
+            String name,
+            StatelessTriggerECD windowActivatedTriggerECD,
+            StatelessTriggerECD windowClosedTriggerECD,
+            StatelessTriggerECD windowClosingTriggerECD,
+            StatelessTriggerECD windowDeactivatedTriggerECD,
+            StatelessTriggerECD windowDeiconifiedTriggerECD,
+            StatelessTriggerECD windowIconifiedTriggerECD,
+            StatelessTriggerECD windowOpenedTriggerECD) {
+<span class="nc" id="L28">        super(&quot;WindowInitiator[&quot; + name + &quot;]&quot;, EventChannelDescriptionUtil.create(new EventChannelDescription[] {</span>
+            windowActivatedTriggerECD, windowClosedTriggerECD,
+            windowClosingTriggerECD, windowDeactivatedTriggerECD,
+            windowDeiconifiedTriggerECD, windowIconifiedTriggerECD,
+            windowOpenedTriggerECD
+        }));
+
+<span class="nc" id="L35">        this.windowActivatedTriggerECD = windowActivatedTriggerECD;</span>
+<span class="nc" id="L36">        this.windowClosedTriggerECD = windowClosedTriggerECD;</span>
+<span class="nc" id="L37">        this.windowClosingTriggerECD = windowClosingTriggerECD;</span>
+<span class="nc" id="L38">        this.windowDeactivatedTriggerECD = windowDeactivatedTriggerECD;</span>
+<span class="nc" id="L39">        this.windowDeiconifiedTriggerECD = windowDeiconifiedTriggerECD;</span>
+<span class="nc" id="L40">        this.windowIconifiedTriggerECD = windowIconifiedTriggerECD;</span>
+<span class="nc" id="L41">        this.windowOpenedTriggerECD = windowOpenedTriggerECD;</span>
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    public final void windowActivated(WindowEvent e) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (windowActivatedTriggerECD != null) {</span>
+<span class="nc" id="L47">            trigger(windowActivatedTriggerECD);</span>
+        }
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public final void windowClosed(WindowEvent e) {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (windowClosedTriggerECD != null) {</span>
+<span class="nc" id="L54">            trigger(windowClosedTriggerECD);</span>
+        }
+<span class="nc" id="L56">    }</span>
+
+    @Override
+    public final void windowClosing(WindowEvent e) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (windowClosingTriggerECD != null) {</span>
+<span class="nc" id="L61">            trigger(windowClosingTriggerECD);</span>
+        }
+<span class="nc" id="L63">    }</span>
+
+    @Override
+    public final void windowDeactivated(WindowEvent e) {
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (windowDeactivatedTriggerECD != null) {</span>
+<span class="nc" id="L68">            trigger(windowDeactivatedTriggerECD);</span>
+        }
+<span class="nc" id="L70">    }</span>
+
+    @Override
+    public final void windowDeiconified(WindowEvent e) {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (windowDeiconifiedTriggerECD != null) {</span>
+<span class="nc" id="L75">            trigger(windowDeiconifiedTriggerECD);</span>
+        }
+<span class="nc" id="L77">    }</span>
+
+    @Override
+    public final void windowIconified(WindowEvent e) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (windowIconifiedTriggerECD != null) {</span>
+<span class="nc" id="L82">            trigger(windowIconifiedTriggerECD);</span>
+        }
+<span class="nc" id="L84">    }</span>
+
+    @Override
+    public final void windowOpened(WindowEvent e) {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (windowOpenedTriggerECD != null) {</span>
+<span class="nc" id="L89">            trigger(windowOpenedTriggerECD);</span>
+        }
+<span class="nc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

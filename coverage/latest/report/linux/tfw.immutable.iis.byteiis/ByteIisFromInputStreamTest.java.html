@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteIisFromInputStreamTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iis.byteiis</a> &gt; <span class="el_source">ByteIisFromInputStreamTest.java</span></div><h1>ByteIisFromInputStreamTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.iis.byteiis;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.io.InputStream;
+import org.junit.jupiter.api.Test;
+
+<span class="nc" id="L10">final class ByteIisFromInputStreamTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L13">        assertThatThrownBy(() -&gt; ByteIisFromInputStream.create(null)).isInstanceOf(IllegalArgumentException.class);</span>
+<span class="nc" id="L14">    }</span>
+
+    @Test
+    void exceptionsTest() {
+<span class="nc" id="L18">        final ExceptionInputStream eis = new ExceptionInputStream();</span>
+<span class="nc" id="L19">        final ByteIis byteIis = ByteIisFromInputStream.create(eis);</span>
+
+<span class="nc" id="L21">        assertThatThrownBy(() -&gt; byteIis.skip(10)).isInstanceOf(IOException.class);</span>
+<span class="nc" id="L22">        assertThatThrownBy(() -&gt; byteIis.read(new byte[10], 0, 10)).isInstanceOf(IOException.class);</span>
+<span class="nc" id="L23">        assertThatThrownBy(byteIis::close).isInstanceOf(IOException.class);</span>
+<span class="nc" id="L24">    }</span>
+
+    @Test
+    void methodsTest() throws IOException {
+<span class="nc" id="L28">        final TestInputStream tis = new TestInputStream();</span>
+<span class="nc" id="L29">        final ByteIis byteIis = ByteIisFromInputStream.create(tis);</span>
+<span class="nc" id="L30">        final long skipN = 11;</span>
+<span class="nc" id="L31">        final byte[] array = new byte[13];</span>
+
+<span class="nc" id="L33">        assertThat(byteIis.skip(skipN)).isEqualTo(skipN);</span>
+<span class="nc" id="L34">        assertThat(byteIis.read(array, 0, array.length)).isEqualTo(array.length);</span>
+
+<span class="nc" id="L36">        byteIis.close();</span>
+
+<span class="nc" id="L38">        assertThat(tis.closeCalled).isTrue();</span>
+<span class="nc" id="L39">        assertThat(tis.readCalled).isTrue();</span>
+<span class="nc" id="L40">        assertThat(tis.skipCalled).isTrue();</span>
+<span class="nc" id="L41">    }</span>
+
+    private static class ExceptionInputStream extends InputStream {
+        @Override
+        public void close() throws IOException {
+<span class="nc" id="L46">            throw new IOException(&quot;This test class only throws Exceptions!&quot;);</span>
+        }
+
+        @Override
+        public int read() throws IOException {
+<span class="nc" id="L51">            throw new IOException(&quot;This test class only throws Exceptions!&quot;);</span>
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+<span class="nc" id="L56">            throw new IOException(&quot;This test class only throws Exceptions!&quot;);</span>
+        }
+
+        @Override
+        public long skip(long arg0) throws IOException {
+<span class="nc" id="L61">            throw new IOException(&quot;This test class only throws Exceptions!&quot;);</span>
+        }
+    }
+
+<span class="nc" id="L65">    private static class TestInputStream extends InputStream {</span>
+<span class="nc" id="L66">        public boolean closeCalled = false;</span>
+<span class="nc" id="L67">        public boolean readCalled = false;</span>
+<span class="nc" id="L68">        public boolean skipCalled = false;</span>
+
+        @Override
+        public void close() throws IOException {
+<span class="nc" id="L72">            closeCalled = true;</span>
+<span class="nc" id="L73">        }</span>
+
+        @Override
+        public int read() throws IOException {
+<span class="nc" id="L77">            throw new IOException(&quot;Read requires implementation, but not used!&quot;);</span>
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+<span class="nc" id="L82">            readCalled = true;</span>
+
+<span class="nc" id="L84">            return len;</span>
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+<span class="nc" id="L89">            skipCalled = true;</span>
+
+<span class="nc" id="L91">            return n;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

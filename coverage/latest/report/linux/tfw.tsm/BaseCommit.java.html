@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseCommit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">BaseCommit.java</span></div><h1>BaseCommit.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import tfw.check.Argument;
+import tfw.tsm.ecd.ECDUtility;
+import tfw.tsm.ecd.EventChannelDescription;
+
+/**
+ * The base class for commit components
+ */
+abstract class BaseCommit extends EventHandler {
+    private final HashSet&lt;String&gt; triggers;
+    private final Initiator[] initiators;
+<span class="nc" id="L15">    private CommitRollbackListener crListener = new CommitRollbackListener() {</span>
+        @Override
+<span class="nc" id="L17">        public void rollback() {}</span>
+
+        @Override
+        public void commit() {
+<span class="nc bnc" id="L21" title="All 2 branches missed.">            if (isStateNonNull()) {</span>
+<span class="nc" id="L22">                BaseCommit.this.commit();</span>
+            } else {
+<span class="nc" id="L24">                BaseCommit.this.debugCommit();</span>
+            }
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        public String getName() {
+<span class="nc" id="L30">            return BaseCommit.this.getName();</span>
+        }
+    };
+
+    BaseCommit(
+            String name,
+            EventChannelDescription[] triggerSinks,
+            EventChannelDescription[] nonTriggerSinks,
+            Initiator[] initiators) {
+<span class="nc" id="L39">        super(</span>
+                name,
+<span class="nc" id="L41">                checkTriggers(triggerSinks, &quot;triggerSinks&quot;),</span>
+<span class="nc" id="L42">                checkNonTriggers(nonTriggerSinks, &quot;nonTriggerSinks&quot;),</span>
+                null);
+<span class="nc" id="L44">        Argument.assertNotEmpty(triggerSinks, &quot;triggerSinks&quot;);</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (initiators != null) {</span>
+<span class="nc" id="L47">            Argument.assertElementNotNull(initiators, &quot;initiators&quot;);</span>
+<span class="nc" id="L48">            this.initiators = initiators.clone();</span>
+        } else {
+<span class="nc" id="L50">            this.initiators = new Initiator[0];</span>
+        }
+
+<span class="nc" id="L53">        this.triggers = new HashSet&lt;String&gt;(Arrays.asList(ECDUtility.toEventChannelNames(triggerSinks)));</span>
+<span class="nc" id="L54">    }</span>
+
+    private static EventChannelDescription[] checkTriggers(EventChannelDescription[] pd, String name) {
+<span class="nc" id="L57">        Argument.assertElementNotNull(pd, name);</span>
+
+<span class="nc" id="L59">        return pd;</span>
+    }
+
+    private static EventChannelDescription[] checkNonTriggers(EventChannelDescription[] pd, String name) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (pd != null) {</span>
+<span class="nc" id="L64">            Argument.assertElementNotNull(pd, name);</span>
+        }
+
+<span class="nc" id="L67">        return pd;</span>
+    }
+
+    /**
+     * Returns true if the specified sink event channel state has changed
+     * during the current transaction, otherwise returns
+     * false. Note that &lt;code&gt;equals()&lt;/code&gt; is used to determine if the
+     * state has changed.
+     *
+     * @param sinkEventChannel the name of the event channel to check.
+     * @return true if the specified sink event channel state has changed
+     * during the current transaction state change cycle, otherwise returns
+     * false.
+     */
+    protected final boolean isStateChanged(EventChannelDescription sinkEventChannel) {
+        // TODO: change this to use the state change rule.
+<span class="nc" id="L83">        Sink sink = getSink(sinkEventChannel);</span>
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (sink == null) {</span>
+<span class="nc" id="L86">            throw new IllegalArgumentException(sinkEventChannel + &quot; not found&quot;);</span>
+        }
+
+<span class="nc" id="L89">        return sink.eventChannel.isStateChanged();</span>
+    }
+
+    /**
+     * Adds this commit component to the transaction manager if the source
+     * of the state change is not one of this commit's initiator and the event
+     * channel is one of this commit's trigger ports.
+     */
+    @Override
+    void stateChange(EventChannel eventChannel) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        for (int i = 0; i &lt; initiators.length; i++) {</span>
+<span class="nc" id="L100">            Source source = initiators[i].getSource(eventChannel.getECD().getEventChannelName());</span>
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (source == eventChannel.getCurrentStateSource()) {</span>
+<span class="nc" id="L103">                return;</span>
+            }
+        }
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (triggers.contains(eventChannel.getECD().getEventChannelName())) {</span>
+<span class="nc" id="L108">            getTransactionManager().addCommitRollbackListener(crListener);</span>
+        }
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * This method is called during the commit phase of a transaction in which
+     * one or more of the triggering event channels has its state changed and
+     * all of the dependent event channels have non-null state.
+     */
+    protected abstract void commit();
+
+    /**
+     * This method is called during the commit phase of a transaction in which
+     * one or more of the triggering event channels has its state changed and
+     * one or more of the dependent event channels has null state.
+     */
+<span class="nc" id="L124">    protected void debugCommit() {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

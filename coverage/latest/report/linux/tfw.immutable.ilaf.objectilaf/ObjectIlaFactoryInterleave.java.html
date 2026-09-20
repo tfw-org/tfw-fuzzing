@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectIlaFactoryInterleave.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ilaf.objectilaf</a> &gt; <span class="el_source">ObjectIlaFactoryInterleave.java</span></div><h1>ObjectIlaFactoryInterleave.java</h1><pre class="source lang-java linenums">package tfw.immutable.ilaf.objectilaf;
+
+import tfw.check.Argument;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.immutable.ila.objectila.ObjectIlaInterleave;
+import tfw.immutable.ilaf.ImmutableLongArrayFactoryUtil;
+
+public class ObjectIlaFactoryInterleave {
+    private ObjectIlaFactoryInterleave() {}
+
+    public static &lt;T&gt; ObjectIlaFactory&lt;T&gt; create(final ObjectIlaFactory&lt;T&gt;[] ilaFactories, final T[] buffers) {
+<span class="nc" id="L12">        return new ObjectIlaFactoryImpl&lt;&gt;(ilaFactories, buffers);</span>
+    }
+
+    private static class ObjectIlaFactoryImpl&lt;T&gt; implements ObjectIlaFactory&lt;T&gt; {
+        private final ObjectIlaFactory&lt;T&gt;[] ilaFactories;
+        private final T[] buffers;
+
+<span class="nc" id="L19">        public ObjectIlaFactoryImpl(final ObjectIlaFactory&lt;T&gt;[] ilaFactories, final T[] buffers) {</span>
+<span class="nc" id="L20">            Argument.assertNotNull(buffers, &quot;buffers&quot;);</span>
+
+<span class="nc" id="L22">            this.ilaFactories = ImmutableLongArrayFactoryUtil.assertNotNullAndClone(ilaFactories, &quot;ilaFactories&quot;);</span>
+<span class="nc" id="L23">            this.buffers = buffers;</span>
+<span class="nc" id="L24">        }</span>
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public ObjectIla&lt;T&gt; create() {
+<span class="nc" id="L29">            final ObjectIla&lt;T&gt;[] ilas = new ObjectIla[ilaFactories.length];</span>
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            for (int i = 0; i &lt; ilas.length; i++) {</span>
+<span class="nc" id="L32">                ilas[i] = ilaFactories[i].create();</span>
+            }
+
+<span class="nc" id="L35">            return ObjectIlaInterleave.create(ilas, buffers);</span>
+        }
+    }
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

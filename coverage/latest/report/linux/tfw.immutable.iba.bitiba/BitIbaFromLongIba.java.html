@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitIbaFromLongIba.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.iba.bitiba</a> &gt; <span class="el_source">BitIbaFromLongIba.java</span></div><h1>BitIbaFromLongIba.java</h1><pre class="source lang-java linenums">package tfw.immutable.iba.bitiba;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import tfw.check.Argument;
+import tfw.immutable.iba.longiba.LongIba;
+import tfw.immutable.ila.bitila.BitIlaUtil;
+
+public final class BitIbaFromLongIba {
+<span class="nc" id="L10">    private static final BigInteger LONG_SIZE = BigInteger.valueOf(Long.SIZE);</span>
+
+    private BitIbaFromLongIba() {}
+
+    public static BitIba create(final LongIba longIba, final int firstLongOffsetInBits, final BigInteger lengthInBits) {
+<span class="nc" id="L15">        return new BitIbaImpl(longIba, firstLongOffsetInBits, lengthInBits);</span>
+    }
+
+    private static class BitIbaImpl extends AbstractBitIba {
+        private final LongIba longIba;
+        private final int firstLongOffsetInBits;
+        private final BigInteger lengthInBits;
+
+<span class="nc" id="L23">        public BitIbaImpl(final LongIba longIba, final int firstLongOffsetInBits, final BigInteger lengthInBits) {</span>
+<span class="nc" id="L24">            Argument.assertNotNull(longIba, &quot;longIba&quot;);</span>
+<span class="nc" id="L25">            Argument.assertNotLessThan(firstLongOffsetInBits, 0, &quot;firstLongOffsetInBits&quot;);</span>
+<span class="nc" id="L26">            Argument.assertNotGreaterThan(firstLongOffsetInBits, 63, &quot;firstLongOffsetInBits&quot;);</span>
+<span class="nc" id="L27">            Argument.assertNotNull(lengthInBits, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L28">            Argument.assertGreaterThanOrEqualTo(lengthInBits, BigInteger.ZERO, &quot;lengthInBits&quot;);</span>
+
+<span class="nc" id="L30">            this.longIba = longIba;</span>
+<span class="nc" id="L31">            this.firstLongOffsetInBits = firstLongOffsetInBits;</span>
+<span class="nc" id="L32">            this.lengthInBits = lengthInBits;</span>
+<span class="nc" id="L33">        }</span>
+
+        @Override
+        protected void closeImpl() throws IOException {
+<span class="nc" id="L37">            longIba.close();</span>
+<span class="nc" id="L38">        }</span>
+
+        @Override
+        protected BigInteger lengthInBitsImpl() throws IOException {
+<span class="nc" id="L42">            return lengthInBits;</span>
+        }
+
+        @Override
+        protected void getImpl(
+                final long[] array,
+                final long arrayOffsetInBits,
+                final BigInteger ibaStartInBits,
+                final long lengthInBits)
+                throws IOException {
+<span class="nc" id="L52">            final BigInteger ibaStartInLongs = ibaStartInBits.divide(LONG_SIZE);</span>
+<span class="nc" id="L53">            final BigInteger ibaEndInLongs =</span>
+<span class="nc" id="L54">                    ibaStartInBits.add(BigInteger.valueOf(lengthInBits)).divide(LONG_SIZE);</span>
+<span class="nc" id="L55">            final int lengthInLongs = ibaEndInLongs</span>
+<span class="nc" id="L56">                    .subtract(ibaStartInLongs)</span>
+<span class="nc" id="L57">                    .add(BigInteger.ONE)</span>
+<span class="nc" id="L58">                    .min(BigInteger.valueOf(Integer.MAX_VALUE))</span>
+<span class="nc" id="L59">                    .intValue();</span>
+<span class="nc" id="L60">            final long[] tempArray = new long[lengthInLongs];</span>
+
+<span class="nc" id="L62">            longIba.get(tempArray, 0, ibaStartInLongs, lengthInLongs);</span>
+
+<span class="nc" id="L64">            BitIlaUtil.copy(array, arrayOffsetInBits, tempArray, firstLongOffsetInBits, lengthInBits);</span>
+<span class="nc" id="L65">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

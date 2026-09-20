@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiplexerTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">MultiplexerTest.java</span></div><h1>MultiplexerTest.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.objectila.ObjectIla;
+import tfw.immutable.ila.objectila.ObjectIlaFill;
+import tfw.immutable.ila.objectila.ObjectIlaFromArray;
+import tfw.tsm.ecd.ObjectECD;
+import tfw.tsm.ecd.StatelessTriggerECD;
+import tfw.tsm.ecd.StringECD;
+import tfw.tsm.ecd.ila.ObjectIlaECD;
+
+<span class="nc" id="L14">final class MultiplexerTest {</span>
+<span class="nc" id="L15">    private StringECD valueECD = new StringECD(&quot;value&quot;);</span>
+<span class="nc" id="L16">    private ObjectIlaECD multiValueECD = new ObjectIlaECD(&quot;multiValue&quot;);</span>
+<span class="nc" id="L17">    private ObjectIlaECD multiMultiValueECD = new ObjectIlaECD(&quot;multiMultiValue&quot;);</span>
+
+    @Test
+    void multiplexerWithIntermediateBranchTest() throws Exception {
+<span class="nc" id="L21">        final StatelessTriggerECD triggerECD = new StatelessTriggerECD(&quot;trigger&quot;);</span>
+<span class="nc" id="L22">        final TestTransactionExceptionHandler exceptionHandler = new TestTransactionExceptionHandler();</span>
+<span class="nc" id="L23">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L24">        final Root root = Root.builder()</span>
+<span class="nc" id="L25">                .setName(&quot;MultiplexerTestRoot&quot;)</span>
+<span class="nc" id="L26">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L27">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L28">                .setTransactionExceptionHandler(exceptionHandler)</span>
+<span class="nc" id="L29">                .addStatelessTriggerECD(triggerECD)</span>
+<span class="nc" id="L30">                .addObjectECD(multiValueECD, ObjectIlaFill.create(null, 2))</span>
+<span class="nc" id="L31">                .build();</span>
+
+<span class="nc" id="L33">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L34">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+
+<span class="nc" id="L36">        MultiplexedBranch multiBranch = mbf.create(&quot;Multiplexer&quot;);</span>
+
+<span class="nc" id="L38">        BranchFactory subBranchFactory = new BranchFactory();</span>
+<span class="nc" id="L39">        Branch subBranch0 = subBranchFactory.create(&quot;subBranch0&quot;);</span>
+<span class="nc" id="L40">        Branch subBranch1 = subBranchFactory.create(&quot;subBranch1&quot;);</span>
+<span class="nc" id="L41">        multiBranch.add(subBranch0, 0);</span>
+<span class="nc" id="L42">        multiBranch.add(subBranch1, 1);</span>
+
+<span class="nc" id="L44">        Initiator initiator0 = new Initiator(&quot;InitiatorValue0&quot;, valueECD);</span>
+<span class="nc" id="L45">        ValueCommit valueCommit0 = new ValueCommit(&quot;CommitValue0&quot;, valueECD);</span>
+
+<span class="nc" id="L47">        subBranch0.add(initiator0);</span>
+<span class="nc" id="L48">        subBranch0.add(valueCommit0);</span>
+
+<span class="nc" id="L50">        root.add(multiBranch);</span>
+<span class="nc" id="L51">        initiator0.set(valueECD, &quot;0&quot;);</span>
+<span class="nc" id="L52">        queue.waitTilEmpty();</span>
+<span class="nc" id="L53">        assertThat(valueCommit0.value).isEqualTo(&quot;0&quot;);</span>
+
+<span class="nc" id="L55">        Initiator initiator1 = new Initiator(&quot;InitiatorValue1&quot;, valueECD);</span>
+<span class="nc" id="L56">        ValueCommit valueCommit1 = new ValueCommit(&quot;CommitValue1&quot;, valueECD);</span>
+<span class="nc" id="L57">        subBranch1.add(initiator1);</span>
+<span class="nc" id="L58">        subBranch1.add(valueCommit1);</span>
+
+<span class="nc" id="L60">        initiator1.set(valueECD, &quot;1&quot;);</span>
+<span class="nc" id="L61">        queue.waitTilEmpty();</span>
+<span class="nc" id="L62">        assertThat(valueCommit0.value).isEqualTo(&quot;0&quot;);</span>
+<span class="nc" id="L63">        assertThat(valueCommit1.value).isEqualTo(&quot;1&quot;);</span>
+
+<span class="nc" id="L65">        Initiator multiInitiator = new Initiator(&quot;MultiValueInitiator&quot;, multiValueECD);</span>
+<span class="nc" id="L66">        root.add(multiInitiator);</span>
+
+<span class="nc" id="L68">        String[] strings = new String[] {&quot;zero&quot;, &quot;one&quot;};</span>
+
+<span class="nc" id="L70">        ObjectIla&lt;Object&gt; obj = ObjectIlaFromArray.create(strings);</span>
+<span class="nc" id="L71">        multiInitiator.set(multiValueECD, obj);</span>
+<span class="nc" id="L72">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L74">        assertThat(strings[0]).isEqualTo(valueCommit0.value);</span>
+<span class="nc" id="L75">        assertThat(strings[1]).isEqualTo(valueCommit1.value);</span>
+
+<span class="nc" id="L77">        MultiValueCommit mvCommit = new MultiValueCommit(&quot;MultiValueCommit&quot;, multiValueECD);</span>
+<span class="nc" id="L78">        root.add(mvCommit);</span>
+
+<span class="nc" id="L80">        initiator0.set(valueECD, &quot;0&quot;);</span>
+<span class="nc" id="L81">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L83">        final Object[] multiValueArray0 = new Object[(int) mvCommit.value.length()];</span>
+<span class="nc" id="L84">        mvCommit.value.get(multiValueArray0, 0, 0, multiValueArray0.length);</span>
+
+<span class="nc" id="L86">        assertThat(valueCommit0.value).isEqualTo(&quot;0&quot;);</span>
+<span class="nc" id="L87">        assertThat(valueCommit1.value).isEqualTo(&quot;one&quot;);</span>
+<span class="nc" id="L88">        assertThat(multiValueArray0[0]).isEqualTo(&quot;0&quot;);</span>
+<span class="nc" id="L89">        assertThat(multiValueArray0[1]).isEqualTo(&quot;one&quot;);</span>
+
+<span class="nc" id="L91">        TestTriggeredConverter tc0 = new TestTriggeredConverter(&quot;tc0&quot;, triggerECD, &quot;tc0&quot;, valueECD);</span>
+<span class="nc" id="L92">        TestTriggeredConverter tc1 = new TestTriggeredConverter(&quot;tc1&quot;, triggerECD, &quot;tc1&quot;, valueECD);</span>
+
+<span class="nc" id="L94">        Initiator triggerInitiator = new Initiator(&quot;trigger&quot;, triggerECD);</span>
+<span class="nc" id="L95">        root.add(triggerInitiator);</span>
+
+<span class="nc" id="L97">        subBranch0.add(tc0);</span>
+<span class="nc" id="L98">        subBranch1.add(tc1);</span>
+
+<span class="nc" id="L100">        triggerInitiator.trigger(triggerECD);</span>
+<span class="nc" id="L101">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L103">        final Object[] multiValueArray1 = new Object[(int) mvCommit.value.length()];</span>
+<span class="nc" id="L104">        mvCommit.value.get(multiValueArray1, 0, 0, multiValueArray1.length);</span>
+
+<span class="nc" id="L106">        assertThat(valueCommit0.value).isEqualTo(&quot;tc0&quot;);</span>
+<span class="nc" id="L107">        assertThat(valueCommit1.value).isEqualTo(&quot;tc1&quot;);</span>
+<span class="nc" id="L108">        assertThat(multiValueArray1[0]).isEqualTo(&quot;tc0&quot;);</span>
+<span class="nc" id="L109">        assertThat(multiValueArray1[1]).isEqualTo(&quot;tc1&quot;);</span>
+        // We remove one of the component to cause a new transaction in order
+        // to make sure that no exceptions are thrown...
+<span class="nc" id="L112">        subBranch0.remove(valueCommit0);</span>
+<span class="nc" id="L113">        triggerInitiator.trigger(triggerECD);</span>
+<span class="nc" id="L114">        queue.waitTilEmpty();</span>
+<span class="nc" id="L115">        assertThat(exceptionHandler.exp).isNull();</span>
+
+<span class="nc" id="L117">        subBranch0.add(valueCommit0);</span>
+<span class="nc" id="L118">        String tc0Value = &quot;tc0-1&quot;;</span>
+<span class="nc" id="L119">        String tc1Value = &quot;tc1-1&quot;;</span>
+<span class="nc" id="L120">        tc0.value = tc0Value;</span>
+<span class="nc" id="L121">        tc1.value = tc1Value;</span>
+<span class="nc" id="L122">        triggerInitiator.trigger(triggerECD);</span>
+<span class="nc" id="L123">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L125">        final Object[] multiValueArray2 = new Object[(int) mvCommit.value.length()];</span>
+<span class="nc" id="L126">        mvCommit.value.get(multiValueArray2, 0, 0, multiValueArray2.length);</span>
+
+<span class="nc" id="L128">        assertThat(tc0Value).isEqualTo(multiValueArray2[0]);</span>
+<span class="nc" id="L129">        assertThat(tc1Value).isEqualTo(multiValueArray2[1]);</span>
+
+<span class="nc" id="L131">        assertThat(exceptionHandler.exp).isNull();</span>
+        // Now we will remove the multiplexer...and make sure everything still
+        // works.
+<span class="nc" id="L134">        root.remove(multiBranch);</span>
+<span class="nc" id="L135">        queue.waitTilEmpty();</span>
+<span class="nc" id="L136">        multiInitiator.set(multiValueECD, obj);</span>
+<span class="nc" id="L137">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L139">        final Object[] multiValueArray3 = new Object[(int) mvCommit.value.length()];</span>
+<span class="nc" id="L140">        final Object[] objArray3 = new Object[(int) obj.length()];</span>
+<span class="nc" id="L141">        mvCommit.value.get(multiValueArray3, 0, 0, multiValueArray3.length);</span>
+<span class="nc" id="L142">        obj.get(objArray3, 0, 0, objArray3.length);</span>
+
+<span class="nc" id="L144">        assertThat(objArray3[0]).isEqualTo(multiValueArray3[0]);</span>
+<span class="nc" id="L145">        assertThat(objArray3[1]).isEqualTo(multiValueArray3[1]);</span>
+        // Now we put the multiplexer back and make sure it still works.
+<span class="nc" id="L147">        root.add(multiBranch);</span>
+<span class="nc" id="L148">        queue.waitTilEmpty();</span>
+
+<span class="nc" id="L150">        final Object[] objArray4 = new Object[(int) obj.length()];</span>
+<span class="nc" id="L151">        obj.get(objArray4, 0, 0, objArray4.length);</span>
+
+<span class="nc" id="L153">        assertThat(objArray4[0]).isEqualTo(valueCommit0.value);</span>
+<span class="nc" id="L154">        assertThat(objArray4[1]).isEqualTo(valueCommit1.value);</span>
+<span class="nc" id="L155">    }</span>
+
+    @Test
+    void multiLayerMultiplexingTest() throws Exception {
+
+<span class="nc" id="L160">        String v00 = &quot;Value0.0&quot;;</span>
+<span class="nc" id="L161">        String v01 = &quot;Value0.1&quot;;</span>
+<span class="nc" id="L162">        String v10 = &quot;Value1.0&quot;;</span>
+<span class="nc" id="L163">        String v11 = &quot;Value1.1&quot;;</span>
+
+<span class="nc" id="L165">        ObjectIla&lt;Object&gt; vmmo = createMultiMultiValue(v00, v01, v10, v11);</span>
+        // TODO add multiMultiInitiator and multiMultiCommit...
+
+<span class="nc" id="L168">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L169">        final Root root = Root.builder()</span>
+<span class="nc" id="L170">                .setName(&quot;MultiplexerTestRoot&quot;)</span>
+<span class="nc" id="L171">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L172">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L173">                .addObjectECD(multiMultiValueECD, vmmo)</span>
+<span class="nc" id="L174">                .build();</span>
+
+<span class="nc" id="L176">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L177">        mbf.addMultiplexer(multiValueECD, multiMultiValueECD);</span>
+<span class="nc" id="L178">        MultiplexedBranch multiMultiBranch = mbf.create(&quot;MultiMultiBranch&quot;);</span>
+
+<span class="nc" id="L180">        mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L181">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+<span class="nc" id="L182">        MultiplexedBranch multiBranchZero = mbf.create(&quot;MultiBranchZero&quot;);</span>
+
+<span class="nc" id="L184">        mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L185">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+<span class="nc" id="L186">        MultiplexedBranch multiBranchOne = mbf.create(&quot;MultiBranchOne&quot;);</span>
+
+<span class="nc" id="L188">        multiMultiBranch.add(multiBranchZero, 0);</span>
+<span class="nc" id="L189">        multiMultiBranch.add(multiBranchOne, 1);</span>
+
+<span class="nc" id="L191">        Initiator initiator00 = new Initiator(&quot;Value0_0&quot;, valueECD);</span>
+<span class="nc" id="L192">        ValueCommit valueCommit00 = new ValueCommit(&quot;Value 0_0&quot;, valueECD);</span>
+<span class="nc" id="L193">        Initiator initiator01 = new Initiator(&quot;Value0_1&quot;, valueECD);</span>
+<span class="nc" id="L194">        ValueCommit valueCommit01 = new ValueCommit(&quot;Value 0_1&quot;, valueECD);</span>
+<span class="nc" id="L195">        multiBranchZero.add(initiator00, 0);</span>
+<span class="nc" id="L196">        multiBranchZero.add(valueCommit00, 0);</span>
+<span class="nc" id="L197">        multiBranchZero.add(initiator01, 1);</span>
+<span class="nc" id="L198">        multiBranchZero.add(valueCommit01, 1);</span>
+
+<span class="nc" id="L200">        Initiator initiator10 = new Initiator(&quot;Value1_0&quot;, valueECD);</span>
+<span class="nc" id="L201">        ValueCommit valueCommit10 = new ValueCommit(&quot;Value 1_0&quot;, valueECD);</span>
+<span class="nc" id="L202">        Initiator initiator11 = new Initiator(&quot;Value1_1&quot;, valueECD);</span>
+<span class="nc" id="L203">        ValueCommit valueCommit11 = new ValueCommit(&quot;Value 1_1&quot;, valueECD);</span>
+<span class="nc" id="L204">        multiBranchOne.add(initiator10, 0);</span>
+<span class="nc" id="L205">        multiBranchOne.add(valueCommit10, 0);</span>
+<span class="nc" id="L206">        multiBranchOne.add(initiator11, 1);</span>
+<span class="nc" id="L207">        multiBranchOne.add(valueCommit11, 1);</span>
+
+<span class="nc" id="L209">        MultiValueCommit mmValueCommit = new MultiValueCommit(&quot;multiMultiValueCommit&quot;, multiMultiValueECD);</span>
+
+<span class="nc" id="L211">        root.add(multiMultiBranch);</span>
+<span class="nc" id="L212">        root.add(mmValueCommit);</span>
+
+<span class="nc" id="L214">        queue.waitTilEmpty();</span>
+<span class="nc" id="L215">        checkState(</span>
+                vmmo,
+                mmValueCommit.value,
+                valueCommit00.value,
+                valueCommit01.value,
+                valueCommit10.value,
+                valueCommit11.value);
+
+<span class="nc" id="L223">        v11 = &quot;hello 1.1&quot;;</span>
+<span class="nc" id="L224">        vmmo = createMultiMultiValue(v00, v01, v10, v11);</span>
+<span class="nc" id="L225">        initiator11.set(valueECD, v11);</span>
+<span class="nc" id="L226">        queue.waitTilEmpty();</span>
+<span class="nc" id="L227">        checkState(</span>
+                vmmo,
+                mmValueCommit.value,
+                valueCommit00.value,
+                valueCommit01.value,
+                valueCommit10.value,
+                valueCommit11.value);
+<span class="nc" id="L234">    }</span>
+
+    @Test
+    void multipleMultiplexersTest() throws InterruptedException {
+<span class="nc" id="L238">        String slot0 = &quot;slot0&quot;;</span>
+
+<span class="nc" id="L240">        final BasicTransactionQueue queue = new BasicTransactionQueue();</span>
+<span class="nc" id="L241">        final Root root = Root.builder()</span>
+<span class="nc" id="L242">                .setName(&quot;MultiplexerTestRoot&quot;)</span>
+<span class="nc" id="L243">                .setTransactionQueue(queue)</span>
+<span class="nc" id="L244">                .setCheckDependencies(new DefaultCheckDependencies())</span>
+<span class="nc" id="L245">                .addObjectECD(multiValueECD, ObjectIlaFromArray.create(new String[] {slot0}))</span>
+<span class="nc" id="L246">                .build();</span>
+
+<span class="nc" id="L248">        MultiplexedBranchFactory mbf = new MultiplexedBranchFactory();</span>
+<span class="nc" id="L249">        mbf.addMultiplexer(valueECD, multiValueECD);</span>
+<span class="nc" id="L250">        MultiplexedBranch multiBranch0 = mbf.create(&quot;MultiBranch0&quot;);</span>
+<span class="nc" id="L251">        ValueCommit vcMb0S0 = new ValueCommit(&quot;ValueCommitBranch0Slot0&quot;, valueECD);</span>
+<span class="nc" id="L252">        multiBranch0.add(vcMb0S0, 0);</span>
+<span class="nc" id="L253">        Initiator initiator00 = new Initiator(&quot;branch0Slot0Initiator&quot;, valueECD);</span>
+<span class="nc" id="L254">        multiBranch0.add(initiator00, 0);</span>
+
+<span class="nc" id="L256">        MultiplexedBranch multiBranch1 = mbf.create(&quot;MultiBranch1&quot;);</span>
+<span class="nc" id="L257">        ValueCommit vcMb1S0 = new ValueCommit(&quot;ValueCommitBranch1Slot0&quot;, valueECD);</span>
+<span class="nc" id="L258">        multiBranch1.add(vcMb1S0, 0);</span>
+
+<span class="nc" id="L260">        root.add(multiBranch0);</span>
+<span class="nc" id="L261">        root.add(multiBranch1);</span>
+<span class="nc" id="L262">        queue.waitTilEmpty();</span>
+<span class="nc" id="L263">        assertThat(slot0).isEqualTo(vcMb0S0.value).isEqualTo(vcMb1S0.value);</span>
+
+<span class="nc" id="L265">        slot0 = &quot;xyz&quot;;</span>
+<span class="nc" id="L266">        initiator00.set(valueECD, slot0);</span>
+<span class="nc" id="L267">        queue.waitTilEmpty();</span>
+<span class="nc" id="L268">        assertThat(slot0).isEqualTo(vcMb0S0.value).isEqualTo(vcMb1S0.value);</span>
+<span class="nc" id="L269">    }</span>
+
+    private ObjectIla&lt;Object&gt; createMultiMultiValue(String v00, String v01, String v10, String v11) {
+<span class="nc" id="L272">        String[] vm0 = new String[] {v00, v01};</span>
+<span class="nc" id="L273">        String[] vm1 = new String[] {v10, v11};</span>
+
+<span class="nc" id="L275">        ObjectIla&lt;Object&gt; vmo0 = ObjectIlaFromArray.create(vm0);</span>
+<span class="nc" id="L276">        ObjectIla&lt;Object&gt; vmo1 = ObjectIlaFromArray.create(vm1);</span>
+
+<span class="nc" id="L278">        return ObjectIlaFromArray.create(new Object[] {vmo0, vmo1});</span>
+    }
+
+    private void checkState(
+            ObjectIla&lt;Object&gt; mmAnswer, ObjectIla&lt;Object&gt; mmResult, String v00, String v01, String v10, String v11)
+            throws Exception {
+<span class="nc" id="L284">        Object[][] mma = toArray(mmAnswer);</span>
+<span class="nc" id="L285">        assertThat(mma[0][0]).isEqualTo(v00);</span>
+<span class="nc" id="L286">        assertThat(mma[0][1]).isEqualTo(v01);</span>
+<span class="nc" id="L287">        assertThat(mma[1][0]).isEqualTo(v10);</span>
+<span class="nc" id="L288">        assertThat(mma[1][1]).isEqualTo(v11);</span>
+
+<span class="nc" id="L290">        Object[][] mmr = toArray(mmResult);</span>
+<span class="nc" id="L291">        assertThat(mma[0][0]).isEqualTo(mmr[0][0]);</span>
+<span class="nc" id="L292">        assertThat(mma[0][1]).isEqualTo(mmr[0][1]);</span>
+<span class="nc" id="L293">        assertThat(mma[1][0]).isEqualTo(mmr[1][0]);</span>
+<span class="nc" id="L294">        assertThat(mma[1][1]).isEqualTo(mmr[1][1]);</span>
+<span class="nc" id="L295">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private Object[][] toArray(ObjectIla&lt;Object&gt; objs) throws Exception {
+<span class="nc" id="L299">        Object[][] mmArray = new Object[2][];</span>
+
+<span class="nc" id="L301">        Object[] mma = new Object[(int) objs.length()];</span>
+<span class="nc" id="L302">        objs.get(mma, 0, 0, mma.length);</span>
+
+<span class="nc" id="L304">        final ObjectIla&lt;Object&gt; mma0Ila = (ObjectIla&lt;Object&gt;) mma[0];</span>
+<span class="nc" id="L305">        final ObjectIla&lt;Object&gt; mma1Ila = (ObjectIla&lt;Object&gt;) mma[1];</span>
+
+<span class="nc" id="L307">        mmArray[0] = new Object[(int) mma0Ila.length()];</span>
+<span class="nc" id="L308">        mmArray[1] = new Object[(int) mma1Ila.length()];</span>
+
+<span class="nc" id="L310">        mma0Ila.get(mmArray[0], 0, 0, mmArray[0].length);</span>
+<span class="nc" id="L311">        mma1Ila.get(mmArray[1], 0, 0, mmArray[1].length);</span>
+
+<span class="nc" id="L313">        return mmArray;</span>
+    }
+
+    private static class TestTriggeredConverter extends TriggeredConverter {
+        private String value;
+
+        private final StringECD outputECD;
+
+        public TestTriggeredConverter(String name, StatelessTriggerECD triggerECD, String value, StringECD outputECD) {
+<span class="nc" id="L322">            super(name, triggerECD, null, new StringECD[] {outputECD});</span>
+<span class="nc" id="L323">            this.value = value;</span>
+<span class="nc" id="L324">            this.outputECD = outputECD;</span>
+<span class="nc" id="L325">        }</span>
+
+        @Override
+        protected void convert() {
+<span class="nc" id="L329">            set(outputECD, value);</span>
+<span class="nc" id="L330">        }</span>
+    }
+
+    private static class ValueCommit extends Commit {
+        public String value;
+
+        public final ObjectECD valueECD;
+
+        public ValueCommit(String name, ObjectECD valueECD) {
+<span class="nc" id="L339">            super(name, new ObjectECD[] {valueECD});</span>
+<span class="nc" id="L340">            this.valueECD = valueECD;</span>
+<span class="nc" id="L341">        }</span>
+
+        @Override
+        public void commit() {
+<span class="nc" id="L345">            value = (String) get(valueECD);</span>
+<span class="nc" id="L346">        }</span>
+    }
+
+    private static class MultiValueCommit extends Commit {
+        public ObjectIla&lt;Object&gt; value;
+
+        public final ObjectECD valueECD;
+
+        public MultiValueCommit(String name, ObjectECD valueECD) {
+<span class="nc" id="L355">            super(name, new ObjectECD[] {valueECD});</span>
+<span class="nc" id="L356">            this.valueECD = valueECD;</span>
+<span class="nc" id="L357">        }</span>
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public void commit() {
+<span class="nc" id="L362">            value = (ObjectIla&lt;Object&gt;) get(valueECD);</span>
+<span class="nc" id="L363">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

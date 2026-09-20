@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Commit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Commit.java</span></div><h1>Commit.java</h1><pre class="source lang-java linenums">package tfw.tsm;
+
+import tfw.tsm.ecd.ObjectECD;
+
+/**
+ * The base class for component which process state in the commit phase of
+ * a transaction. Note that no state can be changed during the commit phase.
+ */
+public abstract class Commit extends BaseCommit {
+
+    /**
+     * Creates a commit component with the specified values.
+     * @param name the name of the commit component.
+     * @param triggerSinks the set of event channels which this
+     * commit component will process.
+     */
+    public Commit(String name, ObjectECD[] triggerSinks) {
+<span class="nc" id="L18">        this(name, triggerSinks, null, null);</span>
+<span class="nc" id="L19">    }</span>
+
+    /**
+     * Creates a commit component with the specified values.
+     *
+     * @param name the name of the component.
+     *
+     * @param triggerSinks the set of event channel sinks which cause the
+     * commit components {@link #commit()} method to be called when their
+     * state is changed.
+     *
+     * @param nonTriggerSinks the set of event channel sinks whose state the
+     * commit component needs, but whose state changes do not cause the
+     * component to call it's {@link #commit()} method.
+     *
+     * @param initiators the set of {@link Initiator}s whose state changes
+     * this commit component will ignore. For example if an initiator sources
+     * events on event channel 'A' and 'A' is one of the event channels
+     * specified in the &lt;code&gt;triggerSinks&lt;/code&gt; list, the {@link #commit()}
+     * method will not be called as a result of the initiator changing 'A's
+     * state.
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;triggerSinks == null&lt;/code&gt;.
+     * @throws IllegalArgumentException if &lt;code&gt;triggerSinks.length == 0&lt;/code&gt;.
+     * @throws IllegalArgumentException if &lt;code&gt;triggerSinks[i] == null&lt;/code&gt;.
+     */
+    public Commit(String name, ObjectECD[] triggerSinks, ObjectECD[] nonTriggerSinks, Initiator[] initiators) {
+<span class="nc" id="L46">        super(name, triggerSinks, nonTriggerSinks, initiators);</span>
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

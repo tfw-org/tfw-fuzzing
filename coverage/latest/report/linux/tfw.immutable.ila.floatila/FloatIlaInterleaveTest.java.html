@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FloatIlaInterleaveTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.immutable.ila.floatila</a> &gt; <span class="el_source">FloatIlaInterleaveTest.java</span></div><h1>FloatIlaInterleaveTest.java</h1><pre class="source lang-java linenums">package tfw.immutable.ila.floatila;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Random;
+import org.junit.jupiter.api.Test;
+import tfw.immutable.ila.IlaTestDimensions;
+
+<span class="nc" id="L12">final class FloatIlaInterleaveTest {</span>
+    @Test
+    void argumentsTest() {
+<span class="nc" id="L15">        final FloatIla ila1 = FloatIlaFromArray.create(new float[10]);</span>
+<span class="nc" id="L16">        final FloatIla ila2 = FloatIlaFromArray.create(new float[20]);</span>
+<span class="nc" id="L17">        final FloatIla[] ilas1 = (FloatIla[]) Array.newInstance(FloatIla.class, 0);</span>
+<span class="nc" id="L18">        final FloatIla[] ilas2 = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+<span class="nc" id="L19">        final FloatIla[] ilas3 = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+<span class="nc" id="L20">        final FloatIla[] ilas4 = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+<span class="nc" id="L21">        final FloatIla[] ilas5 = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+<span class="nc" id="L22">        final FloatIla[] ilas6 = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+<span class="nc" id="L23">        final float[] buffer = new float[10];</span>
+
+<span class="nc" id="L25">        ilas3[0] = null;</span>
+<span class="nc" id="L26">        ilas3[1] = ila1;</span>
+<span class="nc" id="L27">        ilas4[0] = ila1;</span>
+<span class="nc" id="L28">        ilas4[1] = null;</span>
+<span class="nc" id="L29">        ilas5[0] = ila1;</span>
+<span class="nc" id="L30">        ilas5[1] = ila1;</span>
+<span class="nc" id="L31">        ilas6[0] = ila1;</span>
+<span class="nc" id="L32">        ilas6[1] = ila2;</span>
+
+<span class="nc" id="L34">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(null, buffer))</span>
+<span class="nc" id="L35">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L36">                .hasMessage(&quot;ilas == null not allowed!&quot;);</span>
+<span class="nc" id="L37">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas5, null))</span>
+<span class="nc" id="L38">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L39">                .hasMessage(&quot;buffer == null not allowed!&quot;);</span>
+<span class="nc" id="L40">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas1, buffer))</span>
+<span class="nc" id="L41">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L42">                .hasMessage(&quot;ilas.length (=0) &lt; 1 not allowed!&quot;);</span>
+<span class="nc" id="L43">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas2, buffer))</span>
+<span class="nc" id="L44">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L45">                .hasMessage(&quot;ilas[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L46">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas3, buffer))</span>
+<span class="nc" id="L47">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L48">                .hasMessage(&quot;ilas[0] == null not allowed!&quot;);</span>
+<span class="nc" id="L49">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas4, buffer))</span>
+<span class="nc" id="L50">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L51">                .hasMessage(&quot;ilas[1] == null not allowed!&quot;);</span>
+<span class="nc" id="L52">        assertThatThrownBy(() -&gt; FloatIlaInterleave.create(ilas6, buffer))</span>
+<span class="nc" id="L53">                .isInstanceOf(IllegalArgumentException.class)</span>
+<span class="nc" id="L54">                .hasMessage(&quot;ilas[0].length() (=20) != ilas[1].length() (=10) not allowed!&quot;);</span>
+<span class="nc" id="L55">    }</span>
+
+    @Test
+    void allTest() throws Exception {
+<span class="nc" id="L59">        final Random random = new Random(0);</span>
+<span class="nc" id="L60">        final int length = IlaTestDimensions.defaultIlaLength();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (int jj = 2; jj &lt; 6; ++jj) {</span>
+<span class="nc" id="L62">            final float[][] target = new float[jj][length];</span>
+<span class="nc" id="L63">            final float[] array = new float[jj * length];</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            for (int ii = 0; ii &lt; jj * length; ++ii) {</span>
+<span class="nc" id="L65">                array[ii] = target[ii % jj][ii / jj] = random.nextFloat();</span>
+            }
+<span class="nc" id="L67">            FloatIla[] ilas = (FloatIla[]) Array.newInstance(FloatIla.class, jj);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (int ii = 0; ii &lt; jj; ++ii) {</span>
+<span class="nc" id="L69">                ilas[ii] = FloatIlaFromArray.create(target[ii]);</span>
+            }
+<span class="nc" id="L71">            FloatIla targetIla = FloatIlaFromArray.create(array);</span>
+<span class="nc" id="L72">            FloatIla actualIla = FloatIlaInterleave.create(ilas, new float[1000]);</span>
+
+<span class="nc" id="L74">            FloatIlaCheck.check(targetIla, actualIla);</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    @Test
+    void closeTest() throws IOException {
+<span class="nc" id="L80">        final TestCloseFloatIla ila0 = new TestCloseFloatIla();</span>
+<span class="nc" id="L81">        final TestCloseFloatIla ila1 = new TestCloseFloatIla();</span>
+<span class="nc" id="L82">        final FloatIla[] ilas = (FloatIla[]) Array.newInstance(FloatIla.class, 2);</span>
+
+<span class="nc" id="L84">        ilas[0] = ila0;</span>
+<span class="nc" id="L85">        ilas[1] = ila1;</span>
+<span class="nc" id="L86">        try (FloatIla ila = FloatIlaInterleave.create(ilas, new float[1000])) {</span>
+<span class="nc" id="L87">            assertThat(ila).isNotNull();</span>
+        }
+
+<span class="nc" id="L90">        assertThat(ila0.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L91">        assertThat(ila1.getNumberOfCloses()).isEqualTo(1);</span>
+<span class="nc" id="L92">    }</span>
+}
+// AUTO GENERATED FROM TEMPLATE
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

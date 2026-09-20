@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrawRectGraphic.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.awt.graphic</a> &gt; <span class="el_source">DrawRectGraphic.java</span></div><h1>DrawRectGraphic.java</h1><pre class="source lang-java linenums">package tfw.awt.graphic;
+
+import java.awt.Graphics2D;
+import tfw.check.Argument;
+
+public class DrawRectGraphic {
+    private DrawRectGraphic() {}
+
+    public static Graphic create(Graphic graphic, int x, int y, int width, int height) {
+<span class="nc" id="L10">        return new GraphicImpl(graphic, x, y, width, height);</span>
+    }
+
+    private static class GraphicImpl implements Graphic {
+        private final Graphic graphic;
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+
+<span class="nc" id="L20">        private GraphicImpl(Graphic graphic, int x, int y, int width, int height) {</span>
+<span class="nc" id="L21">            this.graphic = graphic;</span>
+<span class="nc" id="L22">            this.x = x;</span>
+<span class="nc" id="L23">            this.y = y;</span>
+<span class="nc" id="L24">            this.width = width;</span>
+<span class="nc" id="L25">            this.height = height;</span>
+<span class="nc" id="L26">        }</span>
+
+        @Override
+        public void paint(Graphics2D graphics2D) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            if (graphic != null) {</span>
+<span class="nc" id="L31">                graphic.paint(graphics2D);</span>
+            }
+
+<span class="nc" id="L34">            graphics2D.drawRect(x, y, width, height);</span>
+<span class="nc" id="L35">        }</span>
+    }
+
+    public static Graphic create(Graphic graphic, int[] xs, int[] ys, int[] widths, int[] heights) {
+<span class="nc" id="L39">        return new GraphicImplArray(graphic, xs, ys, widths, heights);</span>
+    }
+
+    private static class GraphicImplArray implements Graphic {
+        private final Graphic graphic;
+        private final int[] xs;
+        private final int[] ys;
+        private final int[] widths;
+        private final int[] heights;
+
+<span class="nc" id="L49">        private GraphicImplArray(Graphic graphic, int[] xs, int[] ys, int[] widths, int[] heights) {</span>
+<span class="nc" id="L50">            Argument.assertEquals(xs.length, ys.length, &quot;xs.length&quot;, &quot;ys.length&quot;);</span>
+<span class="nc" id="L51">            Argument.assertEquals(xs.length, widths.length, &quot;xs.length&quot;, &quot;widths.length&quot;);</span>
+<span class="nc" id="L52">            Argument.assertEquals(xs.length, heights.length, &quot;xs.length&quot;, &quot;heights.length&quot;);</span>
+
+<span class="nc" id="L54">            this.graphic = graphic;</span>
+<span class="nc" id="L55">            this.xs = xs;</span>
+<span class="nc" id="L56">            this.ys = ys;</span>
+<span class="nc" id="L57">            this.widths = widths;</span>
+<span class="nc" id="L58">            this.heights = heights;</span>
+<span class="nc" id="L59">        }</span>
+
+        @Override
+        public void paint(Graphics2D graphics2D) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (graphic != null) {</span>
+<span class="nc" id="L64">                graphic.paint(graphics2D);</span>
+            }
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            for (int i = 0; i &lt; xs.length; i++) {</span>
+<span class="nc" id="L68">                graphics2D.drawRect(xs[i], ys[i], widths[i], heights[i]);</span>
+            }
+<span class="nc" id="L70">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
