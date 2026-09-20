@@ -2,26 +2,26 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f2e581f0ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f6ea8174ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 3822610463
+INFO: Seed: 4213466581
 MERGE-OUTER: 85 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryFromArrayFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryFromArrayFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7fb1441c8ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f6c8c969ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 4169170543
+INFO: Seed: 673595118
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1023.txt'
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1022.txt'
 MERGE-INNER: 85 total files; 0 processed earlier; will process 85 files now
-#1	pulse  exec/s: 0 rss: 106Mb
-#2	pulse  exec/s: 0 rss: 106Mb
-#4	pulse  exec/s: 0 rss: 106Mb
+#1	pulse  exec/s: 0 rss: 105Mb
+#2	pulse  exec/s: 0 rss: 105Mb
+#4	pulse  exec/s: 0 rss: 105Mb
 #8	pulse  exec/s: 0 rss: 106Mb
 #16	pulse  exec/s: 0 rss: 106Mb
 #32	pulse  exec/s: 0 rss: 106Mb
