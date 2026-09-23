@@ -6,16 +6,17 @@ import org.junit.jupiter.api.Test;
 
 <span class="nc" id="L7">final class ObjectIlmFromArrayTest {</span>
     @Test
-    void objectIlmFromArrayTest() throws Exception {
+    void ObjectIlmFromArrayTest() throws Exception {
 <span class="nc" id="L10">        Object[] array = new Object[6];</span>
 
 <span class="nc bnc" id="L12" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
 <span class="nc" id="L13">            array[i] = new Object();</span>
         }
 
-<span class="nc" id="L16">        ObjectIlm&lt;Object&gt; objectIlm = ObjectIlmFromArray.create(array, array.length / 2);</span>
+<span class="nc" id="L16">        ObjectIlm ObjectIlm = ObjectIlmFromArray.create(array, array.length / 2);</span>
 
-<span class="nc" id="L18">        assertThat(array).isEqualTo(ObjectIlmUtil.toArray(objectIlm, new Object[0]));</span>
+<span class="nc" id="L18">        assertThat(array).isEqualTo(ObjectIlmUtil.toArray(ObjectIlm, new Object[0]));</span>
 <span class="nc" id="L19">    }</span>
 }
+// AUTO GENERATED FROM TEMPLATE
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
