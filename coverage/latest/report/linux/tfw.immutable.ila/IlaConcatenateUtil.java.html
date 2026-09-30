@@ -26,8 +26,11 @@ public final class IlaConcatenateUtil {
 <span class="nc" id="L26">            final int leftAmount = (int) (leftLength - start);</span>
 
 <span class="nc" id="L28">            leftGet.get(offset, start, leftAmount);</span>
-<span class="nc" id="L29">            rightGet.get(offset + leftAmount, 0, length - leftAmount);</span>
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            if (length &gt; leftAmount) {</span>
+<span class="nc" id="L31">                rightGet.get(offset + leftAmount, 0, length - leftAmount);</span>
+            }
         }
-<span class="nc" id="L31">    }</span>
+<span class="nc" id="L34">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

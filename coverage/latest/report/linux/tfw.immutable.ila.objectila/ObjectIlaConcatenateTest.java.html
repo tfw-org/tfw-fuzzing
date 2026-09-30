@@ -55,6 +55,32 @@ import tfw.immutable.ila.IlaTestDimensions;
 <span class="nc" id="L55">        assertThat(leftIla.getNumberOfCloses()).isEqualTo(1);</span>
 <span class="nc" id="L56">        assertThat(rightIla.getNumberOfCloses()).isEqualTo(1);</span>
 <span class="nc" id="L57">    }</span>
+
+    @Test
+    void exactLeftBoundaryTest() throws Exception {
+<span class="nc" id="L61">        final Object[] leftArray = new Object[2];</span>
+<span class="nc" id="L62">        final Object[] rightArray = new Object[2];</span>
+
+<span class="nc" id="L64">        leftArray[0] = new Object();</span>
+<span class="nc" id="L65">        leftArray[1] = new Object();</span>
+<span class="nc" id="L66">        rightArray[0] = new Object();</span>
+<span class="nc" id="L67">        rightArray[1] = new Object();</span>
+
+<span class="nc" id="L69">        final ObjectIla&lt;Object&gt; leftIla = ObjectIlaFromArray.create(leftArray);</span>
+<span class="nc" id="L70">        final ObjectIla&lt;Object&gt; rightIla = ObjectIlaFromArray.create(rightArray);</span>
+<span class="nc" id="L71">        final ObjectIla&lt;Object&gt; actualIla = ObjectIlaConcatenate.create(leftIla, rightIla);</span>
+
+        try {
+<span class="nc" id="L74">            final Object[] destination = new Object[1];</span>
+
+            // Read exactly the final element of the left ILA.
+<span class="nc" id="L77">            actualIla.get(destination, 0, 1, 1);</span>
+
+<span class="nc" id="L79">            assertThat(destination[0]).isEqualTo(leftArray[1]);</span>
+        } finally {
+<span class="nc" id="L81">            actualIla.close();</span>
+        }
+<span class="nc" id="L83">    }</span>
 }
 // AUTO GENERATED FROM TEMPLATE
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

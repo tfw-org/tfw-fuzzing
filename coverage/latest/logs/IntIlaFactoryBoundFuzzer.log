@@ -1,0 +1,8 @@
+OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_IntIlaFactoryBoundFuzzer
+INFO: using inputs from: /github/workspace/cifuzz-corpus/IntIlaFactoryBoundFuzzer
+INFO: found LLVMFuzzerCustomMutator (0x7fc699c17ab0). Disabling -len_control by default.
+INFO: libFuzzer ignores flags that start with '--'
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3708877042

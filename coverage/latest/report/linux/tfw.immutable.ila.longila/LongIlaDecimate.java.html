@@ -30,26 +30,28 @@ public final class LongIlaDecimate {
 
         @Override
         protected long lengthImpl() throws IOException {
-<span class="nc" id="L33">            return (ila.length() + factor - 1) / factor;</span>
+<span class="nc" id="L33">            final long length = ila.length();</span>
+
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            return length == 0 ? 0 : 1 + (length - 1) / factor;</span>
         }
 
         @Override
         protected void getImpl(long[] array, int offset, long start, int length) throws IOException {
-<span class="nc" id="L38">            final long segmentStart = start * factor;</span>
-<span class="nc" id="L39">            final long segmentLength = StrictMath.min(ila.length() - segmentStart, length * factor - 1);</span>
-<span class="nc" id="L40">            final LongIla segment = LongIlaSegment.create(ila, segmentStart, segmentLength);</span>
-<span class="nc" id="L41">            final LongIlaIterator fi = new LongIlaIterator(segment, buffer.clone());</span>
+<span class="nc" id="L40">            final long segmentStart = start * factor;</span>
+<span class="nc" id="L41">            final long segmentLength = StrictMath.min(ila.length() - segmentStart, length * factor - 1);</span>
+<span class="nc" id="L42">            final LongIla segment = LongIlaSegment.create(ila, segmentStart, segmentLength);</span>
+<span class="nc" id="L43">            final LongIlaIterator fi = new LongIlaIterator(segment, buffer.clone());</span>
 
-<span class="nc bnc" id="L43" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
-<span class="nc" id="L44">                array[ii] = fi.next();</span>
-<span class="nc" id="L45">                fi.skip(factor - 1);</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
+<span class="nc" id="L46">                array[ii] = fi.next();</span>
+<span class="nc" id="L47">                fi.skip(factor - 1);</span>
             }
-<span class="nc" id="L47">        }</span>
+<span class="nc" id="L49">        }</span>
 
         @Override
         protected void closeImpl() throws IOException {
-<span class="nc" id="L51">            ila.close();</span>
-<span class="nc" id="L52">        }</span>
+<span class="nc" id="L53">            ila.close();</span>
+<span class="nc" id="L54">        }</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

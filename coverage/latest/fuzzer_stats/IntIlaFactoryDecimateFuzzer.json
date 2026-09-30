@@ -1,0 +1,1 @@
+{"type": "oss-fuzz.java.coverage.json.export", "version": "1.0.0", "data": [{"totals": {"functions": {"covered": 0, "notcovered": 5, "count": 5, "percent": 0.0}, "lines": {"covered": 0, "notcovered": 36, "count": 36, "percent": 0.0}, "regions": {"covered": 0, "notcovered": 10, "count": 10, "percent": 0.0}}, "files": []}]}
