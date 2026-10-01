@@ -7,10 +7,10 @@ public class BooleanIlaFactoryConcatenate {
     private BooleanIlaFactoryConcatenate() {}
 
     public static BooleanIlaFactory create(BooleanIlaFactory leftFactory, BooleanIlaFactory rightFactory) {
-<span class="nc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
-<span class="nc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
+<span class="fc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
 
-<span class="nc" id="L13">        return () -&gt; BooleanIlaConcatenate.create(leftFactory.create(), rightFactory.create());</span>
+<span class="fc" id="L13">        return () -&gt; BooleanIlaConcatenate.create(leftFactory.create(), rightFactory.create());</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

@@ -9,10 +9,10 @@ public final class ByteIlaBound {
     }
 
     public static ByteIla create(ByteIla ila, byte minimum, byte maximum) {
-<span class="nc" id="L12">        Argument.assertNotNull(ila, &quot;ila&quot;);</span>
-<span class="nc" id="L13">        Argument.assertNotGreaterThan(minimum, maximum, &quot;minimum&quot;, &quot;maximum&quot;);</span>
+<span class="fc" id="L12">        Argument.assertNotNull(ila, &quot;ila&quot;);</span>
+<span class="fc" id="L13">        Argument.assertNotGreaterThan(minimum, maximum, &quot;minimum&quot;, &quot;maximum&quot;);</span>
 
-<span class="nc" id="L15">        return new ByteIlaImpl(ila, minimum, maximum);</span>
+<span class="fc" id="L15">        return new ByteIlaImpl(ila, minimum, maximum);</span>
     }
 
     private static class ByteIlaImpl extends AbstractByteIla {
@@ -20,35 +20,35 @@ public final class ByteIlaBound {
         private final byte minimum;
         private final byte maximum;
 
-<span class="nc" id="L23">        private ByteIlaImpl(ByteIla ila, byte minimum, byte maximum) {</span>
-<span class="nc" id="L24">            this.ila = ila;</span>
-<span class="nc" id="L25">            this.minimum = minimum;</span>
-<span class="nc" id="L26">            this.maximum = maximum;</span>
-<span class="nc" id="L27">        }</span>
+<span class="fc" id="L23">        private ByteIlaImpl(ByteIla ila, byte minimum, byte maximum) {</span>
+<span class="fc" id="L24">            this.ila = ila;</span>
+<span class="fc" id="L25">            this.minimum = minimum;</span>
+<span class="fc" id="L26">            this.maximum = maximum;</span>
+<span class="fc" id="L27">        }</span>
 
         @Override
         protected long lengthImpl() throws IOException {
-<span class="nc" id="L31">            return ila.length();</span>
+<span class="fc" id="L31">            return ila.length();</span>
         }
 
         @Override
         protected void getImpl(byte[] array, int offset, long start, int length) throws IOException {
-<span class="nc" id="L36">            ila.get(array, offset, start, length);</span>
+<span class="fc" id="L36">            ila.get(array, offset, start, length);</span>
 
-<span class="nc bnc" id="L38" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
-<span class="nc" id="L39">                byte tmp = array[ii];</span>
-<span class="nc bnc" id="L40" title="All 2 branches missed.">                if (tmp &lt; minimum) {</span>
-<span class="nc" id="L41">                    array[ii] = minimum;</span>
-<span class="nc bnc" id="L42" title="All 2 branches missed.">                } else if (tmp &gt; maximum) {</span>
-<span class="nc" id="L43">                    array[ii] = maximum;</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
+<span class="fc" id="L39">                byte tmp = array[ii];</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">                if (tmp &lt; minimum) {</span>
+<span class="fc" id="L41">                    array[ii] = minimum;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                } else if (tmp &gt; maximum) {</span>
+<span class="fc" id="L43">                    array[ii] = maximum;</span>
                 }
             }
-<span class="nc" id="L46">        }</span>
+<span class="fc" id="L46">        }</span>
 
         @Override
         protected void closeImpl() throws IOException {
-<span class="nc" id="L50">            ila.close();</span>
-<span class="nc" id="L51">        }</span>
+<span class="fc" id="L50">            ila.close();</span>
+<span class="fc" id="L51">        }</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

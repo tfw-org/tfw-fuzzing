@@ -7,9 +7,9 @@ public class ByteIlaFactoryBound {
     private ByteIlaFactoryBound() {}
 
     public static ByteIlaFactory create(ByteIlaFactory ilaFactory, byte minimum, byte maximum) {
-<span class="nc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
 
-<span class="nc" id="L12">        return () -&gt; ByteIlaBound.create(ilaFactory.create(), minimum, maximum);</span>
+<span class="fc" id="L12">        return () -&gt; ByteIlaBound.create(ilaFactory.create(), minimum, maximum);</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

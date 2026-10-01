@@ -2,7 +2,32 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryDivideFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryDivideFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f41a0f64ab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f1d6a712ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 3712909808
+INFO: Seed: 1420708962
+MERGE-OUTER: 106 files, 0 in the initial corpus, 0 processed earlier
+MERGE-OUTER: attempt 1
+OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryDivideFuzzer
+INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryDivideFuzzer
+INFO: found LLVMFuzzerCustomMutator (0x7f359cdefab0). Disabling -len_control by default.
+INFO: libFuzzer ignores flags that start with '--'
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1069005935
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge4633.txt'
+MERGE-INNER: 106 total files; 0 processed earlier; will process 106 files now
+#1	pulse  exec/s: 0 rss: 100Mb
+#2	pulse  exec/s: 0 rss: 100Mb
+#4	pulse  exec/s: 0 rss: 100Mb
+#8	pulse  exec/s: 0 rss: 100Mb
+#16	pulse  exec/s: 0 rss: 101Mb
+#32	pulse  exec/s: 0 rss: 101Mb
+#64	pulse  exec/s: 0 rss: 103Mb
+#106	DONE   exec/s: 0 rss: 105Mb
+MERGE-OUTER: successful in 1 attempt(s)
+MERGE-OUTER: the control file has 13419 bytes
+MERGE-OUTER: consumed 0Mb (91Mb rss) to parse the control file
+MERGE-OUTER: 0 new files with 0 new features added; 0 new coverage edges

@@ -174,12 +174,12 @@ public class Argument {
      * @param rightName name of right argument being compared.
      */
     public static final void assertEquals(long left, long right, String leftName, String rightName) {
-<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (left != right) {</span>
-<span class="nc" id="L178">            final String msg = String.format(ASSERT_EQUALS_FORMAT, leftName, left, rightName, right);</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (left != right) {</span>
+<span class="fc" id="L178">            final String msg = String.format(ASSERT_EQUALS_FORMAT, leftName, left, rightName, right);</span>
 
-<span class="nc" id="L180">            throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L180">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="nc" id="L182">    }</span>
+<span class="fc" id="L182">    }</span>
 
     /**
      * Checks that the left argument is less than or equal to right argument.
@@ -369,12 +369,12 @@ public class Argument {
      * @param rightName name of right argument being compared.
      */
     public static final void assertNotGreaterThan(double left, double right, String leftName, String rightName) {
-<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (left &gt; right) {</span>
-<span class="nc" id="L373">            final String msg = String.format(ASSERT_NOT_GREATER_THAN_FLR_FORMAT, leftName, left, rightName, right);</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        if (left &gt; right) {</span>
+<span class="fc" id="L373">            final String msg = String.format(ASSERT_NOT_GREATER_THAN_FLR_FORMAT, leftName, left, rightName, right);</span>
 
-<span class="nc" id="L375">            throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L375">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="nc" id="L377">    }</span>
+<span class="fc" id="L377">    }</span>
 
     /**
      * Checks that the object is an instance of the clazz.

@@ -7,9 +7,9 @@ public class BooleanIlaFactoryDecimate {
     private BooleanIlaFactoryDecimate() {}
 
     public static BooleanIlaFactory create(BooleanIlaFactory ilaFactory, long factor, boolean[] buffer) {
-<span class="nc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
 
-<span class="nc" id="L12">        return () -&gt; BooleanIlaDecimate.create(ilaFactory.create(), factor, buffer.clone());</span>
+<span class="fc" id="L12">        return () -&gt; BooleanIlaDecimate.create(ilaFactory.create(), factor, buffer.clone());</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

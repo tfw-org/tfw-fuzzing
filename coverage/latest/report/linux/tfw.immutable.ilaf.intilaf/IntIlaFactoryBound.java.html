@@ -7,9 +7,9 @@ public class IntIlaFactoryBound {
     private IntIlaFactoryBound() {}
 
     public static IntIlaFactory create(IntIlaFactory ilaFactory, int minimum, int maximum) {
-<span class="nc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(ilaFactory, &quot;ilaFactory&quot;);</span>
 
-<span class="nc" id="L12">        return () -&gt; IntIlaBound.create(ilaFactory.create(), minimum, maximum);</span>
+<span class="fc" id="L12">        return () -&gt; IntIlaBound.create(ilaFactory.create(), minimum, maximum);</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

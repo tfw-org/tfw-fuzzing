@@ -9,12 +9,12 @@ public final class FloatIlaDecimate {
     }
 
     public static FloatIla create(FloatIla ila, long factor, float[] buffer) {
-<span class="nc" id="L12">        Argument.assertNotNull(ila, &quot;ila&quot;);</span>
-<span class="nc" id="L13">        Argument.assertNotNull(buffer, &quot;buffer&quot;);</span>
-<span class="nc" id="L14">        Argument.assertNotLessThan(factor, 2, &quot;factor&quot;);</span>
-<span class="nc" id="L15">        Argument.assertNotLessThan(buffer.length, 1, &quot;buffer.length&quot;);</span>
+<span class="fc" id="L12">        Argument.assertNotNull(ila, &quot;ila&quot;);</span>
+<span class="fc" id="L13">        Argument.assertNotNull(buffer, &quot;buffer&quot;);</span>
+<span class="fc" id="L14">        Argument.assertNotLessThan(factor, 2, &quot;factor&quot;);</span>
+<span class="fc" id="L15">        Argument.assertNotLessThan(buffer.length, 1, &quot;buffer.length&quot;);</span>
 
-<span class="nc" id="L17">        return new FloatIlaImpl(ila, factor, buffer);</span>
+<span class="fc" id="L17">        return new FloatIlaImpl(ila, factor, buffer);</span>
     }
 
     private static class FloatIlaImpl extends AbstractFloatIla {
@@ -22,36 +22,36 @@ public final class FloatIlaDecimate {
         private final long factor;
         private final float[] buffer;
 
-<span class="nc" id="L25">        private FloatIlaImpl(FloatIla ila, long factor, float[] buffer) {</span>
-<span class="nc" id="L26">            this.ila = ila;</span>
-<span class="nc" id="L27">            this.factor = factor;</span>
-<span class="nc" id="L28">            this.buffer = buffer;</span>
-<span class="nc" id="L29">        }</span>
+<span class="fc" id="L25">        private FloatIlaImpl(FloatIla ila, long factor, float[] buffer) {</span>
+<span class="fc" id="L26">            this.ila = ila;</span>
+<span class="fc" id="L27">            this.factor = factor;</span>
+<span class="fc" id="L28">            this.buffer = buffer;</span>
+<span class="fc" id="L29">        }</span>
 
         @Override
         protected long lengthImpl() throws IOException {
-<span class="nc" id="L33">            final long length = ila.length();</span>
+<span class="fc" id="L33">            final long length = ila.length();</span>
 
-<span class="nc bnc" id="L35" title="All 2 branches missed.">            return length == 0 ? 0 : 1 + (length - 1) / factor;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            return length == 0 ? 0 : 1 + (length - 1) / factor;</span>
         }
 
         @Override
         protected void getImpl(float[] array, int offset, long start, int length) throws IOException {
-<span class="nc" id="L40">            final long segmentStart = start * factor;</span>
-<span class="nc" id="L41">            final long segmentLength = StrictMath.min(ila.length() - segmentStart, length * factor - 1);</span>
-<span class="nc" id="L42">            final FloatIla segment = FloatIlaSegment.create(ila, segmentStart, segmentLength);</span>
-<span class="nc" id="L43">            final FloatIlaIterator fi = new FloatIlaIterator(segment, buffer.clone());</span>
+<span class="fc" id="L40">            final long segmentStart = start * factor;</span>
+<span class="fc" id="L41">            final long segmentLength = StrictMath.min(ila.length() - segmentStart, length * factor - 1);</span>
+<span class="fc" id="L42">            final FloatIla segment = FloatIlaSegment.create(ila, segmentStart, segmentLength);</span>
+<span class="fc" id="L43">            final FloatIlaIterator fi = new FloatIlaIterator(segment, buffer.clone());</span>
 
-<span class="nc bnc" id="L45" title="All 2 branches missed.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
-<span class="nc" id="L46">                array[ii] = fi.next();</span>
-<span class="nc" id="L47">                fi.skip(factor - 1);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            for (int ii = offset; length &gt; 0; ii++, --length) {</span>
+<span class="fc" id="L46">                array[ii] = fi.next();</span>
+<span class="fc" id="L47">                fi.skip(factor - 1);</span>
             }
-<span class="nc" id="L49">        }</span>
+<span class="fc" id="L49">        }</span>
 
         @Override
         protected void closeImpl() throws IOException {
-<span class="nc" id="L53">            ila.close();</span>
-<span class="nc" id="L54">        }</span>
+<span class="fc" id="L53">            ila.close();</span>
+<span class="fc" id="L54">        }</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

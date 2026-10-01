@@ -19,7 +19,7 @@ public final class ByteIlaSegment {
     }
 
     public static ByteIla create(ByteIla ila, long start, long length) {
-<span class="nc" id="L22">        return new ByteIlaImpl(ila, start, length);</span>
+<span class="fc" id="L22">        return new ByteIlaImpl(ila, start, length);</span>
     }
 
     private static class ByteIlaImpl extends AbstractByteIla {
@@ -27,30 +27,30 @@ public final class ByteIlaSegment {
         private final long start;
         private final long length;
 
-<span class="nc" id="L30">        private ByteIlaImpl(ByteIla ila, long start, long length) {</span>
-<span class="nc" id="L31">            Argument.assertNotNull(ila, &quot;ila&quot;);</span>
-<span class="nc" id="L32">            Argument.assertNotLessThan(start, 0, &quot;start&quot;);</span>
-<span class="nc" id="L33">            Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
+<span class="fc" id="L30">        private ByteIlaImpl(ByteIla ila, long start, long length) {</span>
+<span class="fc" id="L31">            Argument.assertNotNull(ila, &quot;ila&quot;);</span>
+<span class="fc" id="L32">            Argument.assertNotLessThan(start, 0, &quot;start&quot;);</span>
+<span class="fc" id="L33">            Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
             try {
-<span class="nc" id="L35">                Argument.assertNotGreaterThan(start + length, ila.length(), &quot;start + length&quot;, &quot;ila.length()&quot;);</span>
+<span class="fc" id="L35">                Argument.assertNotGreaterThan(start + length, ila.length(), &quot;start + length&quot;, &quot;ila.length()&quot;);</span>
 <span class="nc" id="L36">            } catch (IOException e) {</span>
 <span class="nc" id="L37">                throw new IllegalArgumentException(&quot;Could not get ila length!&quot;, e);</span>
-<span class="nc" id="L38">            }</span>
+<span class="fc" id="L38">            }</span>
 
-<span class="nc" id="L40">            this.ila = ila;</span>
-<span class="nc" id="L41">            this.start = start;</span>
-<span class="nc" id="L42">            this.length = length;</span>
-<span class="nc" id="L43">        }</span>
+<span class="fc" id="L40">            this.ila = ila;</span>
+<span class="fc" id="L41">            this.start = start;</span>
+<span class="fc" id="L42">            this.length = length;</span>
+<span class="fc" id="L43">        }</span>
 
         @Override
         protected long lengthImpl() {
-<span class="nc" id="L47">            return length;</span>
+<span class="fc" id="L47">            return length;</span>
         }
 
         @Override
         protected void getImpl(byte[] array, int offset, long start, int length) throws IOException {
-<span class="nc" id="L52">            ila.get(array, offset, this.start + start, length);</span>
-<span class="nc" id="L53">        }</span>
+<span class="fc" id="L52">            ila.get(array, offset, this.start + start, length);</span>
+<span class="fc" id="L53">        }</span>
 
         @Override
         protected void closeImpl() throws IOException {

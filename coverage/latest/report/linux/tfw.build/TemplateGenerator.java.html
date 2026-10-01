@@ -1,0 +1,1171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemplateGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.build</a> &gt; <span class="el_source">TemplateGenerator.java</span></div><h1>TemplateGenerator.java</h1><pre class="source lang-java linenums">package tfw.build;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateExceptionHandler;
+import java.io.File;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public final class TemplateGenerator {
+    private TemplateGenerator() {}
+
+<span class="nc" id="L23">    private enum TemplateProperty {</span>
+<span class="nc" id="L24">        TEMPLATE,</span>
+<span class="nc" id="L25">        TEMPLATE_SPACE,</span>
+<span class="nc" id="L26">        TYPE_OR_TEMPLATE,</span>
+<span class="nc" id="L27">        DIAMOND,</span>
+<span class="nc" id="L28">        SUPPRESS</span>
+    }
+
+<span class="nc" id="L31">    private enum IlaProperty {</span>
+<span class="nc" id="L32">        RANDOM_VALUE,</span>
+<span class="nc" id="L33">        ASSERT_EQUALS_DELTA,</span>
+<span class="nc" id="L34">        CREATE_IMMUTABLE_START,</span>
+<span class="nc" id="L35">        CREATE_IMMUTABLE_END,</span>
+<span class="nc" id="L36">        CAST_FROM_INT,</span>
+<span class="nc" id="L37">        CAST_FROM_INT_PRE,</span>
+<span class="nc" id="L38">        CAST_FROM_INT_POST,</span>
+<span class="nc" id="L39">        CAST_FROM_LONG,</span>
+<span class="nc" id="L40">        CAST_FROM_LONG_PRE,</span>
+<span class="nc" id="L41">        CAST_FROM_LONG_POST,</span>
+<span class="nc" id="L42">        CAST_FROM_DOUBLE</span>
+    }
+
+<span class="nc" id="L45">    private enum FuzzProperty {</span>
+<span class="nc" id="L46">        INITIALIZE,</span>
+<span class="nc" id="L47">        SUPPORT_INITIALIZE,</span>
+<span class="nc" id="L48">        RANDOM_INITIALIZE,</span>
+<span class="nc" id="L49">        ASSERT_ELEMENT_EQUALS,</span>
+<span class="nc" id="L50">        ASSERT_VALUE_EQUALS</span>
+    }
+
+    private static final class TypeDefinition {
+        private final String name;
+        private final String type;
+        private final String lowercase;
+
+        private final EnumMap&lt;TemplateProperty, String&gt; templateProperties;
+        private final EnumMap&lt;IlaProperty, String&gt; ilaProperties;
+        private final EnumMap&lt;FuzzProperty, String&gt; fuzzProperties;
+
+        private boolean fuzzSingleLineAssertElementEquals;
+
+<span class="nc" id="L64">        private TypeDefinition(final String name, final String type, final String lowercase) {</span>
+<span class="nc" id="L65">            this.name = name;</span>
+<span class="nc" id="L66">            this.type = type;</span>
+<span class="nc" id="L67">            this.lowercase = lowercase;</span>
+
+<span class="nc" id="L69">            this.templateProperties = new EnumMap&lt;&gt;(TemplateProperty.class);</span>
+<span class="nc" id="L70">            this.ilaProperties = new EnumMap&lt;&gt;(IlaProperty.class);</span>
+<span class="nc" id="L71">            this.fuzzProperties = new EnumMap&lt;&gt;(FuzzProperty.class);</span>
+
+<span class="nc" id="L73">            templateProperties.put(TemplateProperty.TEMPLATE, &quot;&quot;);</span>
+<span class="nc" id="L74">            templateProperties.put(TemplateProperty.TEMPLATE_SPACE, &quot;&quot;);</span>
+<span class="nc" id="L75">            templateProperties.put(TemplateProperty.TYPE_OR_TEMPLATE, type);</span>
+<span class="nc" id="L76">            templateProperties.put(TemplateProperty.DIAMOND, &quot;&quot;);</span>
+
+<span class="nc" id="L78">            this.fuzzSingleLineAssertElementEquals = false;</span>
+<span class="nc" id="L79">        }</span>
+
+<span class="nc" id="L81">        private TypeDefinition(final TypeDefinition source) {</span>
+<span class="nc" id="L82">            this.name = source.name;</span>
+<span class="nc" id="L83">            this.type = source.type;</span>
+<span class="nc" id="L84">            this.lowercase = source.lowercase;</span>
+
+<span class="nc" id="L86">            this.templateProperties = new EnumMap&lt;&gt;(source.templateProperties);</span>
+<span class="nc" id="L87">            this.ilaProperties = new EnumMap&lt;&gt;(source.ilaProperties);</span>
+<span class="nc" id="L88">            this.fuzzProperties = new EnumMap&lt;&gt;(source.fuzzProperties);</span>
+
+<span class="nc" id="L90">            this.fuzzSingleLineAssertElementEquals = source.fuzzSingleLineAssertElementEquals;</span>
+<span class="nc" id="L91">        }</span>
+
+        private TypeDefinition template(final TemplateProperty property, final String value) {
+<span class="nc" id="L94">            templateProperties.put(property, value);</span>
+<span class="nc" id="L95">            return this;</span>
+        }
+
+        private TypeDefinition ila(final IlaProperty property, final String value) {
+<span class="nc" id="L99">            ilaProperties.put(property, value);</span>
+<span class="nc" id="L100">            return this;</span>
+        }
+
+        private TypeDefinition fuzz(final FuzzProperty property, final String value) {
+<span class="nc" id="L104">            fuzzProperties.put(property, value);</span>
+<span class="nc" id="L105">            return this;</span>
+        }
+
+        private String template(final TemplateProperty property) {
+<span class="nc" id="L109">            return templateProperties.getOrDefault(property, &quot;&quot;);</span>
+        }
+
+        private String ila(final IlaProperty property) {
+<span class="nc" id="L113">            return ilaProperties.getOrDefault(property, &quot;&quot;);</span>
+        }
+
+        private String fuzz(final FuzzProperty property) {
+<span class="nc" id="L117">            return fuzzProperties.getOrDefault(property, &quot;&quot;);</span>
+        }
+    }
+
+<span class="nc" id="L121">    private static final Map&lt;String, TypeDefinition&gt; TYPES = createTypes();</span>
+
+<span class="nc" id="L123">    private static final List&lt;Path&gt; MIGRATED_MAIN_DIRECTORIES = Arrays.asList(</span>
+<span class="nc" id="L124">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iba&quot;),</span>
+<span class="nc" id="L125">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iis&quot;),</span>
+<span class="nc" id="L126">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iisf&quot;),</span>
+<span class="nc" id="L127">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilmf&quot;),</span>
+<span class="nc" id="L128">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilm&quot;),</span>
+<span class="nc" id="L129">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilaf&quot;),</span>
+<span class="nc" id="L130">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ila&quot;));</span>
+
+<span class="nc" id="L132">    private static final List&lt;Path&gt; MIGRATED_TEST_DIRECTORIES = Arrays.asList(</span>
+<span class="nc" id="L133">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iba&quot;),</span>
+<span class="nc" id="L134">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iis&quot;),</span>
+<span class="nc" id="L135">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;iisf&quot;),</span>
+<span class="nc" id="L136">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilm&quot;),</span>
+<span class="nc" id="L137">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ila&quot;),</span>
+<span class="nc" id="L138">            Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilaf&quot;));</span>
+
+<span class="nc" id="L140">    private static final Path ILA_DIRECTORY = Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ila&quot;);</span>
+
+<span class="nc" id="L142">    private static final Path ILAF_DIRECTORY = Paths.get(&quot;tfw&quot;, &quot;immutable&quot;, &quot;ilaf&quot;);</span>
+
+    private static Map&lt;String, TypeDefinition&gt; createTypes() {
+<span class="nc" id="L145">        final Map&lt;String, TypeDefinition&gt; types = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L147">        addStandardTypes(types, &quot;iba&quot;);</span>
+<span class="nc" id="L148">        addStandardTypes(types, &quot;iis&quot;);</span>
+<span class="nc" id="L149">        addStandardTypes(types, &quot;iisf&quot;);</span>
+<span class="nc" id="L150">        addStandardTypes(types, &quot;ilmf&quot;);</span>
+<span class="nc" id="L151">        addStandardTypes(types, &quot;ilm&quot;);</span>
+<span class="nc" id="L152">        addStandardTypes(types, &quot;ilaf&quot;);</span>
+
+<span class="nc" id="L154">        addIlaTypes(types);</span>
+<span class="nc" id="L155">        addFuzzTypes(types);</span>
+
+<span class="nc" id="L157">        return types;</span>
+    }
+
+    private static void addStandardTypes(final Map&lt;String, TypeDefinition&gt; types, final String suffix) {
+<span class="nc" id="L161">        addType(types, suffix, new TypeDefinition(&quot;Boolean&quot;, &quot;boolean&quot;, &quot;boolean&quot;));</span>
+<span class="nc" id="L162">        addType(types, suffix, new TypeDefinition(&quot;Byte&quot;, &quot;byte&quot;, &quot;byte&quot;));</span>
+<span class="nc" id="L163">        addType(types, suffix, new TypeDefinition(&quot;Char&quot;, &quot;char&quot;, &quot;char&quot;));</span>
+<span class="nc" id="L164">        addType(types, suffix, new TypeDefinition(&quot;Double&quot;, &quot;double&quot;, &quot;double&quot;));</span>
+<span class="nc" id="L165">        addType(types, suffix, new TypeDefinition(&quot;Float&quot;, &quot;float&quot;, &quot;float&quot;));</span>
+<span class="nc" id="L166">        addType(types, suffix, new TypeDefinition(&quot;Int&quot;, &quot;int&quot;, &quot;int&quot;));</span>
+<span class="nc" id="L167">        addType(types, suffix, new TypeDefinition(&quot;Long&quot;, &quot;long&quot;, &quot;long&quot;));</span>
+
+<span class="nc" id="L169">        TypeDefinition object = new TypeDefinition(&quot;Object&quot;, &quot;Object&quot;, &quot;object&quot;)</span>
+<span class="nc" id="L170">                .template(TemplateProperty.TEMPLATE, &quot;&lt;T&gt;&quot;)</span>
+<span class="nc" id="L171">                .template(TemplateProperty.TEMPLATE_SPACE, &quot;&lt;T&gt; &quot;)</span>
+<span class="nc" id="L172">                .template(TemplateProperty.TYPE_OR_TEMPLATE, &quot;T&quot;)</span>
+<span class="nc" id="L173">                .template(TemplateProperty.DIAMOND, &quot;&lt;&gt;&quot;);</span>
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (&quot;ilaf&quot;.equals(suffix)) {</span>
+<span class="nc" id="L176">            object.template(TemplateProperty.SUPPRESS, &quot;@SuppressWarnings(\&quot;unchecked\&quot;)\n        &quot;);</span>
+        }
+
+<span class="nc" id="L179">        addType(types, suffix, object);</span>
+<span class="nc" id="L180">        addType(types, suffix, new TypeDefinition(&quot;Short&quot;, &quot;short&quot;, &quot;short&quot;));</span>
+<span class="nc" id="L181">    }</span>
+
+    private static void addType(
+            final Map&lt;String, TypeDefinition&gt; types, final String suffix, final TypeDefinition type) {
+<span class="nc" id="L185">        types.put(type.lowercase + suffix, type);</span>
+<span class="nc" id="L186">    }</span>
+
+    /*
+     * ILA types.
+     *
+     * These values are the former contents of the nine
+     * src/main/template/tfw/immutable/ila/*.mapping files.
+     */
+    private static void addIlaTypes(final Map&lt;String, TypeDefinition&gt; types) {
+<span class="nc" id="L195">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Boolean&quot;, &quot;boolean&quot;, &quot;boolean&quot;)
+<span class="nc" id="L198">                        .ila(IlaProperty.RANDOM_VALUE, &quot;random.nextBoolean()&quot;)</span>
+<span class="nc" id="L199">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Boolean(&quot;)</span>
+<span class="nc" id="L200">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;));</span>
+
+<span class="nc" id="L202">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Byte&quot;, &quot;byte&quot;, &quot;byte&quot;)
+<span class="nc" id="L205">                        .ila(IlaProperty.RANDOM_VALUE, &quot;(byte)random.nextInt()&quot;)</span>
+<span class="nc" id="L206">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Byte(&quot;)</span>
+<span class="nc" id="L207">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;)</span>
+<span class="nc" id="L208">                        .ila(IlaProperty.CAST_FROM_INT, &quot; (byte)&quot;)</span>
+<span class="nc" id="L209">                        .ila(IlaProperty.CAST_FROM_INT_PRE, &quot;(byte) (&quot;)</span>
+<span class="nc" id="L210">                        .ila(IlaProperty.CAST_FROM_INT_POST, &quot;)&quot;)</span>
+<span class="nc" id="L211">                        .ila(IlaProperty.CAST_FROM_LONG, &quot; (byte)&quot;)</span>
+<span class="nc" id="L212">                        .ila(IlaProperty.CAST_FROM_LONG_PRE, &quot;(byte) (&quot;)</span>
+<span class="nc" id="L213">                        .ila(IlaProperty.CAST_FROM_LONG_POST, &quot;)&quot;));</span>
+
+<span class="nc" id="L215">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Char&quot;, &quot;char&quot;, &quot;char&quot;)
+<span class="nc" id="L218">                        .ila(IlaProperty.RANDOM_VALUE, &quot;(char)random.nextInt()&quot;)</span>
+<span class="nc" id="L219">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Character(&quot;)</span>
+<span class="nc" id="L220">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;)</span>
+<span class="nc" id="L221">                        .ila(IlaProperty.CAST_FROM_INT, &quot; (char)&quot;)</span>
+<span class="nc" id="L222">                        .ila(IlaProperty.CAST_FROM_INT_PRE, &quot;(char) (&quot;)</span>
+<span class="nc" id="L223">                        .ila(IlaProperty.CAST_FROM_INT_POST, &quot;)&quot;)</span>
+<span class="nc" id="L224">                        .ila(IlaProperty.CAST_FROM_LONG, &quot; (char)&quot;)</span>
+<span class="nc" id="L225">                        .ila(IlaProperty.CAST_FROM_LONG_PRE, &quot;(char) (&quot;)</span>
+<span class="nc" id="L226">                        .ila(IlaProperty.CAST_FROM_LONG_POST, &quot;)&quot;));</span>
+
+<span class="nc" id="L228">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Double&quot;, &quot;double&quot;, &quot;double&quot;)
+<span class="nc" id="L231">                        .ila(IlaProperty.RANDOM_VALUE, &quot;random.nextDouble()&quot;)</span>
+<span class="nc" id="L232">                        .ila(IlaProperty.ASSERT_EQUALS_DELTA, &quot;, 0&quot;)</span>
+<span class="nc" id="L233">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Double(&quot;)</span>
+<span class="nc" id="L234">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;));</span>
+
+<span class="nc" id="L236">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Float&quot;, &quot;float&quot;, &quot;float&quot;)
+<span class="nc" id="L239">                        .ila(IlaProperty.RANDOM_VALUE, &quot;random.nextFloat()&quot;)</span>
+<span class="nc" id="L240">                        .ila(IlaProperty.ASSERT_EQUALS_DELTA, &quot;, 0f&quot;)</span>
+<span class="nc" id="L241">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Float(&quot;)</span>
+<span class="nc" id="L242">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;)</span>
+<span class="nc" id="L243">                        .ila(IlaProperty.CAST_FROM_DOUBLE, &quot; (float)&quot;));</span>
+
+<span class="nc" id="L245">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Int&quot;, &quot;int&quot;, &quot;int&quot;)
+<span class="nc" id="L248">                        .ila(IlaProperty.RANDOM_VALUE, &quot;random.nextInt()&quot;)</span>
+<span class="nc" id="L249">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Integer(&quot;)</span>
+<span class="nc" id="L250">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;)</span>
+<span class="nc" id="L251">                        .ila(IlaProperty.CAST_FROM_LONG, &quot; (int)&quot;)</span>
+<span class="nc" id="L252">                        .ila(IlaProperty.CAST_FROM_LONG_PRE, &quot;(int) (&quot;)</span>
+<span class="nc" id="L253">                        .ila(IlaProperty.CAST_FROM_LONG_POST, &quot;)&quot;));</span>
+
+<span class="nc" id="L255">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Long&quot;, &quot;long&quot;, &quot;long&quot;)
+<span class="nc" id="L258">                        .ila(IlaProperty.RANDOM_VALUE, &quot;random.nextLong()&quot;)</span>
+<span class="nc" id="L259">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Long(&quot;)</span>
+<span class="nc" id="L260">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;));</span>
+
+<span class="nc" id="L262">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Object&quot;, &quot;Object&quot;, &quot;object&quot;)
+<span class="nc" id="L265">                        .template(TemplateProperty.TEMPLATE, &quot;&lt;T&gt;&quot;)</span>
+<span class="nc" id="L266">                        .template(TemplateProperty.TEMPLATE_SPACE, &quot;&lt;T&gt; &quot;)</span>
+<span class="nc" id="L267">                        .template(TemplateProperty.TYPE_OR_TEMPLATE, &quot;T&quot;)</span>
+<span class="nc" id="L268">                        .template(TemplateProperty.DIAMOND, &quot;&lt;&gt;&quot;)</span>
+<span class="nc" id="L269">                        .ila(IlaProperty.RANDOM_VALUE, &quot;new Object()&quot;));</span>
+
+<span class="nc" id="L271">        addIlaType(</span>
+                types,
+                new TypeDefinition(&quot;Short&quot;, &quot;short&quot;, &quot;short&quot;)
+<span class="nc" id="L274">                        .ila(IlaProperty.RANDOM_VALUE, &quot;(short)random.nextInt()&quot;)</span>
+<span class="nc" id="L275">                        .ila(IlaProperty.CREATE_IMMUTABLE_START, &quot;new Short(&quot;)</span>
+<span class="nc" id="L276">                        .ila(IlaProperty.CREATE_IMMUTABLE_END, &quot;)&quot;)</span>
+<span class="nc" id="L277">                        .ila(IlaProperty.CAST_FROM_INT, &quot; (short)&quot;)</span>
+<span class="nc" id="L278">                        .ila(IlaProperty.CAST_FROM_INT_PRE, &quot;(short) (&quot;)</span>
+<span class="nc" id="L279">                        .ila(IlaProperty.CAST_FROM_INT_POST, &quot;)&quot;)</span>
+<span class="nc" id="L280">                        .ila(IlaProperty.CAST_FROM_LONG, &quot; (short)&quot;)</span>
+<span class="nc" id="L281">                        .ila(IlaProperty.CAST_FROM_LONG_PRE, &quot;(short) (&quot;)</span>
+<span class="nc" id="L282">                        .ila(IlaProperty.CAST_FROM_LONG_POST, &quot;)&quot;));</span>
+<span class="nc" id="L283">    }</span>
+
+    private static void addIlaType(final Map&lt;String, TypeDefinition&gt; types, final TypeDefinition type) {
+<span class="nc" id="L286">        types.put(type.lowercase + &quot;ila&quot;, type);</span>
+<span class="nc" id="L287">    }</span>
+
+    private static void addFuzzTypes(final Map&lt;String, TypeDefinition&gt; types) {
+<span class="nc" id="L290">        addFuzzType(</span>
+                types,
+                &quot;boolean&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot; + &quot;    array[i] = (i &amp; 1) != 0;\n&quot; + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return false;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return true;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return data.consumeBoolean();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + expected[expectedIndex] + \&quot;, actual=\&quot; + actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                false);
+
+<span class="nc" id="L312">        addFuzzType(</span>
+                types,
+                &quot;byte&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot; + &quot;    array[i] = (byte) (i * 37 + 11);\n&quot; + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return Byte.MIN_VALUE;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return Byte.MAX_VALUE;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return 0;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return -1;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return 1;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return (byte) data.consumeInt();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + expected[expectedIndex] + \&quot;, actual=\&quot; + actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                true);
+
+<span class="nc" id="L340">        addFuzzType(</span>
+                types,
+                &quot;char&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot;
+                        + &quot;    switch (i &amp; 3) {\n&quot;
+                        + &quot;        case 0:\n&quot;
+                        + &quot;            array[i] = '\\0';\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 1:\n&quot;
+                        + &quot;            array[i] = '\\uffff';\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 2:\n&quot;
+                        + &quot;            array[i] = (char) i;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        default:\n&quot;
+                        + &quot;            array[i] = (char) (0xffff - i);\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;    }\n&quot;
+                        + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return '\\0';\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return '\\uffff';\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return 0;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return 1;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return Character.MAX_VALUE;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return (char) data.consumeInt();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + (int) expected[expectedIndex] + \&quot;, actual=\&quot; + (int) actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + (int) expected + \&quot;, actual=\&quot; + (int) actual);\n&quot;
+                        + &quot;}&quot;,
+                true);
+
+<span class="nc" id="L383">        addFuzzType(</span>
+                types,
+                &quot;double&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot;
+                        + &quot;    switch (i &amp; 7) {\n&quot;
+                        + &quot;        case 0:\n&quot;
+                        + &quot;            array[i] = 0.0;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 1:\n&quot;
+                        + &quot;            array[i] = -0.0;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 2:\n&quot;
+                        + &quot;            array[i] = Double.NaN;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 3:\n&quot;
+                        + &quot;            array[i] = Double.POSITIVE_INFINITY;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 4:\n&quot;
+                        + &quot;            array[i] = Double.NEGATIVE_INFINITY;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 5:\n&quot;
+                        + &quot;            array[i] = Double.MIN_VALUE;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 6:\n&quot;
+                        + &quot;            array[i] = Double.MAX_VALUE;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        default:\n&quot;
+                        + &quot;            array[i] = i * 1.23456789;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;    }\n&quot;
+                        + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return 0.0;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return -0.0;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return Double.NaN;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return Double.POSITIVE_INFINITY;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return Double.NEGATIVE_INFINITY;\n&quot;
+                        + &quot;    case 5:\n&quot;
+                        + &quot;        return Double.MIN_VALUE;\n&quot;
+                        + &quot;    case 6:\n&quot;
+                        + &quot;        return Double.MAX_VALUE;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return data.consumeDouble();\n&quot;
+                        + &quot;}&quot;,
+                &quot;long expectedBits = Double.doubleToRawLongBits(expected[expectedIndex]);\n&quot;
+                        + &quot;long actualBits = Double.doubleToRawLongBits(actual[actualIndex]);\n&quot;
+                        + &quot;if (expectedBits != actualBits) {\n&quot;
+                        + &quot;    throw new AssertionError(\&quot;expectedBits=\&quot;\n&quot;
+                        + &quot;            + Long.toHexString(expectedBits)\n&quot;
+                        + &quot;            + \&quot;, actualBits=\&quot; + Long.toHexString(actualBits));\n&quot;
+                        + &quot;}&quot;,
+                &quot;long expectedBits = Double.doubleToRawLongBits(expected);\n&quot;
+                        + &quot;long actualBits = Double.doubleToRawLongBits(actual);\n&quot;
+                        + &quot;if (expectedBits != actualBits) {\n&quot;
+                        + &quot;    throw new AssertionError(\&quot;Incorrect value at index \&quot;\n&quot;
+                        + &quot;            + index\n&quot;
+                        + &quot;            + \&quot;: expectedBits=\&quot;\n&quot;
+                        + &quot;            + Long.toHexString(expectedBits)\n&quot;
+                        + &quot;            + \&quot;, actualBits=\&quot;\n&quot;
+                        + &quot;            + Long.toHexString(actualBits));\n&quot;
+                        + &quot;}&quot;,
+                false);
+
+<span class="nc" id="L451">        addFuzzType(</span>
+                types,
+                &quot;float&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot;
+                        + &quot;    switch (i &amp; 7) {\n&quot;
+                        + &quot;        case 0:\n&quot;
+                        + &quot;            array[i] = 0.0f;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 1:\n&quot;
+                        + &quot;            array[i] = -0.0f;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 2:\n&quot;
+                        + &quot;            array[i] = Float.NaN;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 3:\n&quot;
+                        + &quot;            array[i] = Float.POSITIVE_INFINITY;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 4:\n&quot;
+                        + &quot;            array[i] = Float.NEGATIVE_INFINITY;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 5:\n&quot;
+                        + &quot;            array[i] = Float.MIN_VALUE;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 6:\n&quot;
+                        + &quot;            array[i] = Float.MAX_VALUE;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        default:\n&quot;
+                        + &quot;            array[i] = i * 1.2345678f;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;    }\n&quot;
+                        + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return 0.0f;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return -0.0f;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return Float.NaN;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return Float.POSITIVE_INFINITY;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return Float.NEGATIVE_INFINITY;\n&quot;
+                        + &quot;    case 5:\n&quot;
+                        + &quot;        return Float.MIN_VALUE;\n&quot;
+                        + &quot;    case 6:\n&quot;
+                        + &quot;        return Float.MAX_VALUE;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return data.consumeFloat();\n&quot;
+                        + &quot;}&quot;,
+                &quot;int expectedBits = Float.floatToRawIntBits(expected[expectedIndex]);\n&quot;
+                        + &quot;int actualBits = Float.floatToRawIntBits(actual[actualIndex]);\n&quot;
+                        + &quot;if (expectedBits != actualBits) {\n&quot;
+                        + &quot;    throw new AssertionError(\&quot;expectedBits=\&quot;\n&quot;
+                        + &quot;            + Integer.toHexString(expectedBits)\n&quot;
+                        + &quot;            + \&quot;, actualBits=\&quot; + Integer.toHexString(actualBits));\n&quot;
+                        + &quot;}&quot;,
+                &quot;int expectedBits = Float.floatToRawIntBits(expected);\n&quot;
+                        + &quot;int actualBits = Float.floatToRawIntBits(actual);\n&quot;
+                        + &quot;if (expectedBits != actualBits) {\n&quot;
+                        + &quot;    throw new AssertionError(\&quot;Incorrect value at index \&quot;\n&quot;
+                        + &quot;            + index\n&quot;
+                        + &quot;            + \&quot;: expectedBits=\&quot;\n&quot;
+                        + &quot;            + Integer.toHexString(expectedBits)\n&quot;
+                        + &quot;            + \&quot;, actualBits=\&quot;\n&quot;
+                        + &quot;            + Integer.toHexString(actualBits));\n&quot;
+                        + &quot;}&quot;,
+                true);
+
+<span class="nc" id="L519">        addFuzzType(</span>
+                types,
+                &quot;int&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot; + &quot;    array[i] = i * 0x9e3779b9 ^ 0x12345678;\n&quot; + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return Integer.MIN_VALUE;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return Integer.MAX_VALUE;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return 0;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return -1;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return 1;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return data.consumeInt();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + expected[expectedIndex] + \&quot;, actual=\&quot; + actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                true);
+
+<span class="nc" id="L547">        addFuzzType(</span>
+                types,
+                &quot;long&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot;
+                        + &quot;    array[i] = 0x123456789ABCDEFL ^ ((long) i * 0x100000001L);\n&quot;
+                        + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return Long.MIN_VALUE;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return Long.MAX_VALUE;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return 0L;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return -1L;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return 1L;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return data.consumeLong();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + expected[expectedIndex] + \&quot;, actual=\&quot; + actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                true);
+
+<span class="nc" id="L577">        addFuzzType(</span>
+                types,
+                &quot;object&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot;
+                        + &quot;    switch (i &amp; 3) {\n&quot;
+                        + &quot;        case 0:\n&quot;
+                        + &quot;            array[i] = null;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 1:\n&quot;
+                        + &quot;            array[i] = \&quot;tfw-\&quot; + i;\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        case 2:\n&quot;
+                        + &quot;            array[i] = Integer.valueOf(i);\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;        default:\n&quot;
+                        + &quot;            array[i] = Long.valueOf(i);\n&quot;
+                        + &quot;            break;\n&quot;
+                        + &quot;    }\n&quot;
+                        + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return null;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return \&quot;tfw-\&quot; + data.consumeInt();\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return Integer.valueOf(data.consumeInt());\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return Long.valueOf(data.consumeLong());\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return Boolean.valueOf(data.consumeBoolean());\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return \&quot;tfw-\&quot; + index;\n&quot;
+                        + &quot;}&quot;,
+                &quot;Object expectedValue = expected[expectedIndex];\n&quot;
+                        + &quot;Object actualValue = actual[actualIndex];\n&quot;
+                        + &quot;if (expectedValue == null ? actualValue != null : !expectedValue.equals(actualValue)) {\n&quot;
+                        + &quot;    throw new AssertionError(\&quot;expected=\&quot; + expectedValue + \&quot;, actual=\&quot; + actualValue);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected == null ? actual != null : !expected.equals(actual)) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                false);
+
+<span class="nc" id="L621">        addFuzzType(</span>
+                types,
+                &quot;short&quot;,
+                &quot;for (int i = 0; i &lt; array.length; i++) {\n&quot; + &quot;    array[i] = (short) (i * 7919 + 12345);\n&quot; + &quot;}&quot;,
+                &quot;switch (index &amp; 7) {\n&quot;
+                        + &quot;    case 0:\n&quot;
+                        + &quot;        return Short.MIN_VALUE;\n&quot;
+                        + &quot;    case 1:\n&quot;
+                        + &quot;        return Short.MAX_VALUE;\n&quot;
+                        + &quot;    case 2:\n&quot;
+                        + &quot;        return 0;\n&quot;
+                        + &quot;    case 3:\n&quot;
+                        + &quot;        return -1;\n&quot;
+                        + &quot;    case 4:\n&quot;
+                        + &quot;        return 1;\n&quot;
+                        + &quot;    default:\n&quot;
+                        + &quot;        return (short) data.consumeInt();\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected[expectedIndex] != actual[actualIndex]) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;expected=\&quot; + expected[expectedIndex] + \&quot;, actual=\&quot; + actual[actualIndex]);\n&quot;
+                        + &quot;}&quot;,
+                &quot;if (expected != actual) {\n&quot;
+                        + &quot;    throw new AssertionError(\n&quot;
+                        + &quot;            \&quot;Incorrect value at index \&quot; + index + \&quot;: expected=\&quot; + expected + \&quot;, actual=\&quot; + actual);\n&quot;
+                        + &quot;}&quot;,
+                true);
+<span class="nc" id="L648">    }</span>
+
+    private static void addFuzzType(
+            final Map&lt;String, TypeDefinition&gt; types,
+            final String lowercase,
+            final String initialize,
+            final String randomInitialize,
+            final String assertElementEquals,
+            final String assertValueEquals,
+            final boolean singleLineAssertElementEquals) {
+
+<span class="nc" id="L659">        final String key = lowercase + &quot;ilaf&quot;;</span>
+<span class="nc" id="L660">        final TypeDefinition base = types.get(key);</span>
+
+<span class="nc bnc" id="L662" title="All 2 branches missed.">        if (base == null) {</span>
+<span class="nc" id="L663">            throw new IllegalArgumentException(&quot;Unknown fuzz type: &quot; + key);</span>
+        }
+
+<span class="nc" id="L666">        types.put(</span>
+                key,
+<span class="nc" id="L668">                withFuzz(</span>
+                        base,
+                        initialize,
+                        randomInitialize,
+                        assertElementEquals,
+                        assertValueEquals,
+                        singleLineAssertElementEquals));
+<span class="nc" id="L675">    }</span>
+
+    private static TypeDefinition withFuzz(
+            final TypeDefinition base,
+            final String initialize,
+            final String randomInitialize,
+            final String assertElementEquals,
+            final String assertValueEquals,
+            final boolean singleLineAssertElementEquals) {
+
+<span class="nc" id="L685">        final TypeDefinition result = new TypeDefinition(base);</span>
+
+<span class="nc" id="L687">        result.fuzz(FuzzProperty.INITIALIZE, initialize);</span>
+<span class="nc" id="L688">        result.fuzz(FuzzProperty.SUPPORT_INITIALIZE, initialize);</span>
+<span class="nc" id="L689">        result.fuzz(FuzzProperty.RANDOM_INITIALIZE, randomInitialize);</span>
+<span class="nc" id="L690">        result.fuzz(FuzzProperty.ASSERT_ELEMENT_EQUALS, assertElementEquals);</span>
+<span class="nc" id="L691">        result.fuzz(FuzzProperty.ASSERT_VALUE_EQUALS, assertValueEquals);</span>
+<span class="nc" id="L692">        result.fuzzSingleLineAssertElementEquals = singleLineAssertElementEquals;</span>
+
+<span class="nc" id="L694">        return result;</span>
+    }
+
+    public static void main(final String[] args) throws Exception {
+<span class="nc bnc" id="L698" title="All 2 branches missed.">        if (args.length != 1) {</span>
+<span class="nc" id="L699">            throw new IllegalArgumentException(&quot;Usage: TemplateGenerator &lt;template-root&gt;&quot;);</span>
+        }
+
+<span class="nc" id="L702">        final Path templateRoot = Paths.get(args[0]);</span>
+
+<span class="nc" id="L704">        generate(templateRoot.resolve(&quot;main&quot;), Paths.get(&quot;src&quot;, &quot;main&quot;, &quot;java&quot;), SourceKind.MAIN);</span>
+
+<span class="nc" id="L706">        generate(templateRoot.resolve(&quot;test&quot;), Paths.get(&quot;src&quot;, &quot;test&quot;, &quot;java&quot;), SourceKind.TEST);</span>
+
+<span class="nc" id="L708">        generate(templateRoot.resolve(&quot;fuzz&quot;), Paths.get(&quot;src&quot;, &quot;fuzz&quot;, &quot;java&quot;), SourceKind.FUZZ);</span>
+<span class="nc" id="L709">    }</span>
+
+    private static void generate(final Path templateRoot, final Path outputRoot, final SourceKind sourceKind)
+            throws Exception {
+<span class="nc bnc" id="L713" title="All 2 branches missed.">        if (!Files.exists(templateRoot)) {</span>
+<span class="nc" id="L714">            return;</span>
+        }
+
+<span class="nc" id="L717">        final Configuration configuration = new Configuration(Configuration.VERSION_2_3_34);</span>
+
+<span class="nc" id="L719">        configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L720">        configuration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);</span>
+<span class="nc" id="L721">        configuration.setLogTemplateExceptions(false);</span>
+<span class="nc" id="L722">        configuration.setWrapUncheckedExceptions(true);</span>
+
+        final List&lt;Path&gt; templates;
+
+<span class="nc" id="L726">        try (Stream&lt;Path&gt; paths = Files.find(</span>
+                templateRoot,
+                Integer.MAX_VALUE,
+<span class="nc bnc" id="L729" title="All 2 branches missed.">                (path, attributes) -&gt; attributes.isRegularFile()</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">                        &amp;&amp; path.getFileName().toString().endsWith(&quot;.ftl&quot;))) {</span>
+
+<span class="nc" id="L732">            templates = paths.collect(Collectors.toList());</span>
+        }
+
+<span class="nc bnc" id="L735" title="All 2 branches missed.">        for (final Path templatePath : templates) {</span>
+<span class="nc" id="L736">            generate(configuration, templateRoot, outputRoot, sourceKind, templatePath);</span>
+<span class="nc" id="L737">        }</span>
+<span class="nc" id="L738">    }</span>
+
+    private static void generate(
+            final Configuration configuration,
+            final Path templateRoot,
+            final Path outputRoot,
+            final SourceKind sourceKind,
+            final Path templatePath)
+            throws Exception {
+<span class="nc" id="L747">        final String source = new String(Files.readAllBytes(templatePath), StandardCharsets.UTF_8);</span>
+
+<span class="nc" id="L749">        final String[] parts = source.split(&quot;\\R&quot;, 2);</span>
+
+<span class="nc bnc" id="L751" title="All 4 branches missed.">        if (parts.length != 2 || !parts[0].startsWith(&quot;//&quot;)) {</span>
+<span class="nc" id="L752">            throw new IllegalArgumentException(</span>
+                    &quot;Template does not have a mapping comment as its first line: &quot; + templatePath);
+        }
+
+<span class="nc" id="L756">        final String mappingLine = parts[0].substring(2).trim();</span>
+
+<span class="nc" id="L758">        final Path relativeDirectory = templateRoot.relativize(templatePath.getParent());</span>
+
+<span class="nc" id="L760">        final Template template = new Template(templatePath.toString(), parts[1], configuration);</span>
+
+<span class="nc bnc" id="L762" title="All 2 branches missed.">        for (final String mappingName : mappingLine.split(&quot;,&quot;)) {</span>
+<span class="nc" id="L763">            generateMapping(template, outputRoot, relativeDirectory, sourceKind, templatePath, mappingName.trim());</span>
+        }
+<span class="nc" id="L765">    }</span>
+
+    private static void addCommonModel(final Map&lt;String, Object&gt; model, final TypeDefinition type) {
+<span class="nc" id="L768">        model.put(&quot;NAME&quot;, type.name);</span>
+<span class="nc" id="L769">        model.put(&quot;TEMPLATE&quot;, type.template(TemplateProperty.TEMPLATE));</span>
+<span class="nc" id="L770">        model.put(&quot;TEMPLATE_SPACE&quot;, type.template(TemplateProperty.TEMPLATE_SPACE));</span>
+<span class="nc" id="L771">        model.put(&quot;TYPE_OR_TEMPLATE&quot;, type.template(TemplateProperty.TYPE_OR_TEMPLATE));</span>
+<span class="nc" id="L772">        model.put(&quot;DIAMOND&quot;, type.template(TemplateProperty.DIAMOND));</span>
+<span class="nc" id="L773">        model.put(&quot;TYPE&quot;, type.type);</span>
+<span class="nc" id="L774">        model.put(&quot;LOWERCASE&quot;, type.lowercase);</span>
+<span class="nc" id="L775">        model.put(&quot;LOWER_NAME&quot;, type.lowercase);</span>
+<span class="nc" id="L776">        model.put(&quot;SUPPRESS&quot;, type.template(TemplateProperty.SUPPRESS));</span>
+<span class="nc" id="L777">    }</span>
+
+    private static void addIlaModel(final Map&lt;String, Object&gt; model, final TypeDefinition type) {
+<span class="nc" id="L780">        model.put(&quot;RANDOM_VALUE&quot;, type.ila(IlaProperty.RANDOM_VALUE));</span>
+<span class="nc" id="L781">        model.put(&quot;ASSERT_EQUALS_DELTA&quot;, type.ila(IlaProperty.ASSERT_EQUALS_DELTA));</span>
+<span class="nc" id="L782">        model.put(&quot;CREATE_IMMUTABLE_START&quot;, type.ila(IlaProperty.CREATE_IMMUTABLE_START));</span>
+<span class="nc" id="L783">        model.put(&quot;CREATE_IMMUTABLE_END&quot;, type.ila(IlaProperty.CREATE_IMMUTABLE_END));</span>
+<span class="nc" id="L784">        model.put(&quot;CAST_FROM_INT&quot;, type.ila(IlaProperty.CAST_FROM_INT));</span>
+<span class="nc" id="L785">        model.put(&quot;CAST_FROM_INT_PRE&quot;, type.ila(IlaProperty.CAST_FROM_INT_PRE));</span>
+<span class="nc" id="L786">        model.put(&quot;CAST_FROM_INT_POST&quot;, type.ila(IlaProperty.CAST_FROM_INT_POST));</span>
+<span class="nc" id="L787">        model.put(&quot;CAST_FROM_LONG&quot;, type.ila(IlaProperty.CAST_FROM_LONG));</span>
+<span class="nc" id="L788">        model.put(&quot;CAST_FROM_LONG_PRE&quot;, type.ila(IlaProperty.CAST_FROM_LONG_PRE));</span>
+<span class="nc" id="L789">        model.put(&quot;CAST_FROM_LONG_POST&quot;, type.ila(IlaProperty.CAST_FROM_LONG_POST));</span>
+<span class="nc" id="L790">        model.put(&quot;CAST_FROM_DOUBLE&quot;, type.ila(IlaProperty.CAST_FROM_DOUBLE));</span>
+<span class="nc" id="L791">    }</span>
+
+    private static void addTestModel(final Map&lt;String, Object&gt; model, final TypeDefinition type) {
+<span class="nc" id="L794">        model.put(&quot;TEMPLATE&quot;, testTemplate(type.type));</span>
+<span class="nc" id="L795">        model.put(&quot;DEFAULT_VALUE&quot;, defaultValue(type.type));</span>
+<span class="nc" id="L796">        model.put(&quot;DEFAULT_VALUE_2&quot;, defaultValue2(type.type));</span>
+<span class="nc" id="L797">        model.put(&quot;RANDOM_VALUE&quot;, randomValue(type.type));</span>
+<span class="nc" id="L798">        model.put(&quot;RANDOM_INCLUDE&quot;, randomInclude(type.type));</span>
+<span class="nc" id="L799">        model.put(&quot;RANDOM_INIT&quot;, randomInit(type.type));</span>
+<span class="nc" id="L800">        model.put(&quot;RANDOM_INCLUDE_2&quot;, randomInclude2(type.type));</span>
+<span class="nc" id="L801">        model.put(&quot;RANDOM_INIT_0&quot;, randomInit0(type.type));</span>
+<span class="nc" id="L802">        model.put(&quot;RANDOM_INIT_12&quot;, randomInit12(type.type));</span>
+<span class="nc" id="L803">        model.put(&quot;UTIL&quot;, util(type.type));</span>
+<span class="nc" id="L804">        model.put(&quot;FULL_CAST&quot;, fullCast(type));</span>
+<span class="nc" id="L805">        model.put(&quot;CHAR_CAST_TO_INT&quot;, charCastToInt(type.type));</span>
+<span class="nc" id="L806">        model.put(&quot;FP_ZEROS&quot;, fpZeros(type.type));</span>
+<span class="nc" id="L807">        model.put(&quot;IS_EQUALS_START&quot;, isEqualsStart(type.type));</span>
+<span class="nc" id="L808">        model.put(&quot;IS_EQUALS_END&quot;, isEqualsEnd(type.type));</span>
+<span class="nc" id="L809">        model.put(&quot;CAST_FROM_INT&quot;, testCastFromInt(type.type));</span>
+<span class="nc" id="L810">        model.put(&quot;CAST_FROM_INT_PAREN&quot;, testCastFromIntParen(type.type));</span>
+<span class="nc" id="L811">        model.put(&quot;CAST_FROM_INT_PAREN_END&quot;, testCastFromIntParenEnd(type.type));</span>
+<span class="nc" id="L812">        model.put(&quot;CAST_FROM_DOUBLE&quot;, testCastFromDouble(type.type));</span>
+<span class="nc" id="L813">        model.put(&quot;SUPPRESS&quot;, testSuppress(type.type));</span>
+<span class="nc" id="L814">    }</span>
+
+    private static void addFuzzModel(final Map&lt;String, Object&gt; model, final TypeDefinition type) {
+<span class="nc" id="L817">        model.put(&quot;FUZZ_INITIALIZE&quot;, indent(type.fuzz(FuzzProperty.INITIALIZE), 20));</span>
+<span class="nc" id="L818">        model.put(&quot;FUZZ_SUPPORT_INITIALIZE&quot;, indent(type.fuzz(FuzzProperty.SUPPORT_INITIALIZE), 8));</span>
+<span class="nc" id="L819">        model.put(&quot;FUZZ_RANDOM_INITIALIZE&quot;, indent(type.fuzz(FuzzProperty.RANDOM_INITIALIZE), 8));</span>
+<span class="nc" id="L820">        model.put(&quot;FUZZ_ASSERT_ELEMENT_EQUALS&quot;, indent(type.fuzz(FuzzProperty.ASSERT_ELEMENT_EQUALS), 20));</span>
+<span class="nc" id="L821">        model.put(&quot;FUZZ_ASSERT_VALUE_EQUALS&quot;, indent(type.fuzz(FuzzProperty.ASSERT_VALUE_EQUALS), 8));</span>
+<span class="nc" id="L822">        model.put(&quot;FUZZ_SINGLE_LINE_ASSERT_ELEMENT_EQUALS&quot;, type.fuzzSingleLineAssertElementEquals);</span>
+<span class="nc" id="L823">    }</span>
+
+    private static void generateMapping(
+            final Template template,
+            final Path outputRoot,
+            final Path relativeDirectory,
+            final SourceKind sourceKind,
+            final Path templatePath,
+            final String mappingName)
+            throws Exception {
+<span class="nc" id="L833">        final Map&lt;String, Object&gt; model = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L834">        final TypeDefinition type = TYPES.get(mappingName);</span>
+
+<span class="nc bnc" id="L836" title="All 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L837">            throw new IllegalArgumentException(&quot;Unknown type mapping: &quot; + mappingName);</span>
+        }
+
+<span class="nc bnc" id="L840" title="All 4 branches missed.">        if (sourceKind == SourceKind.MAIN &amp;&amp; !MIGRATED_MAIN_DIRECTORIES.contains(relativeDirectory)) {</span>
+<span class="nc" id="L841">            return;</span>
+        }
+
+<span class="nc bnc" id="L844" title="All 4 branches missed.">        if (sourceKind == SourceKind.TEST &amp;&amp; !MIGRATED_TEST_DIRECTORIES.contains(relativeDirectory)) {</span>
+<span class="nc" id="L845">            return;</span>
+        }
+
+<span class="nc bnc" id="L848" title="All 4 branches missed.">        if (sourceKind == SourceKind.FUZZ &amp;&amp; !ILAF_DIRECTORY.equals(relativeDirectory)) {</span>
+<span class="nc" id="L849">            return;</span>
+        }
+
+<span class="nc" id="L852">        addCommonModel(model, type);</span>
+
+<span class="nc bnc" id="L854" title="All 4 branches missed.">        if (sourceKind == SourceKind.MAIN &amp;&amp; ILA_DIRECTORY.equals(relativeDirectory)) {</span>
+<span class="nc" id="L855">            addIlaModel(model, type);</span>
+        }
+
+<span class="nc bnc" id="L858" title="All 2 branches missed.">        if (sourceKind == SourceKind.TEST) {</span>
+<span class="nc" id="L859">            addTestModel(model, type);</span>
+        }
+
+<span class="nc bnc" id="L862" title="All 2 branches missed.">        if (sourceKind == SourceKind.FUZZ) {</span>
+<span class="nc" id="L863">            addFuzzModel(model, type);</span>
+        }
+
+<span class="nc" id="L866">        writeGeneratedFile(template, templatePath, model, mappingName, outputRoot, relativeDirectory);</span>
+<span class="nc" id="L867">    }</span>
+
+    private static void writeGeneratedFile(
+            final Template template,
+            final Path templatePath,
+            final Map&lt;String, Object&gt; model,
+            final String mappingName,
+            final Path outputRoot,
+            final Path relativeDirectory)
+            throws Exception {
+
+<span class="nc" id="L878">        final String packageName =</span>
+<span class="nc" id="L879">                relativeDirectory.resolve(mappingName).toString().replace(File.separatorChar, '.');</span>
+
+<span class="nc" id="L881">        model.put(&quot;PACKAGE&quot;, packageName);</span>
+
+<span class="nc" id="L883">        final StringWriter writer = new StringWriter();</span>
+
+<span class="nc" id="L885">        template.process(model, writer);</span>
+
+<span class="nc" id="L887">        final String generated = writer.toString() + &quot;// AUTO GENERATED FROM TEMPLATE&quot; + System.lineSeparator();</span>
+
+<span class="nc" id="L889">        final Path packageDirectory = outputRoot.resolve(packageName.replace('.', File.separatorChar));</span>
+
+<span class="nc" id="L891">        Files.createDirectories(packageDirectory);</span>
+
+<span class="nc" id="L893">        final String templateName = templatePath.getFileName().toString();</span>
+
+<span class="nc" id="L895">        final String outputName = templateName</span>
+<span class="nc" id="L896">                .replace(&quot;.ftl&quot;, &quot;&quot;)</span>
+<span class="nc" id="L897">                .replace(&quot;__&quot;, (String) model.get(&quot;NAME&quot;))</span>
+<span class="nc" id="L898">                .replaceAll(&quot;\\.\\..+\\.&quot;, &quot;.&quot;);</span>
+
+<span class="nc" id="L900">        final Path outputFile = packageDirectory.resolve(outputName);</span>
+
+<span class="nc" id="L902">        System.out.println(&quot;  &quot; + templatePath + &quot; [&quot; + mappingName + &quot;] -&gt; &quot; + outputFile);</span>
+
+<span class="nc" id="L904">        Files.write(outputFile, generated.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L905">    }</span>
+
+    private static String indent(final String text, final int spaces) {
+<span class="nc" id="L908">        final String indentation = String.join(&quot;&quot;, java.util.Collections.nCopies(spaces, &quot; &quot;));</span>
+
+<span class="nc" id="L910">        final String[] lines = text.split(&quot;\\n&quot;, -1);</span>
+
+<span class="nc" id="L912">        final StringBuilder result = new StringBuilder();</span>
+
+<span class="nc bnc" id="L914" title="All 2 branches missed.">        for (int i = 0; i &lt; lines.length; i++) {</span>
+<span class="nc bnc" id="L915" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L916">                result.append('\n');</span>
+            }
+
+<span class="nc bnc" id="L919" title="All 2 branches missed.">            if (!lines[i].isEmpty()) {</span>
+<span class="nc" id="L920">                result.append(indentation);</span>
+<span class="nc" id="L921">                result.append(lines[i]);</span>
+            }
+        }
+
+<span class="nc" id="L925">        return result.toString();</span>
+    }
+
+    private static String testTemplate(final String type) {
+<span class="nc bnc" id="L929" title="All 2 branches missed.">        return &quot;Object&quot;.equals(type) ? &quot;&lt;Object&gt;&quot; : &quot;&quot;;</span>
+    }
+
+    private static String defaultValue(final String type) {
+<span class="nc bnc" id="L933" title="All 10 branches missed.">        switch (type) {</span>
+            case &quot;boolean&quot;:
+<span class="nc" id="L935">                return &quot;false&quot;;</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L937">                return &quot;(byte) 0&quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L939">                return &quot;(char) 0&quot;;</span>
+            case &quot;double&quot;:
+<span class="nc" id="L941">                return &quot;0.0&quot;;</span>
+            case &quot;float&quot;:
+<span class="nc" id="L943">                return &quot;0.0f&quot;;</span>
+            case &quot;int&quot;:
+<span class="nc" id="L945">                return &quot;0&quot;;</span>
+            case &quot;long&quot;:
+<span class="nc" id="L947">                return &quot;0L&quot;;</span>
+            case &quot;Object&quot;:
+<span class="nc" id="L949">                return &quot;Object.class&quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L951">                return &quot;(short) 0&quot;;</span>
+            default:
+<span class="nc" id="L953">                throw new IllegalArgumentException(&quot;Unknown type: &quot; + type);</span>
+        }
+    }
+
+    private static String defaultValue2(final String type) {
+<span class="nc bnc" id="L958" title="All 10 branches missed.">        switch (type) {</span>
+            case &quot;boolean&quot;:
+<span class="nc" id="L960">                return &quot;true&quot;;</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L962">                return &quot;(byte) 1&quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L964">                return &quot;(char) 1&quot;;</span>
+            case &quot;double&quot;:
+<span class="nc" id="L966">                return &quot;1.0&quot;;</span>
+            case &quot;float&quot;:
+<span class="nc" id="L968">                return &quot;1.0f&quot;;</span>
+            case &quot;int&quot;:
+<span class="nc" id="L970">                return &quot;1&quot;;</span>
+            case &quot;long&quot;:
+<span class="nc" id="L972">                return &quot;1L&quot;;</span>
+            case &quot;Object&quot;:
+<span class="nc" id="L974">                return &quot;String.class&quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L976">                return &quot;(short) 1&quot;;</span>
+            default:
+<span class="nc" id="L978">                throw new IllegalArgumentException(&quot;Unknown type: &quot; + type);</span>
+        }
+    }
+
+    private static String randomValue(final String type) {
+<span class="nc bnc" id="L983" title="All 10 branches missed.">        switch (type) {</span>
+            case &quot;boolean&quot;:
+<span class="nc" id="L985">                return &quot;random.nextBoolean()&quot;;</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L987">                return &quot;(byte) random.nextInt()&quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L989">                return &quot;(char) random.nextInt()&quot;;</span>
+            case &quot;double&quot;:
+<span class="nc" id="L991">                return &quot;random.nextDouble()&quot;;</span>
+            case &quot;float&quot;:
+<span class="nc" id="L993">                return &quot;random.nextFloat()&quot;;</span>
+            case &quot;int&quot;:
+<span class="nc" id="L995">                return &quot;random.nextInt()&quot;;</span>
+            case &quot;long&quot;:
+<span class="nc" id="L997">                return &quot;random.nextLong()&quot;;</span>
+            case &quot;Object&quot;:
+<span class="nc" id="L999">                return &quot;new Object()&quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L1001">                return &quot;(short) random.nextInt()&quot;;</span>
+            default:
+<span class="nc" id="L1003">                throw new IllegalArgumentException(&quot;Unknown type: &quot; + type);</span>
+        }
+    }
+
+    private static String randomInclude2(final String type) {
+<span class="nc bnc" id="L1008" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1009">            return &quot;\n&quot;;</span>
+        }
+
+<span class="nc" id="L1012">        return &quot;import java.util.Random;\n\n&quot;;</span>
+    }
+
+    private static String randomInit0(final String type) {
+<span class="nc bnc" id="L1016" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1017">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1020">        return &quot;final Random random = new Random(0);\n&quot;;</span>
+    }
+
+    private static String randomInit12(final String type) {
+<span class="nc bnc" id="L1024" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1025">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1028">        return &quot;final Random random = new Random(0);\n        &quot;;</span>
+    }
+
+    private static String util(final String type) {
+<span class="nc bnc" id="L1032" title="All 2 branches missed.">        if (&quot;boolean&quot;.equals(type)) {</span>
+<span class="nc" id="L1033">            return &quot;BooleanIlaUtilCheck.checkAll(actual, epsilon);\n        &quot;;</span>
+        }
+
+<span class="nc" id="L1036">        return &quot;&quot;;</span>
+    }
+
+    private static String fullCast(final TypeDefinition type) {
+<span class="nc bnc" id="L1040" title="All 2 branches missed.">        final String template = &quot;Object&quot;.equals(type.type) ? &quot;&lt;Object&gt;&quot; : &quot;&quot;;</span>
+<span class="nc" id="L1041">        return &quot;(&quot; + type.name + &quot;Ila&quot; + template + &quot;[]) &quot;;</span>
+    }
+
+    private static String charCastToInt(final String type) {
+<span class="nc bnc" id="L1045" title="All 2 branches missed.">        if (&quot;char&quot;.equals(type)) {</span>
+<span class="nc" id="L1046">            return &quot;(int) &quot;;</span>
+        }
+
+<span class="nc" id="L1049">        return &quot;&quot;;</span>
+    }
+
+    private static String fpZeros(final String type) {
+<span class="nc bnc" id="L1053" title="All 4 branches missed.">        if (&quot;double&quot;.equals(type) || &quot;float&quot;.equals(type)) {</span>
+<span class="nc" id="L1054">            return &quot;00000&quot;;</span>
+        }
+
+<span class="nc" id="L1057">        return &quot;&quot;;</span>
+    }
+
+    private static String isEqualsStart(final String type) {
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1062">            return &quot;.equals(&quot;;</span>
+        }
+
+<span class="nc bnc" id="L1065" title="All 2 branches missed.">        if (&quot;boolean&quot;.equals(type)</span>
+<span class="nc bnc" id="L1066" title="All 2 branches missed.">                || &quot;byte&quot;.equals(type)</span>
+<span class="nc bnc" id="L1067" title="All 2 branches missed.">                || &quot;char&quot;.equals(type)</span>
+<span class="nc bnc" id="L1068" title="All 2 branches missed.">                || &quot;int&quot;.equals(type)</span>
+<span class="nc bnc" id="L1069" title="All 2 branches missed.">                || &quot;long&quot;.equals(type)</span>
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">                || &quot;short&quot;.equals(type)) {</span>
+<span class="nc" id="L1071">            return &quot; == &quot;;</span>
+        }
+
+<span class="nc" id="L1074">        return &quot;&quot;;</span>
+    }
+
+    private static String isEqualsEnd(final String type) {
+<span class="nc bnc" id="L1078" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1079">            return &quot;)&quot;;</span>
+        }
+
+<span class="nc" id="L1082">        return &quot;&quot;;</span>
+    }
+
+    private static String testCastFromInt(final String type) {
+<span class="nc bnc" id="L1086" title="All 4 branches missed.">        switch (type) {</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L1088">                return &quot;(byte) &quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L1090">                return &quot;(char) &quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L1092">                return &quot;(short) &quot;;</span>
+            default:
+<span class="nc" id="L1094">                return &quot;&quot;;</span>
+        }
+    }
+
+    private static String testCastFromIntParen(final String type) {
+<span class="nc bnc" id="L1099" title="All 4 branches missed.">        switch (type) {</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L1101">                return &quot;(byte) (&quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L1103">                return &quot;(char) (&quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L1105">                return &quot;(short) (&quot;;</span>
+            default:
+<span class="nc" id="L1107">                return &quot;&quot;;</span>
+        }
+    }
+
+    private static String testCastFromIntParenEnd(final String type) {
+<span class="nc bnc" id="L1112" title="All 2 branches missed.">        switch (type) {</span>
+            case &quot;byte&quot;:
+            case &quot;char&quot;:
+            case &quot;short&quot;:
+<span class="nc" id="L1116">                return &quot;)&quot;;</span>
+            default:
+<span class="nc" id="L1118">                return &quot;&quot;;</span>
+        }
+    }
+
+    private static String testCastFromDouble(final String type) {
+<span class="nc bnc" id="L1123" title="All 7 branches missed.">        switch (type) {</span>
+            case &quot;byte&quot;:
+<span class="nc" id="L1125">                return &quot;(byte) &quot;;</span>
+            case &quot;char&quot;:
+<span class="nc" id="L1127">                return &quot;(char) &quot;;</span>
+            case &quot;float&quot;:
+<span class="nc" id="L1129">                return &quot;(float) &quot;;</span>
+            case &quot;int&quot;:
+<span class="nc" id="L1131">                return &quot;(int) &quot;;</span>
+            case &quot;long&quot;:
+<span class="nc" id="L1133">                return &quot;(long) &quot;;</span>
+            case &quot;short&quot;:
+<span class="nc" id="L1135">                return &quot;(short) &quot;;</span>
+            default:
+<span class="nc" id="L1137">                return &quot;&quot;;</span>
+        }
+    }
+
+    private static String testSuppress(final String type) {
+<span class="nc bnc" id="L1142" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1143">            return &quot;@SuppressWarnings(\&quot;unchecked\&quot;)\n    &quot;;</span>
+        }
+
+<span class="nc" id="L1146">        return &quot;&quot;;</span>
+    }
+
+    private static String randomInclude(final String type) {
+<span class="nc bnc" id="L1150" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1151">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1154">        return &quot;import java.util.Random;\n&quot;;</span>
+    }
+
+    private static String randomInit(final String type) {
+<span class="nc bnc" id="L1158" title="All 2 branches missed.">        if (&quot;Object&quot;.equals(type)) {</span>
+<span class="nc" id="L1159">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L1162">        return &quot;final Random random = new Random(0);\n        &quot;;</span>
+    }
+
+<span class="nc" id="L1165">    private enum SourceKind {</span>
+<span class="nc" id="L1166">        MAIN,</span>
+<span class="nc" id="L1167">        TEST,</span>
+<span class="nc" id="L1168">        FUZZ</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

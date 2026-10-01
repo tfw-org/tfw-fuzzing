@@ -7,10 +7,10 @@ public class DoubleIlaFactoryConcatenate {
     private DoubleIlaFactoryConcatenate() {}
 
     public static DoubleIlaFactory create(DoubleIlaFactory leftFactory, DoubleIlaFactory rightFactory) {
-<span class="nc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
-<span class="nc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
+<span class="fc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
 
-<span class="nc" id="L13">        return () -&gt; DoubleIlaConcatenate.create(leftFactory.create(), rightFactory.create());</span>
+<span class="fc" id="L13">        return () -&gt; DoubleIlaConcatenate.create(leftFactory.create(), rightFactory.create());</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

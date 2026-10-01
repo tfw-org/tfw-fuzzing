@@ -7,10 +7,10 @@ public class LongIlaFactoryAdd {
     private LongIlaFactoryAdd() {}
 
     public static LongIlaFactory create(LongIlaFactory leftFactory, LongIlaFactory rightFactory, int bufferSize) {
-<span class="nc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
-<span class="nc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
+<span class="fc" id="L10">        Argument.assertNotNull(leftFactory, &quot;leftFactory&quot;);</span>
+<span class="fc" id="L11">        Argument.assertNotNull(rightFactory, &quot;rightFactory&quot;);</span>
 
-<span class="nc" id="L13">        return () -&gt; LongIlaAdd.create(leftFactory.create(), rightFactory.create(), bufferSize);</span>
+<span class="fc" id="L13">        return () -&gt; LongIlaAdd.create(leftFactory.create(), rightFactory.create(), bufferSize);</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE
