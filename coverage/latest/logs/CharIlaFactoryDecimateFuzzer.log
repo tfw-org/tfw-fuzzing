@@ -2,32 +2,32 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryDecimateFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryDecimateFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f90e2f1aab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f99909f9ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1190660914
-MERGE-OUTER: 84 files, 0 in the initial corpus, 0 processed earlier
+INFO: Seed: 4146231916
+MERGE-OUTER: 85 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_CharIlaFactoryDecimateFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/CharIlaFactoryDecimateFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7f53b2b6dab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f92e6b6dab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1536577908
+INFO: Seed: 94381406
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1306.txt'
-MERGE-INNER: 84 total files; 0 processed earlier; will process 84 files now
-#1	pulse  exec/s: 0 rss: 106Mb
-#2	pulse  exec/s: 0 rss: 106Mb
-#4	pulse  exec/s: 0 rss: 106Mb
-#8	pulse  exec/s: 0 rss: 106Mb
-#16	pulse  exec/s: 0 rss: 107Mb
-#32	pulse  exec/s: 0 rss: 109Mb
-#64	pulse  exec/s: 0 rss: 109Mb
-#84	DONE   exec/s: 0 rss: 109Mb
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge1307.txt'
+MERGE-INNER: 85 total files; 0 processed earlier; will process 85 files now
+#1	pulse  exec/s: 0 rss: 108Mb
+#2	pulse  exec/s: 0 rss: 108Mb
+#4	pulse  exec/s: 0 rss: 108Mb
+#8	pulse  exec/s: 0 rss: 108Mb
+#16	pulse  exec/s: 0 rss: 108Mb
+#32	pulse  exec/s: 0 rss: 108Mb
+#64	pulse  exec/s: 0 rss: 108Mb
+#85	DONE   exec/s: 0 rss: 108Mb
 MERGE-OUTER: successful in 1 attempt(s)
-MERGE-OUTER: the control file has 10797 bytes
-MERGE-OUTER: consumed 0Mb (90Mb rss) to parse the control file
+MERGE-OUTER: the control file has 10926 bytes
+MERGE-OUTER: consumed 0Mb (94Mb rss) to parse the control file
 MERGE-OUTER: 0 new files with 0 new features added; 0 new coverage edges
