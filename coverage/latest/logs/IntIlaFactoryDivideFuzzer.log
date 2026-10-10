@@ -2,30 +2,30 @@ OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in ve
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_IntIlaFactoryDivideFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/IntIlaFactoryDivideFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7eff5608aab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7fc511e19ab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1886057764
+INFO: Seed: 1560905580
 MERGE-OUTER: 144 files, 0 in the initial corpus, 0 processed earlier
 MERGE-OUTER: attempt 1
 OpenJDK 64-Bit Server VM warning: Option CriticalJNINatives was deprecated in version 16.0 and will likely be removed in a future release.
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 INFO: using inputs from: /github/workspace/build-out/dummy_corpus_dir_for_IntIlaFactoryDivideFuzzer
 INFO: using inputs from: /github/workspace/cifuzz-corpus/IntIlaFactoryDivideFuzzer
-INFO: found LLVMFuzzerCustomMutator (0x7fac20e6eab0). Disabling -len_control by default.
+INFO: found LLVMFuzzerCustomMutator (0x7f1621c6eab0). Disabling -len_control by default.
 INFO: libFuzzer ignores flags that start with '--'
 INFO: Running with entropic power schedule (0xFF, 100).
-INFO: Seed: 1557220385
+INFO: Seed: 1613529863
 INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 1048576 bytes
-MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge2252.txt'
+MERGE-INNER: using the control file '/tmp/libFuzzerTemp.Merge2255.txt'
 MERGE-INNER: 144 total files; 0 processed earlier; will process 144 files now
-#1	pulse  exec/s: 0 rss: 103Mb
-#2	pulse  exec/s: 0 rss: 103Mb
-#4	pulse  exec/s: 0 rss: 103Mb
-#8	pulse  exec/s: 0 rss: 103Mb
-#16	pulse  exec/s: 0 rss: 103Mb
-#32	pulse  exec/s: 0 rss: 104Mb
-#64	pulse  exec/s: 0 rss: 107Mb
+#1	pulse  exec/s: 0 rss: 110Mb
+#2	pulse  exec/s: 0 rss: 110Mb
+#4	pulse  exec/s: 0 rss: 110Mb
+#8	pulse  exec/s: 0 rss: 110Mb
+#16	pulse  exec/s: 0 rss: 110Mb
+#32	pulse  exec/s: 0 rss: 110Mb
+#64	pulse  exec/s: 0 rss: 111Mb
 #128	pulse  exec/s: 0 rss: 113Mb
 #144	DONE   exec/s: 0 rss: 113Mb
 MERGE-OUTER: successful in 1 attempt(s)
