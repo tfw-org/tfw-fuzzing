@@ -9,21 +9,29 @@ public final class ImmutableLongArrayUtil {
     private static final String START_LABEL = &quot;start&quot;;
     private static final String LENGTH_LABEL = &quot;length&quot;;
     private static final String OFFSET_PLUS_LENGTH_LABEL = OFFSET_LABEL + &quot;+&quot; + LENGTH_LABEL;
-    private static final String START_PLUS_LENGTH_LABEL = START_LABEL + &quot;+&quot; + LENGTH_LABEL;
 
     private ImmutableLongArrayUtil() {}
 
+    /*
+     * The bounds-checking semantics are modeled after System.arraycopy():
+     * the requested range must fit within both the destination array and
+     * the ILA. In particular, a zero-length range may start at the end
+     * of either, but not beyond it.
+     *
+     * ILA-specific behavior, such as closed-state checks and exceptions
+     * raised while accessing the underlying data, is handled separately.
+     */
     public static void boundsCheck(long ilaLength, int arrayLength, int offset, long start, int length) {
-<span class="fc" id="L17">        Argument.assertNotLessThan(ilaLength, 0, ILA_LENGTH_LABEL);</span>
-<span class="fc" id="L18">        Argument.assertNotLessThan(arrayLength, 0, ARRAY_LENGTH_LABEL);</span>
-<span class="fc" id="L19">        Argument.assertNotLessThan(offset, 0, OFFSET_LABEL);</span>
-<span class="fc" id="L20">        Argument.assertNotLessThan(start, 0, START_LABEL);</span>
-<span class="fc" id="L21">        Argument.assertNotLessThan(length, 0, LENGTH_LABEL);</span>
-<span class="fc" id="L22">        Argument.assertLessThan(offset, arrayLength, OFFSET_LABEL, ARRAY_LENGTH_LABEL);</span>
-<span class="fc" id="L23">        Argument.assertLessThan(start, ilaLength, START_LABEL, ILA_LENGTH_LABEL);</span>
-<span class="fc" id="L24">        Argument.assertNotGreaterThan(</span>
+<span class="fc" id="L25">        Argument.assertNotLessThan(ilaLength, 0, ILA_LENGTH_LABEL);</span>
+<span class="fc" id="L26">        Argument.assertNotLessThan(arrayLength, 0, ARRAY_LENGTH_LABEL);</span>
+<span class="fc" id="L27">        Argument.assertNotLessThan(offset, 0, OFFSET_LABEL);</span>
+<span class="fc" id="L28">        Argument.assertNotLessThan(start, 0, START_LABEL);</span>
+<span class="fc" id="L29">        Argument.assertNotLessThan(length, 0, LENGTH_LABEL);</span>
+<span class="fc" id="L30">        Argument.assertNotGreaterThan(offset, arrayLength, OFFSET_LABEL, ARRAY_LENGTH_LABEL);</span>
+<span class="fc" id="L31">        Argument.assertNotGreaterThan(start, ilaLength, START_LABEL, ILA_LENGTH_LABEL);</span>
+<span class="fc" id="L32">        Argument.assertNotGreaterThan(</span>
                 (long) offset + length, arrayLength, OFFSET_PLUS_LENGTH_LABEL, ARRAY_LENGTH_LABEL);
-<span class="fc" id="L26">        Argument.assertNotGreaterThan(start + length, ilaLength, START_PLUS_LENGTH_LABEL, ILA_LENGTH_LABEL);</span>
-<span class="fc" id="L27">    }</span>
+<span class="fc" id="L34">        Argument.assertNotGreaterThan(length, ilaLength - start, LENGTH_LABEL, &quot;ila.length()-start&quot;);</span>
+<span class="fc" id="L35">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

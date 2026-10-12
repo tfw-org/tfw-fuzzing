@@ -321,12 +321,12 @@ public class Argument {
      * @param rightName name of right argument being compared.
      */
     public static final void assertLessThan(long left, long right, String leftName, String rightName) {
-<span class="fc bfc" id="L324" title="All 2 branches covered.">        if (left &gt;= right) {</span>
-<span class="fc" id="L325">            final String msg = String.format(ASSERT_LESS_THAN_I_FORMAT, leftName, left, rightName, right);</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        if (left &gt;= right) {</span>
+<span class="nc" id="L325">            final String msg = String.format(ASSERT_LESS_THAN_I_FORMAT, leftName, left, rightName, right);</span>
 
-<span class="fc" id="L327">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L327">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="fc" id="L329">    }</span>
+<span class="nc" id="L329">    }</span>
 
     /**
      * Checks that the left argument is greater than or equal to right argument.
