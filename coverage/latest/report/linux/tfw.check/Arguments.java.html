@@ -41,225 +41,433 @@ public final class Arguments {
 <span class="nc" id="L41">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L42">    }</span>
 
-    public static void checkLessThan(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L45">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(byte left, String leftName, byte right) {
+<span class="nc" id="L45">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L46">    }</span>
 
-    public static void checkLessThan(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L49">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L49">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L50">    }</span>
 
-    public static void checkLessThan(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L53">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(char left, String leftName, char right) {
+<span class="nc" id="L53">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L54">    }</span>
 
-    public static void checkLessThan(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L57">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L57">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L58">    }</span>
 
-    public static void checkLessThan(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L61">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(double left, String leftName, double right) {
+<span class="nc" id="L61">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L62">    }</span>
 
-    public static void checkLessThan(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L65">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L65">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L66">    }</span>
 
-    public static void checkLessThan(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L69">        checkBigInteger(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+    public static void checkLessThan(float left, String leftName, float right) {
+<span class="nc" id="L69">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L70">    }</span>
 
-    public static void checkLessThanOrEqual(byte left, String leftName, byte right, String rightName) {
-<span class="nc" id="L73">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L73">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L74">    }</span>
 
-    public static void checkLessThanOrEqual(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L77">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(int left, String leftName, int right) {
+<span class="nc" id="L77">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L78">    }</span>
 
-    public static void checkLessThanOrEqual(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L81">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L81">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L82">    }</span>
 
-    public static void checkLessThanOrEqual(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L85">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(long left, String leftName, long right) {
+<span class="nc" id="L85">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L86">    }</span>
 
-    public static void checkLessThanOrEqual(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L89">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L89">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L90">    }</span>
 
-    public static void checkLessThanOrEqual(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L93">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(short left, String leftName, short right) {
+<span class="nc" id="L93">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L94">    }</span>
 
-    public static void checkLessThanOrEqual(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L97">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L97">        checkBigInteger(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="nc" id="L98">    }</span>
 
-    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L101">        checkBigInteger(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkLessThan(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L101">        checkLessThan(left, leftName, right, null);</span>
 <span class="nc" id="L102">    }</span>
 
-    public static void checkEquals(byte left, String leftName, byte right, String rightName) {
-<span class="nc" id="L105">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(byte left, String leftName, byte right, String rightName) {
+<span class="nc" id="L105">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L106">    }</span>
 
-    public static void checkEquals(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L109">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(byte left, String leftName, byte right) {
+<span class="nc" id="L109">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L110">    }</span>
 
-    public static void checkEquals(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L113">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L113">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L114">    }</span>
 
-    public static void checkEquals(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L117">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(char left, String leftName, char right) {
+<span class="nc" id="L117">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L118">    }</span>
 
-    public static void checkEquals(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L121">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L121">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L122">    }</span>
 
-    public static void checkEquals(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L125">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(double left, String leftName, double right) {
+<span class="nc" id="L125">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L126">    }</span>
 
-    public static void checkEquals(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L129">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L129">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L130">    }</span>
 
-    public static void checkEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L133">        checkBigInteger(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(float left, String leftName, float right) {
+<span class="nc" id="L133">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L134">    }</span>
 
-    public static void checkEquals(boolean left, String leftName, boolean right, String rightName) {
-<span class="nc" id="L137">        checkBoolean(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L137">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L138">    }</span>
 
-    public static void checkTrue(boolean bool, String boolName) {
-<span class="nc" id="L141">        checkBoolean(Operation.EQUALS, bool, boolName, true, null);</span>
+    public static void checkLessThanOrEqual(int left, String leftName, int right) {
+<span class="nc" id="L141">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L142">    }</span>
 
-    public static void checkFalse(boolean bool, String boolName) {
-<span class="nc" id="L145">        checkBoolean(Operation.EQUALS, bool, boolName, false, null);</span>
+    public static void checkLessThanOrEqual(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L145">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L146">    }</span>
 
-    public static void checkEquals(Object left, String leftName, Object right, String rightName) {
-<span class="nc" id="L149">        checkObjectEquals(Operation.EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(long left, String leftName, long right) {
+<span class="nc" id="L149">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L150">    }</span>
 
-    public static void checkNull(Object object, String objectName) {
-<span class="nc" id="L153">        checkObjectNull(Operation.IS_NULL, object, objectName);</span>
+    public static void checkLessThanOrEqual(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L153">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L154">    }</span>
 
-    public static void checkNotNull(Object object, String objectName) {
-<span class="nc" id="L157">        checkObjectNull(Operation.IS_NOT_NULL, object, objectName);</span>
+    public static void checkLessThanOrEqual(short left, String leftName, short right) {
+<span class="nc" id="L157">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L158">    }</span>
 
-    public static void checkNotEquals(byte left, String leftName, byte right, String rightName) {
-<span class="nc" id="L161">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L161">        checkBigInteger(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="nc" id="L162">    }</span>
 
-    public static void checkNotEquals(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L165">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L165">        checkLessThanOrEqual(left, leftName, right, null);</span>
 <span class="nc" id="L166">    }</span>
 
-    public static void checkNotEquals(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L169">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(byte left, String leftName, byte right, String rightName) {
+<span class="nc" id="L169">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L170">    }</span>
 
-    public static void checkNotEquals(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L173">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(byte left, String leftName, byte right) {
+<span class="nc" id="L173">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L174">    }</span>
 
-    public static void checkNotEquals(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L177">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L177">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L178">    }</span>
 
-    public static void checkNotEquals(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L181">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(char left, String leftName, char right) {
+<span class="nc" id="L181">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L182">    }</span>
 
-    public static void checkNotEquals(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L185">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L185">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L186">    }</span>
 
-    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L189">        checkBigInteger(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(double left, String leftName, double right) {
+<span class="nc" id="L189">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L190">    }</span>
 
-    public static void checkNotEquals(boolean left, String leftName, boolean right, String rightName) {
-<span class="nc" id="L193">        checkBoolean(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L193">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L194">    }</span>
 
-    public static void checkNotEquals(Object left, String leftName, Object right, String rightName) {
-<span class="nc" id="L197">        checkObjectEquals(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+    public static void checkEquals(float left, String leftName, float right) {
+<span class="nc" id="L197">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L198">    }</span>
 
-    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right, String rightName) {
-<span class="nc" id="L201">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L201">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L202">    }</span>
 
-    public static void checkGreaterThanOrEqual(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L205">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(int left, String leftName, int right) {
+<span class="nc" id="L205">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L206">    }</span>
 
-    public static void checkGreaterThanOrEqual(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L209">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L209">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L210">    }</span>
 
-    public static void checkGreaterThanOrEqual(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L213">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(long left, String leftName, long right) {
+<span class="nc" id="L213">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L214">    }</span>
 
-    public static void checkGreaterThanOrEqual(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L217">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L217">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L218">    }</span>
 
-    public static void checkGreaterThanOrEqual(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L221">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(short left, String leftName, short right) {
+<span class="nc" id="L221">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L222">    }</span>
 
-    public static void checkGreaterThanOrEqual(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L225">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L225">        checkBigInteger(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L226">    }</span>
 
-    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L229">        checkBigInteger(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+    public static void checkEquals(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L229">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L230">    }</span>
 
-    public static void checkGreaterThan(byte left, String leftName, byte right, String rightName) {
-<span class="nc" id="L233">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkEquals(boolean left, String leftName, boolean right, String rightName) {
+<span class="nc" id="L233">        checkBoolean(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L234">    }</span>
 
-    public static void checkGreaterThan(char left, String leftName, char right, String rightName) {
-<span class="nc" id="L237">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkEquals(boolean left, String leftName, boolean right) {
+<span class="nc" id="L237">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L238">    }</span>
 
-    public static void checkGreaterThan(double left, String leftName, double right, String rightName) {
-<span class="nc" id="L241">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkEquals(Object left, String leftName, Object right, String rightName) {
+<span class="nc" id="L241">        checkObjectEquals(Operation.EQUALS, left, leftName, right, rightName);</span>
 <span class="nc" id="L242">    }</span>
 
-    public static void checkGreaterThan(float left, String leftName, float right, String rightName) {
-<span class="nc" id="L245">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkEquals(Object left, String leftName, Object right) {
+<span class="nc" id="L245">        checkEquals(left, leftName, right, null);</span>
 <span class="nc" id="L246">    }</span>
 
-    public static void checkGreaterThan(int left, String leftName, int right, String rightName) {
-<span class="nc" id="L249">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkTrue(boolean bool, String boolName) {
+<span class="nc" id="L249">        checkBoolean(Operation.EQUALS, bool, boolName, true, null);</span>
 <span class="nc" id="L250">    }</span>
 
-    public static void checkGreaterThan(long left, String leftName, long right, String rightName) {
-<span class="nc" id="L253">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkFalse(boolean bool, String boolName) {
+<span class="nc" id="L253">        checkBoolean(Operation.EQUALS, bool, boolName, false, null);</span>
 <span class="nc" id="L254">    }</span>
 
-    public static void checkGreaterThan(short left, String leftName, short right, String rightName) {
-<span class="nc" id="L257">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkNull(Object object, String objectName) {
+<span class="nc" id="L257">        checkObjectNull(Operation.IS_NULL, object, objectName);</span>
 <span class="nc" id="L258">    }</span>
 
-    public static void checkGreaterThan(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="nc" id="L261">        checkBigInteger(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    public static void checkNotNull(Object object, String objectName) {
+<span class="nc" id="L261">        checkObjectNull(Operation.IS_NOT_NULL, object, objectName);</span>
 <span class="nc" id="L262">    }</span>
+
+    public static void checkNotEquals(byte left, String leftName, byte right, String rightName) {
+<span class="nc" id="L265">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L266">    }</span>
+
+    public static void checkNotEquals(byte left, String leftName, byte right) {
+<span class="nc" id="L269">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L270">    }</span>
+
+    public static void checkNotEquals(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L273">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L274">    }</span>
+
+    public static void checkNotEquals(char left, String leftName, char right) {
+<span class="nc" id="L277">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L278">    }</span>
+
+    public static void checkNotEquals(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L281">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L282">    }</span>
+
+    public static void checkNotEquals(double left, String leftName, double right) {
+<span class="nc" id="L285">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L286">    }</span>
+
+    public static void checkNotEquals(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L289">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L290">    }</span>
+
+    public static void checkNotEquals(float left, String leftName, float right) {
+<span class="nc" id="L293">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L294">    }</span>
+
+    public static void checkNotEquals(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L297">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L298">    }</span>
+
+    public static void checkNotEquals(int left, String leftName, int right) {
+<span class="nc" id="L301">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L302">    }</span>
+
+    public static void checkNotEquals(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L305">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L306">    }</span>
+
+    public static void checkNotEquals(long left, String leftName, long right) {
+<span class="nc" id="L309">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L310">    }</span>
+
+    public static void checkNotEquals(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L313">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L314">    }</span>
+
+    public static void checkNotEquals(short left, String leftName, short right) {
+<span class="nc" id="L317">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L318">    }</span>
+
+    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L321">        checkBigInteger(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L322">    }</span>
+
+    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L325">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L326">    }</span>
+
+    public static void checkNotEquals(boolean left, String leftName, boolean right, String rightName) {
+<span class="nc" id="L329">        checkBoolean(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L330">    }</span>
+
+    public static void checkNotEquals(boolean left, String leftName, boolean right) {
+<span class="nc" id="L333">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L334">    }</span>
+
+    public static void checkNotEquals(Object left, String leftName, Object right, String rightName) {
+<span class="nc" id="L337">        checkObjectEquals(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="nc" id="L338">    }</span>
+
+    public static void checkNotEquals(Object left, String leftName, Object right) {
+<span class="nc" id="L341">        checkNotEquals(left, leftName, right, null);</span>
+<span class="nc" id="L342">    }</span>
+
+    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right, String rightName) {
+<span class="nc" id="L345">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L346">    }</span>
+
+    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right) {
+<span class="nc" id="L349">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L350">    }</span>
+
+    public static void checkGreaterThanOrEqual(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L353">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L354">    }</span>
+
+    public static void checkGreaterThanOrEqual(char left, String leftName, char right) {
+<span class="nc" id="L357">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L358">    }</span>
+
+    public static void checkGreaterThanOrEqual(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L361">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L362">    }</span>
+
+    public static void checkGreaterThanOrEqual(double left, String leftName, double right) {
+<span class="nc" id="L365">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L366">    }</span>
+
+    public static void checkGreaterThanOrEqual(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L369">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L370">    }</span>
+
+    public static void checkGreaterThanOrEqual(float left, String leftName, float right) {
+<span class="nc" id="L373">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L374">    }</span>
+
+    public static void checkGreaterThanOrEqual(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L377">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L378">    }</span>
+
+    public static void checkGreaterThanOrEqual(int left, String leftName, int right) {
+<span class="nc" id="L381">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L382">    }</span>
+
+    public static void checkGreaterThanOrEqual(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L385">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L386">    }</span>
+
+    public static void checkGreaterThanOrEqual(long left, String leftName, long right) {
+<span class="nc" id="L389">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L390">    }</span>
+
+    public static void checkGreaterThanOrEqual(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L393">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L394">    }</span>
+
+    public static void checkGreaterThanOrEqual(short left, String leftName, short right) {
+<span class="nc" id="L397">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L398">    }</span>
+
+    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L401">        checkBigInteger(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="nc" id="L402">    }</span>
+
+    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L405">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="nc" id="L406">    }</span>
+
+    public static void checkGreaterThan(byte left, String leftName, byte right, String rightName) {
+<span class="nc" id="L409">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L410">    }</span>
+
+    public static void checkGreaterThan(byte left, String leftName, byte right) {
+<span class="nc" id="L413">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L414">    }</span>
+
+    public static void checkGreaterThan(char left, String leftName, char right, String rightName) {
+<span class="nc" id="L417">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L418">    }</span>
+
+    public static void checkGreaterThan(char left, String leftName, char right) {
+<span class="nc" id="L421">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L422">    }</span>
+
+    public static void checkGreaterThan(double left, String leftName, double right, String rightName) {
+<span class="nc" id="L425">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L426">    }</span>
+
+    public static void checkGreaterThan(double left, String leftName, double right) {
+<span class="nc" id="L429">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L430">    }</span>
+
+    public static void checkGreaterThan(float left, String leftName, float right, String rightName) {
+<span class="nc" id="L433">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L434">    }</span>
+
+    public static void checkGreaterThan(float left, String leftName, float right) {
+<span class="nc" id="L437">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L438">    }</span>
+
+    public static void checkGreaterThan(int left, String leftName, int right, String rightName) {
+<span class="nc" id="L441">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L442">    }</span>
+
+    public static void checkGreaterThan(int left, String leftName, int right) {
+<span class="nc" id="L445">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L446">    }</span>
+
+    public static void checkGreaterThan(long left, String leftName, long right, String rightName) {
+<span class="nc" id="L449">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L450">    }</span>
+
+    public static void checkGreaterThan(long left, String leftName, long right) {
+<span class="nc" id="L453">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L454">    }</span>
+
+    public static void checkGreaterThan(short left, String leftName, short right, String rightName) {
+<span class="nc" id="L457">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L458">    }</span>
+
+    public static void checkGreaterThan(short left, String leftName, short right) {
+<span class="nc" id="L461">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L462">    }</span>
+
+    public static void checkGreaterThan(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="nc" id="L465">        checkBigInteger(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="nc" id="L466">    }</span>
+
+    public static void checkGreaterThan(BigInteger left, String leftName, BigInteger right) {
+<span class="nc" id="L469">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="nc" id="L470">    }</span>
 
     private static void checkIntegral(
             final Operation operation,
@@ -267,19 +475,26 @@ public final class Arguments {
             final String leftName,
             final long right,
             final String rightName) {
-<span class="nc bnc" id="L270" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
+<span class="nc bnc" id="L478" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; left &gt; right)
                 || (operation == Operation.EQUALS &amp;&amp; left != right)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; left &lt; right)
                 || (operation == Operation.GREATER_THAN &amp;&amp; left &lt;= right)) {
-<span class="nc" id="L276">            final String msg = String.format(</span>
-                    &quot;%s (=%d) %s %s (=%d) not allowed!&quot;,
-<span class="nc" id="L278">                    leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">            if (rightName == null) {</span>
+<span class="nc" id="L485">                final String msg = String.format(</span>
+<span class="nc" id="L486">                        &quot;%s (=%d) %s %d not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="nc" id="L280">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L488">                throw new IllegalArgumentException(msg);</span>
+            } else {
+<span class="nc" id="L490">                final String msg = String.format(</span>
+                        &quot;%s (=%d) %s %s (=%d) not allowed!&quot;,
+<span class="nc" id="L492">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+
+<span class="nc" id="L494">                throw new IllegalArgumentException(msg);</span>
+            }
         }
-<span class="nc" id="L282">    }</span>
+<span class="nc" id="L497">    }</span>
 
     private static void checkFloatingPoint(
             final Operation operation,
@@ -287,19 +502,26 @@ public final class Arguments {
             final String leftName,
             final double right,
             final String rightName) {
-<span class="nc bnc" id="L290" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
+<span class="nc bnc" id="L505" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; left &gt; right)
                 || (operation == Operation.EQUALS &amp;&amp; left != right)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; left &lt; right)
                 || (operation == Operation.GREATER_THAN &amp;&amp; left &lt;= right)) {
-<span class="nc" id="L296">            final String msg = String.format(</span>
-                    &quot;%s (=%f) %s %s (=%f) not allowed!&quot;,
-<span class="nc" id="L298">                    leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="nc bnc" id="L511" title="All 2 branches missed.">            if (rightName == null) {</span>
+<span class="nc" id="L512">                final String msg = String.format(</span>
+<span class="nc" id="L513">                        &quot;%s (=%f) %s %f not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="nc" id="L300">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L515">                throw new IllegalArgumentException(msg);</span>
+            } else {
+<span class="nc" id="L517">                final String msg = String.format(</span>
+                        &quot;%s (=%f) %s %s (=%f) not allowed!&quot;,
+<span class="nc" id="L519">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+
+<span class="nc" id="L521">                throw new IllegalArgumentException(msg);</span>
+            }
         }
-<span class="nc" id="L302">    }</span>
+<span class="nc" id="L524">    }</span>
 
     private static void checkBigInteger(
             final Operation operation,
@@ -307,21 +529,34 @@ public final class Arguments {
             final String leftName,
             final BigInteger right,
             final String rightName) {
-<span class="nc" id="L310">        final int result = left.compareTo(right);</span>
+<span class="nc bnc" id="L532" title="All 8 branches missed.">        if ((operation == Operation.EQUALS || operation == Operation.NOT_EQUALS) &amp;&amp; (left == null || right == null)) {</span>
+<span class="nc" id="L533">            checkObjectEquals(operation, left, leftName, right, rightName);</span>
 
-<span class="nc bnc" id="L312" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
+<span class="nc" id="L535">            return;</span>
+        }
+
+<span class="nc" id="L538">        final int result = left.compareTo(right);</span>
+
+<span class="nc bnc" id="L540" title="All 24 branches missed.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; result &gt; 0)
                 || (operation == Operation.EQUALS &amp;&amp; result != 0)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; result == 0)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; result &lt; 0)
                 || (operation == Operation.GREATER_THAN &amp;&amp; result &lt;= 0)) {
-<span class="nc" id="L318">            final String msg = String.format(</span>
-                    &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="nc" id="L320">                    leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">            if (rightName == null) {</span>
+<span class="nc" id="L547">                final String msg = String.format(</span>
+<span class="nc" id="L548">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="nc" id="L322">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L550">                throw new IllegalArgumentException(msg);</span>
+            } else {
+<span class="nc" id="L552">                final String msg = String.format(</span>
+                        &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
+<span class="nc" id="L554">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+
+<span class="nc" id="L556">                throw new IllegalArgumentException(msg);</span>
+            }
         }
-<span class="nc" id="L324">    }</span>
+<span class="nc" id="L559">    }</span>
 
     private static void checkBoolean(
             final Operation operation,
@@ -329,21 +564,21 @@ public final class Arguments {
             final String leftName,
             final boolean right,
             final String rightName) {
-<span class="nc bnc" id="L332" title="All 8 branches missed.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
-<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (rightName == null) {</span>
-<span class="nc" id="L334">                final String msg = String.format(</span>
-<span class="nc" id="L335">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="nc bnc" id="L567" title="All 8 branches missed.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
+<span class="nc bnc" id="L568" title="All 2 branches missed.">            if (rightName == null) {</span>
+<span class="nc" id="L569">                final String msg = String.format(</span>
+<span class="nc" id="L570">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="nc" id="L337">                throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L572">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="nc" id="L339">                final String msg = String.format(</span>
+<span class="nc" id="L574">                final String msg = String.format(</span>
                         &quot;%s (=%b) %s %s (=%b) not allowed!&quot;,
-<span class="nc" id="L341">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="nc" id="L576">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="nc" id="L343">                throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L578">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="nc" id="L346">    }</span>
+<span class="nc" id="L581">    }</span>
 
     private static void checkObjectEquals(
             final Operation operation,
@@ -351,24 +586,31 @@ public final class Arguments {
             final String leftName,
             final Object right,
             final String rightName) {
-<span class="nc bnc" id="L354" title="All 8 branches missed.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
+<span class="nc bnc" id="L589" title="All 8 branches missed.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
 
-<span class="nc bnc" id="L356" title="All 8 branches missed.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
-<span class="nc" id="L357">            final String msg = String.format(</span>
-                    &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="nc" id="L359">                    leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="nc bnc" id="L591" title="All 8 branches missed.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
+<span class="nc bnc" id="L592" title="All 2 branches missed.">            if (rightName == null) {</span>
+<span class="nc" id="L593">                final String msg = String.format(</span>
+<span class="nc" id="L594">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="nc" id="L361">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L596">                throw new IllegalArgumentException(msg);</span>
+            } else {
+<span class="nc" id="L598">                final String msg = String.format(</span>
+                        &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
+<span class="nc" id="L600">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+
+<span class="nc" id="L602">                throw new IllegalArgumentException(msg);</span>
+            }
         }
-<span class="nc" id="L363">    }</span>
+<span class="nc" id="L605">    }</span>
 
     private static void checkObjectNull(final Operation operation, final Object left, final String leftName) {
-<span class="nc bnc" id="L366" title="All 8 branches missed.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
-<span class="nc" id="L367">            final String msg =</span>
-<span class="nc" id="L368">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
+<span class="nc bnc" id="L608" title="All 8 branches missed.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
+<span class="nc" id="L609">            final String msg =</span>
+<span class="nc" id="L610">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
 
-<span class="nc" id="L370">            throw new IllegalArgumentException(msg);</span>
+<span class="nc" id="L612">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="nc" id="L372">    }</span>
+<span class="nc" id="L614">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
