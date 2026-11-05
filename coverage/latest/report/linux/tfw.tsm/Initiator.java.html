@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Initiator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">tfw.tsm</a> &gt; <span class="el_source">Initiator.java</span></div><h1>Initiator.java</h1><pre class="source lang-java linenums">package tfw.tsm;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import tfw.check.Argument;
+import tfw.check.Arguments;
 import tfw.tsm.ecd.EventChannelDescription;
 import tfw.tsm.ecd.ObjectECD;
 import tfw.tsm.ecd.StatelessTriggerECD;
@@ -40,7 +43,7 @@ public class Initiator extends TreeComponent {
      * The list of state changes which occur while the component is not
      * connected.
      */
-<span class="nc" id="L43">    private List&lt;TransactionContainer&gt; deferredStateChanges = null;</span>
+<span class="nc" id="L46">    private List&lt;TransactionContainer&gt; deferredStateChanges = null;</span>
 
     /**
      * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name and source
@@ -52,8 +55,8 @@ public class Initiator extends TreeComponent {
      *            the source event channel for this initiator.
      */
     public Initiator(String name, EventChannelDescription source) {
-<span class="nc" id="L55">        this(name, new EventChannelDescription[] {source});</span>
-<span class="nc" id="L56">    }</span>
+<span class="nc" id="L58">        this(name, new EventChannelDescription[] {source});</span>
+<span class="nc" id="L59">    }</span>
 
     /**
      * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name and set of
@@ -66,8 +69,8 @@ public class Initiator extends TreeComponent {
      *            &lt;code&gt;Initiator&lt;/code&gt;.
      */
     public Initiator(String name, EventChannelDescription[] sources) {
-<span class="nc" id="L69">        this(name, sources, null);</span>
-<span class="nc" id="L70">    }</span>
+<span class="nc" id="L72">        this(name, sources, null);</span>
+<span class="nc" id="L73">    }</span>
 
     /**
      * Constructs an &lt;code&gt;Initiator&lt;/code&gt; with the specified name, set of
@@ -83,92 +86,92 @@ public class Initiator extends TreeComponent {
      *            channel.
      */
     public Initiator(String name, EventChannelDescription[] sources, StateQueueFactory queueFactory) {
-<span class="nc" id="L86">        super(</span>
+<span class="nc" id="L89">        super(</span>
                 name,
                 null,
-<span class="nc bnc" id="L89" title="All 2 branches missed.">                createSources(name, sources, queueFactory == null ? new DefaultStateQueueFactory() : queueFactory),</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                createSources(name, sources, queueFactory == null ? new DefaultStateQueueFactory() : queueFactory),</span>
                 null);
 
-<span class="nc" id="L92">        Argument.assertNotNull(name, &quot;name&quot;);</span>
+<span class="nc" id="L95">        Argument.assertNotNull(name, &quot;name&quot;);</span>
 
-<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (sources.length == 0) {</span>
-<span class="nc" id="L95">            throw new IllegalArgumentException(&quot;sources.length == 0 not allowed&quot;);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (sources.length == 0) {</span>
+<span class="nc" id="L98">            throw new IllegalArgumentException(&quot;sources.length == 0 not allowed&quot;);</span>
         }
-<span class="nc" id="L97">    }</span>
+<span class="nc" id="L100">    }</span>
 
     public static InitiatorBuilder builder() {
-<span class="nc" id="L100">        return new InitiatorBuilder();</span>
+<span class="nc" id="L103">        return new InitiatorBuilder();</span>
     }
 
     synchronized TransactionContainer[] getDeferredStateChangesAndClear() {
-<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (deferredStateChanges != null) {</span>
-<span class="nc" id="L105">            TransactionContainer[] sns =</span>
-<span class="nc" id="L106">                    deferredStateChanges.toArray(new TransactionContainer[deferredStateChanges.size()]);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (deferredStateChanges != null) {</span>
+<span class="nc" id="L108">            TransactionContainer[] sns =</span>
+<span class="nc" id="L109">                    deferredStateChanges.toArray(new TransactionContainer[deferredStateChanges.size()]);</span>
 
-<span class="nc" id="L108">            deferredStateChanges = null;</span>
+<span class="nc" id="L111">            deferredStateChanges = null;</span>
 
-<span class="nc" id="L110">            return sns;</span>
+<span class="nc" id="L113">            return sns;</span>
         } else {
-<span class="nc" id="L112">            return null;</span>
+<span class="nc" id="L115">            return null;</span>
         }
     }
 
     private static Source[] createSources(String name, EventChannelDescription[] sources, StateQueueFactory factory) {
-<span class="nc" id="L117">        Argument.assertNotNull(sources, &quot;sources&quot;);</span>
-<span class="nc" id="L118">        Argument.assertElementNotNull(sources, &quot;sources&quot;);</span>
-<span class="nc" id="L119">        Argument.assertNotNull(factory, &quot;factory&quot;);</span>
+<span class="nc" id="L120">        Argument.assertNotNull(sources, &quot;sources&quot;);</span>
+<span class="nc" id="L121">        Argument.assertElementNotNull(sources, &quot;sources&quot;);</span>
+<span class="nc" id="L122">        Argument.assertNotNull(factory, &quot;factory&quot;);</span>
 
-<span class="nc" id="L121">        Source[] srcs = new Source[sources.length];</span>
+<span class="nc" id="L124">        Source[] srcs = new Source[sources.length];</span>
 
-<span class="nc bnc" id="L123" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.length; i++) {</span>
-<span class="nc" id="L124">            srcs[i] = new InitiatorSource(name, sources[i], factory.create());</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="nc" id="L127">            srcs[i] = new InitiatorSource(name, sources[i], factory.create());</span>
         }
 
-<span class="nc" id="L127">        return srcs;</span>
+<span class="nc" id="L130">        return srcs;</span>
     }
 
     private TransactionState newTransaction(InitiatorSource[] sources, Object[] state) {
-<span class="nc" id="L131">        Root localImmediateRoot = null;</span>
-<span class="nc" id="L132">        BranchComponent localImmediateParent = null;</span>
+<span class="nc" id="L134">        Root localImmediateRoot = null;</span>
+<span class="nc" id="L135">        BranchComponent localImmediateParent = null;</span>
 
-<span class="nc" id="L134">        synchronized (this) {</span>
-<span class="nc" id="L135">            localImmediateRoot = immediateRoot;</span>
-<span class="nc" id="L136">            localImmediateParent = immediateParent;</span>
-<span class="nc" id="L137">        }</span>
+<span class="nc" id="L137">        synchronized (this) {</span>
+<span class="nc" id="L138">            localImmediateRoot = immediateRoot;</span>
+<span class="nc" id="L139">            localImmediateParent = immediateParent;</span>
+<span class="nc" id="L140">        }</span>
 
-<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (localImmediateRoot == null) {</span>
-<span class="nc" id="L140">            TransactionState transactionState = new DeferredTransactionState();</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (localImmediateRoot == null) {</span>
+<span class="nc" id="L143">            TransactionState transactionState = new DeferredTransactionState();</span>
 
-<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (localImmediateParent == null) {</span>
-<span class="nc" id="L143">                synchronized (this) {</span>
-<span class="nc bnc" id="L144" title="All 2 branches missed.">                    if (deferredStateChanges == null) {</span>
-<span class="nc" id="L145">                        deferredStateChanges = new ArrayList&lt;TransactionContainer&gt;();</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (localImmediateParent == null) {</span>
+<span class="nc" id="L146">                synchronized (this) {</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                    if (deferredStateChanges == null) {</span>
+<span class="nc" id="L148">                        deferredStateChanges = new ArrayList&lt;TransactionContainer&gt;();</span>
                     }
 
-<span class="nc" id="L148">                    deferredStateChanges.add(</span>
+<span class="nc" id="L151">                    deferredStateChanges.add(</span>
                             new TransactionContainer(new SourceNState(sources, state), transactionState));
-<span class="nc" id="L150">                }</span>
+<span class="nc" id="L153">                }</span>
             } else {
-<span class="nc" id="L152">                localImmediateParent.addStateChange(</span>
+<span class="nc" id="L155">                localImmediateParent.addStateChange(</span>
                         new TransactionContainer(new SourceNState(sources, state), transactionState));
             }
 
-<span class="nc" id="L156">            return transactionState;</span>
+<span class="nc" id="L159">            return transactionState;</span>
         } else {
-<span class="nc" id="L158">            TransactionState transactionState = localImmediateRoot</span>
-<span class="nc" id="L159">                    .getTransactionManager()</span>
-<span class="nc" id="L160">                    .getTransactionQueue()</span>
-<span class="nc" id="L161">                    .createTransactionState();</span>
+<span class="nc" id="L161">            TransactionState transactionState = localImmediateRoot</span>
+<span class="nc" id="L162">                    .getTransactionManager()</span>
+<span class="nc" id="L163">                    .getTransactionQueue()</span>
+<span class="nc" id="L164">                    .createTransactionState();</span>
 
-<span class="nc" id="L163">            localImmediateRoot</span>
-<span class="nc" id="L164">                    .getTransactionManager()</span>
-<span class="nc" id="L165">                    .addStateChange(</span>
+<span class="nc" id="L166">            localImmediateRoot</span>
+<span class="nc" id="L167">                    .getTransactionManager()</span>
+<span class="nc" id="L168">                    .addStateChange(</span>
                             sources,
                             state,
                             transactionState,
-<span class="nc bnc" id="L169" title="All 2 branches missed.">                            TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                            TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null);</span>
 
-<span class="nc" id="L171">            return transactionState;</span>
+<span class="nc" id="L174">            return transactionState;</span>
         }
     }
 
@@ -187,21 +190,21 @@ public class Initiator extends TreeComponent {
      */
     private TransactionState unifiedSet(EventChannelDescription sourceEventChannel, final Object state) {
 
-<span class="nc" id="L190">        Argument.assertNotNull(sourceEventChannel, &quot;sourceEventChannel&quot;);</span>
+<span class="nc" id="L193">        Argument.assertNotNull(sourceEventChannel, &quot;sourceEventChannel&quot;);</span>
         // Trigger have null values...
         // CheckArgument.checkNull(state, &quot;state&quot;);
 
-<span class="nc" id="L194">        final InitiatorSource source = (InitiatorSource) getSource(sourceEventChannel.getEventChannelName());</span>
+<span class="nc" id="L197">        final InitiatorSource source = (InitiatorSource) getSource(sourceEventChannel.getEventChannelName());</span>
 
-<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (source == null) {</span>
-<span class="nc" id="L197">            throw new IllegalArgumentException(sourceEventChannel + &quot; not found&quot;);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L200">            throw new IllegalArgumentException(sourceEventChannel + &quot; not found&quot;);</span>
         }
 
-<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (!source.ecd.getPredicate().test(state)) {</span>
-<span class="nc" id="L201">            throw new IllegalArgumentException(&quot;value == &quot; + state + &quot; does not meet the constraints on this value&quot;);</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (!source.ecd.getPredicate().test(state)) {</span>
+<span class="nc" id="L204">            throw new IllegalArgumentException(&quot;value == &quot; + state + &quot; does not meet the constraints on this value&quot;);</span>
         }
 
-<span class="nc" id="L204">        return newTransaction(new InitiatorSource[] {source}, new Object[] {state});</span>
+<span class="nc" id="L207">        return newTransaction(new InitiatorSource[] {source}, new Object[] {state});</span>
     }
 
     /**
@@ -211,28 +214,28 @@ public class Initiator extends TreeComponent {
      *            the event channel state to set.
      */
     public final void set(EventChannelState[] state) {
-<span class="nc" id="L214">        fset(state);</span>
-<span class="nc" id="L215">    }</span>
+<span class="nc" id="L217">        fset(state);</span>
+<span class="nc" id="L218">    }</span>
 
     public final TransactionState fset(EventChannelState[] state) {
-<span class="nc" id="L218">        Argument.assertNotEmpty(state, &quot;state&quot;);</span>
+<span class="nc" id="L221">        Argument.assertNotEmpty(state, &quot;state&quot;);</span>
 
-<span class="nc" id="L220">        InitiatorSource[] sources = new InitiatorSource[state.length];</span>
-<span class="nc" id="L221">        Object[] stateObjects = new Object[state.length];</span>
+<span class="nc" id="L223">        InitiatorSource[] sources = new InitiatorSource[state.length];</span>
+<span class="nc" id="L224">        Object[] stateObjects = new Object[state.length];</span>
 
-<span class="nc bnc" id="L223" title="All 2 branches missed.">        for (int i = 0; i &lt; state.length; i++) {</span>
-<span class="nc" id="L224">            String eventChannel = state[i].getEventChannelName();</span>
-<span class="nc" id="L225">            InitiatorSource source = (InitiatorSource) getSource(eventChannel);</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        for (int i = 0; i &lt; state.length; i++) {</span>
+<span class="nc" id="L227">            String eventChannel = state[i].getEventChannelName();</span>
+<span class="nc" id="L228">            InitiatorSource source = (InitiatorSource) getSource(eventChannel);</span>
 
-<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (source == null) {</span>
-<span class="nc" id="L228">                throw new IllegalArgumentException(eventChannel + &quot; not found&quot;);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (source == null) {</span>
+<span class="nc" id="L231">                throw new IllegalArgumentException(eventChannel + &quot; not found&quot;);</span>
             }
 
-<span class="nc" id="L231">            sources[i] = source;</span>
-<span class="nc" id="L232">            stateObjects[i] = state[i].getState();</span>
+<span class="nc" id="L234">            sources[i] = source;</span>
+<span class="nc" id="L235">            stateObjects[i] = state[i].getState();</span>
         }
 
-<span class="nc" id="L235">        return newTransaction(sources, stateObjects);</span>
+<span class="nc" id="L238">        return newTransaction(sources, stateObjects);</span>
     }
 
     /**
@@ -244,29 +247,29 @@ public class Initiator extends TreeComponent {
      *            The event channel to receive the trigger event.
      */
     public final void trigger(StatelessTriggerECD triggerEventChannel) {
-<span class="nc" id="L247">        ftrigger(triggerEventChannel);</span>
-<span class="nc" id="L248">    }</span>
+<span class="nc" id="L250">        ftrigger(triggerEventChannel);</span>
+<span class="nc" id="L251">    }</span>
 
     public final TransactionState ftrigger(StatelessTriggerECD triggerEventChannel) {
-<span class="nc" id="L251">        return unifiedSet(triggerEventChannel, null);</span>
+<span class="nc" id="L254">        return unifiedSet(triggerEventChannel, null);</span>
     }
 
     public final void set(ObjectECD objectECD, Object state) {
-<span class="nc" id="L255">        fset(objectECD, state);</span>
-<span class="nc" id="L256">    }</span>
+<span class="nc" id="L258">        fset(objectECD, state);</span>
+<span class="nc" id="L259">    }</span>
 
     public final TransactionState fset(ObjectECD objectECD, Object state) {
-<span class="nc" id="L259">        return unifiedSet(objectECD, state);</span>
+<span class="nc" id="L262">        return unifiedSet(objectECD, state);</span>
     }
 
     static class SourceNState {
         public final InitiatorSource[] sources;
         public final Object[] state;
 
-<span class="nc" id="L266">        public SourceNState(InitiatorSource[] sources, Object[] state) {</span>
-<span class="nc" id="L267">            this.sources = sources;</span>
-<span class="nc" id="L268">            this.state = state;</span>
-<span class="nc" id="L269">        }</span>
+<span class="nc" id="L269">        public SourceNState(InitiatorSource[] sources, Object[] state) {</span>
+<span class="nc" id="L270">            this.sources = sources;</span>
+<span class="nc" id="L271">            this.state = state;</span>
+<span class="nc" id="L272">        }</span>
     }
 
     static class TransactionContainer {
@@ -274,46 +277,84 @@ public class Initiator extends TreeComponent {
         public final TransactionState transactionState;
         public final Throwable setLocation;
 
-<span class="nc" id="L277">        public TransactionContainer(SourceNState state, TransactionState transactionState) {</span>
-<span class="nc" id="L278">            this.state = state;</span>
-<span class="nc" id="L279">            this.transactionState = transactionState;</span>
-<span class="nc bnc" id="L280" title="All 2 branches missed.">            this.setLocation = TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null;</span>
-<span class="nc" id="L281">        }</span>
+<span class="nc" id="L280">        public TransactionContainer(SourceNState state, TransactionState transactionState) {</span>
+<span class="nc" id="L281">            this.state = state;</span>
+<span class="nc" id="L282">            this.transactionState = transactionState;</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">            this.setLocation = TransactionMgr.isTraceLogging() ? new Throwable(&quot;StateChange&quot;) : null;</span>
+<span class="nc" id="L284">        }</span>
     }
 
     public static class InitiatorBuilder {
-<span class="nc" id="L285">        private String name = null;</span>
-<span class="nc" id="L286">        private List&lt;EventChannelDescription&gt; eventChannelDescriptions = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L287">        private StateQueueFactory stateQueueFactory = new DefaultStateQueueFactory();</span>
+<span class="nc" id="L288">        private String name = null;</span>
+<span class="nc" id="L289">        private final List&lt;EventChannelDescription&gt; eventChannelDescriptions = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L290">        private StateQueueFactory stateQueueFactory = new DefaultStateQueueFactory();</span>
+<span class="nc" id="L291">        private final List&lt;List&lt;? extends EventChannelConfig&lt;?&gt;&gt;&gt; eventChannelConfigLists = new ArrayList&lt;&gt;();</span>
 
-<span class="nc" id="L289">        InitiatorBuilder() {}</span>
+<span class="nc" id="L293">        InitiatorBuilder() {}</span>
 
         public InitiatorBuilder setName(final String name) {
-<span class="nc" id="L292">            this.name = name;</span>
+<span class="nc" id="L296">            this.name = name;</span>
 
-<span class="nc" id="L294">            return this;</span>
+<span class="nc" id="L298">            return this;</span>
         }
 
         public InitiatorBuilder addEventChannelDescription(final EventChannelDescription eventChannelDescription) {
-<span class="nc" id="L298">            eventChannelDescriptions.add(eventChannelDescription);</span>
+<span class="nc" id="L302">            eventChannelDescriptions.add(eventChannelDescription);</span>
 
-<span class="nc" id="L300">            return this;</span>
+<span class="nc" id="L304">            return this;</span>
+        }
+
+        public InitiatorBuilder addEventChannelConfigs(
+                final List&lt;? extends EventChannelConfig&lt;?&gt;&gt; eventChannelConfigs) {
+<span class="nc" id="L309">            eventChannelConfigLists.add(eventChannelConfigs);</span>
+
+<span class="nc" id="L311">            return this;</span>
         }
 
         public InitiatorBuilder setStateQueueFactory(final StateQueueFactory stateQueueFactory) {
-<span class="nc" id="L304">            this.stateQueueFactory = stateQueueFactory;</span>
+<span class="nc" id="L315">            this.stateQueueFactory = stateQueueFactory;</span>
 
-<span class="nc" id="L306">            return this;</span>
+<span class="nc" id="L317">            return this;</span>
         }
 
         public Initiator build() {
-<span class="nc" id="L310">            Argument.assertNotNull(name, &quot;name&quot;);</span>
-<span class="nc" id="L311">            Argument.assertGreaterThan(eventChannelDescriptions.size(), 0, &quot;eventChannelDescriptions.size()&quot;);</span>
+<span class="nc" id="L321">            Argument.assertNotNull(name, &quot;name&quot;);</span>
 
-<span class="nc" id="L313">            final EventChannelDescription[] ecds =</span>
-<span class="nc" id="L314">                    eventChannelDescriptions.toArray(new EventChannelDescription[eventChannelDescriptions.size()]);</span>
+<span class="nc" id="L323">            final Map&lt;String, EventChannelDescription&gt; ecds = new LinkedHashMap&lt;&gt;();</span>
 
-<span class="nc" id="L316">            return new Initiator(name, ecds, stateQueueFactory);</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            for (EventChannelDescription ecd : eventChannelDescriptions) {</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                if (ecd == null) {</span>
+<span class="nc" id="L327">                    throw new IllegalArgumentException(&quot;null ECD not allowed!&quot;);</span>
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                } else if (ecds.containsKey(ecd.getEventChannelName())) {</span>
+<span class="nc" id="L329">                    throw new IllegalArgumentException(&quot;Duplicate ECD = &quot; + ecd.getEventChannelName());</span>
+                } else {
+<span class="nc" id="L331">                    ecds.put(ecd.getEventChannelName(), ecd);</span>
+                }
+<span class="nc" id="L333">            }</span>
+
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            for (List&lt;? extends EventChannelConfig&lt;?&gt;&gt; eventChannelConfigs : eventChannelConfigLists) {</span>
+<span class="nc" id="L336">                Arguments.checkNotNull(eventChannelConfigs, &quot;eventChannelConfigs&quot;);</span>
+
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                for (EventChannelConfig&lt;?&gt; eventChannelConfig : eventChannelConfigs) {</span>
+<span class="nc" id="L339">                    Arguments.checkNotNull(eventChannelConfig, &quot;eventChannelConfig&quot;);</span>
+
+<span class="nc" id="L341">                    final EventChannelDescription ecd = eventChannelConfig.getEventChannelDescription();</span>
+
+<span class="nc" id="L343">                    Arguments.checkNotNull(ecd, &quot;eventChannelDescription&quot;);</span>
+
+<span class="nc bnc" id="L345" title="All 2 branches missed.">                    if (ecds.containsKey(ecd.getEventChannelName())) {</span>
+<span class="nc" id="L346">                        throw new IllegalArgumentException(&quot;Duplicate ECD = &quot; + ecd.getEventChannelName());</span>
+                    } else {
+<span class="nc" id="L348">                        ecds.put(ecd.getEventChannelName(), ecd);</span>
+                    }
+<span class="nc" id="L350">                }</span>
+<span class="nc" id="L351">            }</span>
+
+<span class="nc" id="L353">            Arguments.checkGreaterThan(ecds.size(), &quot;ecds.size()&quot;, 0, &quot;0&quot;);</span>
+
+<span class="nc" id="L355">            final EventChannelDescription[] ecdsArray = ecds.values().toArray(new EventChannelDescription[ecds.size()]);</span>
+
+<span class="nc" id="L357">            return new Initiator(name, ecdsArray, stateQueueFactory);</span>
         }
     }
 }
