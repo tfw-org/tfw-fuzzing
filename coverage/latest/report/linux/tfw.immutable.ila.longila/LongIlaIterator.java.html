@@ -6,32 +6,33 @@ import tfw.check.Argument;
 public final class LongIlaIterator {
     private final LongIla instance;
     private final long instanceLength;
+    private final long[] buffer;
+
     private long amountLeftToFetch;
     private int amountToFetch;
-    private long[] buffer;
     private int bufferIndex;
     private long fetchPosition;
     private long actualPosition;
 
     public static final int DEFAULT_BUFFER_SIZE = 10000;
 
-<span class="fc" id="L18">    public LongIlaIterator(LongIla instance, long[] buffer) throws IOException {</span>
-<span class="fc" id="L19">        Argument.assertNotNull(instance, &quot;instance&quot;);</span>
-<span class="fc" id="L20">        Argument.assertNotNull(buffer, &quot;buffer&quot;);</span>
-<span class="fc" id="L21">        Argument.assertNotLessThan(buffer.length, 1, &quot;buffer.length&quot;);</span>
+<span class="fc" id="L19">    public LongIlaIterator(LongIla instance, long[] buffer) throws IOException {</span>
+<span class="fc" id="L20">        Argument.assertNotNull(instance, &quot;instance&quot;);</span>
+<span class="fc" id="L21">        Argument.assertNotNull(buffer, &quot;buffer&quot;);</span>
+<span class="fc" id="L22">        Argument.assertNotLessThan(buffer.length, 1, &quot;buffer.length&quot;);</span>
 
-<span class="fc" id="L23">        this.instance = instance;</span>
-<span class="fc" id="L24">        this.instanceLength = instance.length();</span>
-<span class="fc" id="L25">        this.amountToFetch = buffer.length;</span>
-<span class="fc" id="L26">        this.buffer = buffer;</span>
-<span class="fc" id="L27">        this.bufferIndex = buffer.length;</span>
-<span class="fc" id="L28">        this.actualPosition = 0;</span>
-<span class="fc" id="L29">        this.fetchPosition = 0;</span>
-<span class="fc" id="L30">        this.amountLeftToFetch = instanceLength - actualPosition;</span>
-<span class="fc" id="L31">    }</span>
+<span class="fc" id="L24">        this.instance = instance;</span>
+<span class="fc" id="L25">        this.instanceLength = instance.length();</span>
+<span class="fc" id="L26">        this.amountToFetch = buffer.length;</span>
+<span class="fc" id="L27">        this.buffer = buffer;</span>
+<span class="fc" id="L28">        this.bufferIndex = buffer.length;</span>
+<span class="fc" id="L29">        this.actualPosition = 0;</span>
+<span class="fc" id="L30">        this.fetchPosition = 0;</span>
+<span class="fc" id="L31">        this.amountLeftToFetch = instanceLength - actualPosition;</span>
+<span class="fc" id="L32">    }</span>
 
     public boolean hasNext() {
-<span class="fc bfc" id="L34" title="All 2 branches covered.">        return actualPosition &lt; instanceLength;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        return actualPosition &lt; instanceLength;</span>
     }
 
     /**
@@ -41,19 +42,19 @@ public final class LongIlaIterator {
      */
     public long next() throws IOException {
         // do we need to fetch into buffer?
-<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (bufferIndex == buffer.length) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (bufferIndex == buffer.length) {</span>
             // how much do we fetch?
-<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (amountLeftToFetch &lt; buffer.length) {</span>
-<span class="fc" id="L47">                amountToFetch = (int) amountLeftToFetch;</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (amountLeftToFetch &lt; buffer.length) {</span>
+<span class="fc" id="L48">                amountToFetch = (int) amountLeftToFetch;</span>
             }
 
-<span class="fc" id="L50">            amountLeftToFetch -= amountToFetch;</span>
-<span class="fc" id="L51">            instance.get(buffer, 0, fetchPosition, amountToFetch);</span>
-<span class="fc" id="L52">            fetchPosition += amountToFetch;</span>
-<span class="fc" id="L53">            bufferIndex = 0;</span>
+<span class="fc" id="L51">            amountLeftToFetch -= amountToFetch;</span>
+<span class="fc" id="L52">            instance.get(buffer, 0, fetchPosition, amountToFetch);</span>
+<span class="fc" id="L53">            fetchPosition += amountToFetch;</span>
+<span class="fc" id="L54">            bufferIndex = 0;</span>
         }
-<span class="fc" id="L55">        actualPosition++;</span>
-<span class="fc" id="L56">        return buffer[bufferIndex++];</span>
+<span class="fc" id="L56">        actualPosition++;</span>
+<span class="fc" id="L57">        return buffer[bufferIndex++];</span>
     }
 
     /**
@@ -62,21 +63,21 @@ public final class LongIlaIterator {
      * properly.
      */
     public void skip(long amount) throws IOException {
-<span class="fc" id="L65">        long newBufferIndex = bufferIndex + amount;</span>
-<span class="fc" id="L66">        actualPosition += amount;</span>
+<span class="fc" id="L66">        long newBufferIndex = bufferIndex + amount;</span>
+<span class="fc" id="L67">        actualPosition += amount;</span>
 
         // will we blow our cache?
-<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (newBufferIndex &gt; buffer.length) {</span>
-<span class="fc" id="L70">            amountLeftToFetch = instanceLength - actualPosition;</span>
-<span class="fc" id="L71">            fetchPosition = actualPosition;</span>
-<span class="fc" id="L72">            bufferIndex = buffer.length;</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (newBufferIndex &gt; buffer.length) {</span>
+<span class="fc" id="L71">            amountLeftToFetch = instanceLength - actualPosition;</span>
+<span class="fc" id="L72">            fetchPosition = actualPosition;</span>
+<span class="fc" id="L73">            bufferIndex = buffer.length;</span>
         } else {
-<span class="fc" id="L74">            bufferIndex = (int) newBufferIndex;</span>
+<span class="fc" id="L75">            bufferIndex = (int) newBufferIndex;</span>
         }
-<span class="fc" id="L76">    }</span>
+<span class="fc" id="L77">    }</span>
 
     public long remaining() {
-<span class="nc" id="L79">        return instanceLength - actualPosition;</span>
+<span class="nc" id="L80">        return instanceLength - actualPosition;</span>
     }
 }
 // AUTO GENERATED FROM TEMPLATE

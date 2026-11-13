@@ -12,7 +12,7 @@ import tfw.tsm.ecd.EventChannelDescription;
 abstract class BaseCommit extends EventHandler {
     private final HashSet&lt;String&gt; triggers;
     private final Initiator[] initiators;
-<span class="nc" id="L15">    private CommitRollbackListener crListener = new CommitRollbackListener() {</span>
+<span class="nc" id="L15">    private final CommitRollbackListener crListener = new CommitRollbackListener() {</span>
         @Override
 <span class="nc" id="L17">        public void rollback() {}</span>
 

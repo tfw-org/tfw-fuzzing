@@ -23,9 +23,9 @@ public abstract class Synchronizer extends Processor {
     private final List&lt;ObjectECD&gt; aEventList;
     private final List&lt;ObjectECD&gt; bEventList;
     private final List&lt;ObjectECD&gt; additionalList;
-<span class="nc" id="L26">    private HashSet&lt;EventChannel&gt; aToBConvert = new HashSet&lt;EventChannel&gt;();</span>
-<span class="nc" id="L27">    private HashSet&lt;EventChannel&gt; bToAConvert = new HashSet&lt;EventChannel&gt;();</span>
-<span class="nc" id="L28">    private CommitRollbackListener crListener = new CommitRollbackListener() {</span>
+<span class="nc" id="L26">    private final HashSet&lt;EventChannel&gt; aToBConvert = new HashSet&lt;EventChannel&gt;();</span>
+<span class="nc" id="L27">    private final HashSet&lt;EventChannel&gt; bToAConvert = new HashSet&lt;EventChannel&gt;();</span>
+<span class="nc" id="L28">    private final CommitRollbackListener crListener = new CommitRollbackListener() {</span>
         @Override
         public void rollback() {
 <span class="nc" id="L31">            aToBConvert.clear();</span>
