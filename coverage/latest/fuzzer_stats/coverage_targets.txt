@@ -5,6 +5,7 @@ CharIlaFactoryFromArrayFuzzer
 IntIlaFactoryAddFuzzer
 DoubleIlaFactoryDecimateFuzzer
 ShortIlaFactoryConcatenateFuzzer
+ArgumentsReflectionFuzzer
 FloatIlaFactoryDecimateFuzzer
 BooleanIlaFactoryConcatenateFuzzer
 ByteIlaFactoryAddFuzzer
