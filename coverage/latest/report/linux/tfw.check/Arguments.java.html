@@ -529,34 +529,48 @@ public final class Arguments {
             final String leftName,
             final BigInteger right,
             final String rightName) {
-<span class="fc bfc" id="L532" title="All 8 branches covered.">        if ((operation == Operation.EQUALS || operation == Operation.NOT_EQUALS) &amp;&amp; (left == null || right == null)) {</span>
-<span class="fc" id="L533">            checkObjectEquals(operation, left, leftName, right, rightName);</span>
+<span class="fc bfc" id="L532" title="All 4 branches covered.">        if (operation != Operation.EQUALS &amp;&amp; operation != Operation.NOT_EQUALS) {</span>
+<span class="fc bfc" id="L533" title="All 2 branches covered.">            if (left == null) {</span>
+<span class="fc bfc" id="L534" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, leftName == null ? &quot;left&quot; : leftName);</span>
 
-<span class="fc" id="L535">            return;</span>
+<span class="fc" id="L536">                throw new IllegalArgumentException(msg);</span>
+            }
+
+<span class="fc bfc" id="L539" title="All 2 branches covered.">            if (right == null) {</span>
+<span class="fc bfc" id="L540" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, rightName == null ? &quot;right&quot; : rightName);</span>
+
+<span class="fc" id="L542">                throw new IllegalArgumentException(msg);</span>
+            }
         }
 
-<span class="fc" id="L538">        final int result = left.compareTo(right);</span>
+<span class="fc bfc" id="L546" title="All 8 branches covered.">        if ((operation == Operation.EQUALS || operation == Operation.NOT_EQUALS) &amp;&amp; (left == null || right == null)) {</span>
+<span class="fc" id="L547">            checkObjectEquals(operation, left, leftName, right, rightName);</span>
 
-<span class="fc bfc" id="L540" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
+<span class="fc" id="L549">            return;</span>
+        }
+
+<span class="fc" id="L552">        final int result = left.compareTo(right);</span>
+
+<span class="fc bfc" id="L554" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; result &gt; 0)
                 || (operation == Operation.EQUALS &amp;&amp; result != 0)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; result == 0)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; result &lt; 0)
                 || (operation == Operation.GREATER_THAN &amp;&amp; result &lt;= 0)) {
-<span class="fc bfc" id="L546" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L547">                final String msg = String.format(</span>
-<span class="fc" id="L548">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L560" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L561">                final String msg = String.format(</span>
+<span class="fc" id="L562">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L550">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L564">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L552">                final String msg = String.format(</span>
+<span class="fc" id="L566">                final String msg = String.format(</span>
                         &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="fc" id="L554">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L568">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L556">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L570">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L559">    }</span>
+<span class="fc" id="L573">    }</span>
 
     private static void checkBoolean(
             final Operation operation,
@@ -564,21 +578,21 @@ public final class Arguments {
             final String leftName,
             final boolean right,
             final String rightName) {
-<span class="fc bfc" id="L567" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
-<span class="fc bfc" id="L568" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L569">                final String msg = String.format(</span>
-<span class="fc" id="L570">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L581" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L583">                final String msg = String.format(</span>
+<span class="fc" id="L584">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L572">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L586">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L574">                final String msg = String.format(</span>
+<span class="fc" id="L588">                final String msg = String.format(</span>
                         &quot;%s (=%b) %s %s (=%b) not allowed!&quot;,
-<span class="fc" id="L576">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L590">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L578">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L592">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L581">    }</span>
+<span class="fc" id="L595">    }</span>
 
     private static void checkObjectEquals(
             final Operation operation,
@@ -586,31 +600,31 @@ public final class Arguments {
             final String leftName,
             final Object right,
             final String rightName) {
-<span class="fc bfc" id="L589" title="All 8 branches covered.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
+<span class="fc bfc" id="L603" title="All 8 branches covered.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
 
-<span class="fc bfc" id="L591" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
-<span class="fc bfc" id="L592" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L593">                final String msg = String.format(</span>
-<span class="fc" id="L594">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L605" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
+<span class="fc bfc" id="L606" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L607">                final String msg = String.format(</span>
+<span class="fc" id="L608">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L596">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L610">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L598">                final String msg = String.format(</span>
+<span class="fc" id="L612">                final String msg = String.format(</span>
                         &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="fc" id="L600">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L614">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L602">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L616">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L605">    }</span>
+<span class="fc" id="L619">    }</span>
 
     private static void checkObjectNull(final Operation operation, final Object left, final String leftName) {
-<span class="fc bfc" id="L608" title="All 8 branches covered.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
-<span class="fc" id="L609">            final String msg =</span>
-<span class="fc" id="L610">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
+<span class="fc bfc" id="L622" title="All 8 branches covered.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
+<span class="fc" id="L623">            final String msg =</span>
+<span class="fc" id="L624">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
 
-<span class="fc" id="L612">            throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L626">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="fc" id="L614">    }</span>
+<span class="fc" id="L628">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
