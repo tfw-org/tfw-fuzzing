@@ -6,468 +6,1821 @@ import java.math.BigInteger;
 import java.util.EnumMap;
 import java.util.Map;
 
+/**
+ * Provides static checks for argument values and relationships between arguments.
+ *
+ * &lt;p&gt;Each check returns normally unless its failure condition is met, in which case it
+ * throws {@link IllegalArgumentException}. Failure messages report the relevant
+ * operand values and names where applicable.
+ *
+ * &lt;p&gt;Comparison checks support the primitive numeric types and {@link BigInteger}.
+ * Equality checks additionally support {@code boolean} and {@link Object}. Overloads
+ * accepting both operand names are intended for comparisons between named values.
+ * Overloads omitting {@code rightName} are intended for comparisons against constants
+ * or other self-explanatory values; the right operand's value appears without a name
+ * in the failure message.
+ *
+ * &lt;p&gt;Floating-point checks use Java primitive comparison operators. Consequently,
+ * relational checks do not reject a comparison involving {@code NaN}: the inverse
+ * comparison used to detect failure is also {@code false}. {@code NaN} is not equal
+ * to itself, so {@code checkEquals} rejects two {@code NaN} values and
+ * {@code checkNotEquals} accepts them.
+ *
+ * &lt;p&gt;Relational checks involving {@link BigInteger} require both operands to be
+ * non-null. If either is null, the exception message identifies the null operand
+ * by its supplied name, or by {@code left} or {@code right} if no name is given.
+ * BigInteger equality checks allow null operands and consider two null operands
+ * equal. Object equality checks consider two null operands equal; otherwise,
+ * equality is determined by the left operand's {@link Object#equals(Object)} method.
+ *
+ * &lt;p&gt;This class is not instantiable.
+ */
 public final class Arguments {
     private Arguments() {}
 
-<span class="fc" id="L12">    private enum Operation {</span>
-<span class="fc" id="L13">        LESS_THAN,</span>
-<span class="fc" id="L14">        LESS_THAN_OR_EQUAL,</span>
-<span class="fc" id="L15">        EQUALS,</span>
-<span class="fc" id="L16">        IS_NULL,</span>
-<span class="fc" id="L17">        IS_NOT_NULL,</span>
-<span class="fc" id="L18">        NOT_EQUALS,</span>
-<span class="fc" id="L19">        GREATER_THAN_OR_EQUAL,</span>
-<span class="fc" id="L20">        GREATER_THAN</span>
+<span class="fc" id="L41">    private enum Operation {</span>
+<span class="fc" id="L42">        LESS_THAN,</span>
+<span class="fc" id="L43">        LESS_THAN_OR_EQUAL,</span>
+<span class="fc" id="L44">        EQUALS,</span>
+<span class="fc" id="L45">        IS_NULL,</span>
+<span class="fc" id="L46">        IS_NOT_NULL,</span>
+<span class="fc" id="L47">        NOT_EQUALS,</span>
+<span class="fc" id="L48">        GREATER_THAN_OR_EQUAL,</span>
+<span class="fc" id="L49">        GREATER_THAN</span>
     }
 
     private static final Map&lt;Operation, String&gt; OPERATION_STRING_MAP;
 
     static {
-<span class="fc" id="L26">        final Map&lt;Operation, String&gt; m = new EnumMap&lt;&gt;(Operation.class);</span>
+<span class="fc" id="L55">        final Map&lt;Operation, String&gt; m = new EnumMap&lt;&gt;(Operation.class);</span>
 
-<span class="fc" id="L28">        m.put(Operation.LESS_THAN, &quot;&gt;=&quot;);</span>
-<span class="fc" id="L29">        m.put(Operation.LESS_THAN_OR_EQUAL, &quot;&gt;&quot;);</span>
-<span class="fc" id="L30">        m.put(Operation.EQUALS, &quot;!=&quot;);</span>
-<span class="fc" id="L31">        m.put(Operation.IS_NULL, &quot;!=&quot;);</span>
-<span class="fc" id="L32">        m.put(Operation.IS_NOT_NULL, &quot;==&quot;);</span>
-<span class="fc" id="L33">        m.put(Operation.NOT_EQUALS, &quot;==&quot;);</span>
-<span class="fc" id="L34">        m.put(Operation.GREATER_THAN_OR_EQUAL, &quot;&lt;&quot;);</span>
-<span class="fc" id="L35">        m.put(Operation.GREATER_THAN, &quot;&lt;=&quot;);</span>
+<span class="fc" id="L57">        m.put(Operation.LESS_THAN, &quot;&gt;=&quot;);</span>
+<span class="fc" id="L58">        m.put(Operation.LESS_THAN_OR_EQUAL, &quot;&gt;&quot;);</span>
+<span class="fc" id="L59">        m.put(Operation.EQUALS, &quot;!=&quot;);</span>
+<span class="fc" id="L60">        m.put(Operation.IS_NULL, &quot;!=&quot;);</span>
+<span class="fc" id="L61">        m.put(Operation.IS_NOT_NULL, &quot;==&quot;);</span>
+<span class="fc" id="L62">        m.put(Operation.NOT_EQUALS, &quot;==&quot;);</span>
+<span class="fc" id="L63">        m.put(Operation.GREATER_THAN_OR_EQUAL, &quot;&lt;&quot;);</span>
+<span class="fc" id="L64">        m.put(Operation.GREATER_THAN, &quot;&lt;=&quot;);</span>
 
-<span class="fc" id="L37">        OPERATION_STRING_MAP = unmodifiableMap(m);</span>
-<span class="fc" id="L38">    }</span>
+<span class="fc" id="L66">        OPERATION_STRING_MAP = unmodifiableMap(m);</span>
+<span class="fc" id="L67">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L41">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L42">    }</span>
+<span class="fc" id="L82">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L83">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(byte left, String leftName, byte right) {
-<span class="fc" id="L45">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L46">    }</span>
+<span class="fc" id="L98">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L99">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L49">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L114">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L115">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(char left, String leftName, char right) {
-<span class="fc" id="L53">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L54">    }</span>
+<span class="fc" id="L130">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L131">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L57">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L58">    }</span>
+<span class="fc" id="L147">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L148">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(double left, String leftName, double right) {
-<span class="fc" id="L61">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L62">    }</span>
+<span class="fc" id="L164">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L165">    }</span>
 
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
     public static void checkLessThan(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L65">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L66">    }</span>
-
-    public static void checkLessThan(float left, String leftName, float right) {
-<span class="fc" id="L69">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L70">    }</span>
-
-    public static void checkLessThan(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L73">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L74">    }</span>
-
-    public static void checkLessThan(int left, String leftName, int right) {
-<span class="fc" id="L77">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L78">    }</span>
-
-    public static void checkLessThan(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L81">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L82">    }</span>
-
-    public static void checkLessThan(long left, String leftName, long right) {
-<span class="fc" id="L85">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L86">    }</span>
-
-    public static void checkLessThan(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L89">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L90">    }</span>
-
-    public static void checkLessThan(short left, String leftName, short right) {
-<span class="fc" id="L93">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L94">    }</span>
-
-    public static void checkLessThan(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L97">        checkBigInteger(Operation.LESS_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L98">    }</span>
-
-    public static void checkLessThan(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L101">        checkLessThan(left, leftName, right, null);</span>
-<span class="fc" id="L102">    }</span>
-
-    public static void checkLessThanOrEqual(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L105">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L106">    }</span>
-
-    public static void checkLessThanOrEqual(byte left, String leftName, byte right) {
-<span class="fc" id="L109">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L110">    }</span>
-
-    public static void checkLessThanOrEqual(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L113">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L114">    }</span>
-
-    public static void checkLessThanOrEqual(char left, String leftName, char right) {
-<span class="fc" id="L117">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L118">    }</span>
-
-    public static void checkLessThanOrEqual(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L121">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L122">    }</span>
-
-    public static void checkLessThanOrEqual(double left, String leftName, double right) {
-<span class="fc" id="L125">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L126">    }</span>
-
-    public static void checkLessThanOrEqual(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L129">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L130">    }</span>
-
-    public static void checkLessThanOrEqual(float left, String leftName, float right) {
-<span class="fc" id="L133">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L134">    }</span>
-
-    public static void checkLessThanOrEqual(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L137">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L138">    }</span>
-
-    public static void checkLessThanOrEqual(int left, String leftName, int right) {
-<span class="fc" id="L141">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L142">    }</span>
-
-    public static void checkLessThanOrEqual(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L145">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L146">    }</span>
-
-    public static void checkLessThanOrEqual(long left, String leftName, long right) {
-<span class="fc" id="L149">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L150">    }</span>
-
-    public static void checkLessThanOrEqual(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L153">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L154">    }</span>
-
-    public static void checkLessThanOrEqual(short left, String leftName, short right) {
-<span class="fc" id="L157">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L158">    }</span>
-
-    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L161">        checkBigInteger(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L162">    }</span>
-
-    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L165">        checkLessThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L166">    }</span>
-
-    public static void checkEquals(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L169">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L170">    }</span>
-
-    public static void checkEquals(byte left, String leftName, byte right) {
-<span class="fc" id="L173">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L174">    }</span>
-
-    public static void checkEquals(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L177">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L178">    }</span>
-
-    public static void checkEquals(char left, String leftName, char right) {
-<span class="fc" id="L181">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L181">        checkFloatingPoint(Operation.LESS_THAN, left, leftName, right, rightName);</span>
 <span class="fc" id="L182">    }</span>
 
-    public static void checkEquals(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L185">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L186">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(float left, String leftName, float right) {
+<span class="fc" id="L198">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L199">    }</span>
 
-    public static void checkEquals(double left, String leftName, double right) {
-<span class="fc" id="L189">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L190">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(int left, String leftName, int right, String rightName) {
+<span class="fc" id="L214">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L215">    }</span>
 
-    public static void checkEquals(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L193">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L194">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(int left, String leftName, int right) {
+<span class="fc" id="L230">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L231">    }</span>
 
-    public static void checkEquals(float left, String leftName, float right) {
-<span class="fc" id="L197">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L198">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(long left, String leftName, long right, String rightName) {
+<span class="fc" id="L246">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L247">    }</span>
 
-    public static void checkEquals(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L201">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L202">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(long left, String leftName, long right) {
+<span class="fc" id="L262">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L263">    }</span>
 
-    public static void checkEquals(int left, String leftName, int right) {
-<span class="fc" id="L205">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L206">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(short left, String leftName, short right, String rightName) {
+<span class="fc" id="L278">        checkIntegral(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L279">    }</span>
 
-    public static void checkEquals(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L209">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L210">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left &lt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt;= right}
+     */
+    public static void checkLessThan(short left, String leftName, short right) {
+<span class="fc" id="L294">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L295">    }</span>
 
-    public static void checkEquals(long left, String leftName, long right) {
-<span class="fc" id="L213">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L214">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left.compareTo(right) &lt; 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &gt;= 0}, or either operand is null
+     */
+    public static void checkLessThan(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="fc" id="L311">        checkBigInteger(Operation.LESS_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L312">    }</span>
 
-    public static void checkEquals(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L217">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L218">    }</span>
+    /**
+     * Checks that the left operand is less than the right operand.
+     *
+     * &lt;p&gt;The check's comparison is {@code left.compareTo(right) &lt; 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &gt;= 0}, or either operand is null
+     */
+    public static void checkLessThan(BigInteger left, String leftName, BigInteger right) {
+<span class="fc" id="L328">        checkLessThan(left, leftName, right, null);</span>
+<span class="fc" id="L329">    }</span>
 
-    public static void checkEquals(short left, String leftName, short right) {
-<span class="fc" id="L221">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L222">    }</span>
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(byte left, String leftName, byte right, String rightName) {
+<span class="fc" id="L344">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L345">    }</span>
 
-    public static void checkEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L225">        checkBigInteger(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L226">    }</span>
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(byte left, String leftName, byte right) {
+<span class="fc" id="L360">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L361">    }</span>
 
-    public static void checkEquals(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L229">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L230">    }</span>
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(char left, String leftName, char right, String rightName) {
+<span class="fc" id="L376">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L377">    }</span>
 
-    public static void checkEquals(boolean left, String leftName, boolean right, String rightName) {
-<span class="fc" id="L233">        checkBoolean(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L234">    }</span>
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(char left, String leftName, char right) {
+<span class="fc" id="L392">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L393">    }</span>
 
-    public static void checkEquals(boolean left, String leftName, boolean right) {
-<span class="fc" id="L237">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L238">    }</span>
-
-    public static void checkEquals(Object left, String leftName, Object right, String rightName) {
-<span class="fc" id="L241">        checkObjectEquals(Operation.EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L242">    }</span>
-
-    public static void checkEquals(Object left, String leftName, Object right) {
-<span class="fc" id="L245">        checkEquals(left, leftName, right, null);</span>
-<span class="fc" id="L246">    }</span>
-
-    public static void checkTrue(boolean bool, String boolName) {
-<span class="fc" id="L249">        checkBoolean(Operation.EQUALS, bool, boolName, true, null);</span>
-<span class="fc" id="L250">    }</span>
-
-    public static void checkFalse(boolean bool, String boolName) {
-<span class="fc" id="L253">        checkBoolean(Operation.EQUALS, bool, boolName, false, null);</span>
-<span class="fc" id="L254">    }</span>
-
-    public static void checkNull(Object object, String objectName) {
-<span class="fc" id="L257">        checkObjectNull(Operation.IS_NULL, object, objectName);</span>
-<span class="fc" id="L258">    }</span>
-
-    public static void checkNotNull(Object object, String objectName) {
-<span class="fc" id="L261">        checkObjectNull(Operation.IS_NOT_NULL, object, objectName);</span>
-<span class="fc" id="L262">    }</span>
-
-    public static void checkNotEquals(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L265">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L266">    }</span>
-
-    public static void checkNotEquals(byte left, String leftName, byte right) {
-<span class="fc" id="L269">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L270">    }</span>
-
-    public static void checkNotEquals(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L273">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L274">    }</span>
-
-    public static void checkNotEquals(char left, String leftName, char right) {
-<span class="fc" id="L277">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L278">    }</span>
-
-    public static void checkNotEquals(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L281">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L282">    }</span>
-
-    public static void checkNotEquals(double left, String leftName, double right) {
-<span class="fc" id="L285">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L286">    }</span>
-
-    public static void checkNotEquals(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L289">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L290">    }</span>
-
-    public static void checkNotEquals(float left, String leftName, float right) {
-<span class="fc" id="L293">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L294">    }</span>
-
-    public static void checkNotEquals(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L297">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L298">    }</span>
-
-    public static void checkNotEquals(int left, String leftName, int right) {
-<span class="fc" id="L301">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L302">    }</span>
-
-    public static void checkNotEquals(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L305">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L306">    }</span>
-
-    public static void checkNotEquals(long left, String leftName, long right) {
-<span class="fc" id="L309">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L310">    }</span>
-
-    public static void checkNotEquals(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L313">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L314">    }</span>
-
-    public static void checkNotEquals(short left, String leftName, short right) {
-<span class="fc" id="L317">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L318">    }</span>
-
-    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L321">        checkBigInteger(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L322">    }</span>
-
-    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L325">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L326">    }</span>
-
-    public static void checkNotEquals(boolean left, String leftName, boolean right, String rightName) {
-<span class="fc" id="L329">        checkBoolean(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L330">    }</span>
-
-    public static void checkNotEquals(boolean left, String leftName, boolean right) {
-<span class="fc" id="L333">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L334">    }</span>
-
-    public static void checkNotEquals(Object left, String leftName, Object right, String rightName) {
-<span class="fc" id="L337">        checkObjectEquals(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
-<span class="fc" id="L338">    }</span>
-
-    public static void checkNotEquals(Object left, String leftName, Object right) {
-<span class="fc" id="L341">        checkNotEquals(left, leftName, right, null);</span>
-<span class="fc" id="L342">    }</span>
-
-    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L345">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L346">    }</span>
-
-    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right) {
-<span class="fc" id="L349">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L350">    }</span>
-
-    public static void checkGreaterThanOrEqual(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L353">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L354">    }</span>
-
-    public static void checkGreaterThanOrEqual(char left, String leftName, char right) {
-<span class="fc" id="L357">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L358">    }</span>
-
-    public static void checkGreaterThanOrEqual(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L361">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L362">    }</span>
-
-    public static void checkGreaterThanOrEqual(double left, String leftName, double right) {
-<span class="fc" id="L365">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L366">    }</span>
-
-    public static void checkGreaterThanOrEqual(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L369">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L370">    }</span>
-
-    public static void checkGreaterThanOrEqual(float left, String leftName, float right) {
-<span class="fc" id="L373">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L374">    }</span>
-
-    public static void checkGreaterThanOrEqual(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L377">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L378">    }</span>
-
-    public static void checkGreaterThanOrEqual(int left, String leftName, int right) {
-<span class="fc" id="L381">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L382">    }</span>
-
-    public static void checkGreaterThanOrEqual(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L385">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L386">    }</span>
-
-    public static void checkGreaterThanOrEqual(long left, String leftName, long right) {
-<span class="fc" id="L389">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L390">    }</span>
-
-    public static void checkGreaterThanOrEqual(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L393">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L394">    }</span>
-
-    public static void checkGreaterThanOrEqual(short left, String leftName, short right) {
-<span class="fc" id="L397">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L398">    }</span>
-
-    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L401">        checkBigInteger(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
-<span class="fc" id="L402">    }</span>
-
-    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L405">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
-<span class="fc" id="L406">    }</span>
-
-    public static void checkGreaterThan(byte left, String leftName, byte right, String rightName) {
-<span class="fc" id="L409">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(double left, String leftName, double right, String rightName) {
+<span class="fc" id="L409">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
 <span class="fc" id="L410">    }</span>
 
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(double left, String leftName, double right) {
+<span class="fc" id="L426">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L427">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(float left, String leftName, float right, String rightName) {
+<span class="fc" id="L443">        checkFloatingPoint(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L444">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(float left, String leftName, float right) {
+<span class="fc" id="L460">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L461">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(int left, String leftName, int right, String rightName) {
+<span class="fc" id="L476">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L477">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(int left, String leftName, int right) {
+<span class="fc" id="L492">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L493">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(long left, String leftName, long right, String rightName) {
+<span class="fc" id="L508">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L509">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(long left, String leftName, long right) {
+<span class="fc" id="L524">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L525">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(short left, String leftName, short right, String rightName) {
+<span class="fc" id="L540">        checkIntegral(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L541">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &lt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &gt; right}
+     */
+    public static void checkLessThanOrEqual(short left, String leftName, short right) {
+<span class="fc" id="L556">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L557">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &lt;= 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &gt; 0}, or either operand is null
+     */
+    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="fc" id="L573">        checkBigInteger(Operation.LESS_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L574">    }</span>
+
+    /**
+     * Checks that the left operand is less than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &lt;= 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &gt; 0}, or either operand is null
+     */
+    public static void checkLessThanOrEqual(BigInteger left, String leftName, BigInteger right) {
+<span class="fc" id="L590">        checkLessThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L591">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(byte left, String leftName, byte right, String rightName) {
+<span class="fc" id="L606">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L607">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(byte left, String leftName, byte right) {
+<span class="fc" id="L622">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L623">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(char left, String leftName, char right, String rightName) {
+<span class="fc" id="L638">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L639">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(char left, String leftName, char right) {
+<span class="fc" id="L654">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L655">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(double left, String leftName, double right, String rightName) {
+<span class="fc" id="L671">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L672">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(double left, String leftName, double right) {
+<span class="fc" id="L688">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L689">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(float left, String leftName, float right, String rightName) {
+<span class="fc" id="L705">        checkFloatingPoint(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L706">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(float left, String leftName, float right) {
+<span class="fc" id="L722">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L723">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(int left, String leftName, int right, String rightName) {
+<span class="fc" id="L738">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L739">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(int left, String leftName, int right) {
+<span class="fc" id="L754">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L755">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(long left, String leftName, long right, String rightName) {
+<span class="fc" id="L770">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L771">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(long left, String leftName, long right) {
+<span class="fc" id="L786">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L787">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(short left, String leftName, short right, String rightName) {
+<span class="fc" id="L802">        checkIntegral(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L803">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(short left, String leftName, short right) {
+<span class="fc" id="L818">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L819">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code Objects.equals(left, right)}.
+     * Equality is null-safe and compares BigInteger values; two null operands are equal.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code !Objects.equals(left, right)}
+     */
+    public static void checkEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="fc" id="L835">        checkBigInteger(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L836">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code Objects.equals(left, right)}.
+     * Equality is null-safe and compares BigInteger values; two null operands are equal.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code !Objects.equals(left, right)}
+     */
+    public static void checkEquals(BigInteger left, String leftName, BigInteger right) {
+<span class="fc" id="L852">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L853">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(boolean left, String leftName, boolean right, String rightName) {
+<span class="fc" id="L868">        checkBoolean(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L869">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left == right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left != right}
+     */
+    public static void checkEquals(boolean left, String leftName, boolean right) {
+<span class="fc" id="L884">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L885">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For object operands, equality is
+     * {@code (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right))}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the equality condition is false
+     */
+    public static void checkEquals(Object left, String leftName, Object right, String rightName) {
+<span class="fc" id="L901">        checkObjectEquals(Operation.EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L902">    }</span>
+
+    /**
+     * Checks that the left operand is equal to the right operand.
+     *
+     * &lt;p&gt;For object operands, equality is
+     * {@code (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right))}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the equality condition is false
+     */
+    public static void checkEquals(Object left, String leftName, Object right) {
+<span class="fc" id="L918">        checkEquals(left, leftName, right, null);</span>
+<span class="fc" id="L919">    }</span>
+
+    /**
+     * Checks that the specified boolean value is true.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code bool == true}.
+     *
+     * @param bool the boolean value to check
+     * @param boolName the name used to identify the boolean value in a failure message
+     * @throws IllegalArgumentException if {@code bool} is false
+     */
+    public static void checkTrue(boolean bool, String boolName) {
+<span class="fc" id="L931">        checkBoolean(Operation.EQUALS, bool, boolName, true, null);</span>
+<span class="fc" id="L932">    }</span>
+
+    /**
+     * Checks that the specified boolean value is false.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code bool == false}.
+     *
+     * @param bool the boolean value to check
+     * @param boolName the name used to identify the boolean value in a failure message
+     * @throws IllegalArgumentException if {@code bool} is true
+     */
+    public static void checkFalse(boolean bool, String boolName) {
+<span class="fc" id="L944">        checkBoolean(Operation.EQUALS, bool, boolName, false, null);</span>
+<span class="fc" id="L945">    }</span>
+
+    /**
+     * Checks that the specified object reference is null.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code object == null}.
+     *
+     * @param object the object reference to check
+     * @param objectName the name used to identify the object in a failure message
+     * @throws IllegalArgumentException if {@code object} is not null
+     */
+    public static void checkNull(Object object, String objectName) {
+<span class="fc" id="L957">        checkObjectNull(Operation.IS_NULL, object, objectName);</span>
+<span class="fc" id="L958">    }</span>
+
+    /**
+     * Checks that the specified object reference is not null.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code object != null}.
+     *
+     * @param object the object reference to check
+     * @param objectName the name used to identify the object in a failure message
+     * @throws IllegalArgumentException if {@code object} is null
+     */
+    public static void checkNotNull(Object object, String objectName) {
+<span class="fc" id="L970">        checkObjectNull(Operation.IS_NOT_NULL, object, objectName);</span>
+<span class="fc" id="L971">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(byte left, String leftName, byte right, String rightName) {
+<span class="fc" id="L986">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L987">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(byte left, String leftName, byte right) {
+<span class="fc" id="L1002">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1003">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(char left, String leftName, char right, String rightName) {
+<span class="fc" id="L1018">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1019">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(char left, String leftName, char right) {
+<span class="fc" id="L1034">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1035">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(double left, String leftName, double right, String rightName) {
+<span class="fc" id="L1051">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1052">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(double left, String leftName, double right) {
+<span class="fc" id="L1068">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1069">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(float left, String leftName, float right, String rightName) {
+<span class="fc" id="L1085">        checkFloatingPoint(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1086">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(float left, String leftName, float right) {
+<span class="fc" id="L1102">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1103">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(int left, String leftName, int right, String rightName) {
+<span class="fc" id="L1118">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1119">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(int left, String leftName, int right) {
+<span class="fc" id="L1134">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1135">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(long left, String leftName, long right, String rightName) {
+<span class="fc" id="L1150">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1151">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(long left, String leftName, long right) {
+<span class="fc" id="L1166">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1167">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(short left, String leftName, short right, String rightName) {
+<span class="fc" id="L1182">        checkIntegral(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1183">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(short left, String leftName, short right) {
+<span class="fc" id="L1198">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1199">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code !Objects.equals(left, right)}.
+     * Equality is null-safe and compares BigInteger values; two null operands are equal.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code Objects.equals(left, right)}
+     */
+    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="fc" id="L1215">        checkBigInteger(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1216">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code !Objects.equals(left, right)}.
+     * Equality is null-safe and compares BigInteger values; two null operands are equal.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code Objects.equals(left, right)}
+     */
+    public static void checkNotEquals(BigInteger left, String leftName, BigInteger right) {
+<span class="fc" id="L1232">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1233">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(boolean left, String leftName, boolean right, String rightName) {
+<span class="fc" id="L1248">        checkBoolean(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1249">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left != right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left == right}
+     */
+    public static void checkNotEquals(boolean left, String leftName, boolean right) {
+<span class="fc" id="L1264">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1265">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For object operands, inequality is
+     * {@code (left != null &amp;&amp; !left.equals(right)) || (left == null &amp;&amp; right != null)}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the inequality condition is false
+     */
+    public static void checkNotEquals(Object left, String leftName, Object right, String rightName) {
+<span class="fc" id="L1281">        checkObjectEquals(Operation.NOT_EQUALS, left, leftName, right, rightName);</span>
+<span class="fc" id="L1282">    }</span>
+
+    /**
+     * Checks that the left operand is not equal to the right operand.
+     *
+     * &lt;p&gt;For object operands, inequality is
+     * {@code (left != null &amp;&amp; !left.equals(right)) || (left == null &amp;&amp; right != null)}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the inequality condition is false
+     */
+    public static void checkNotEquals(Object left, String leftName, Object right) {
+<span class="fc" id="L1298">        checkNotEquals(left, leftName, right, null);</span>
+<span class="fc" id="L1299">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right, String rightName) {
+<span class="fc" id="L1314">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1315">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(byte left, String leftName, byte right) {
+<span class="fc" id="L1330">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1331">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(char left, String leftName, char right, String rightName) {
+<span class="fc" id="L1346">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1347">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(char left, String leftName, char right) {
+<span class="fc" id="L1362">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1363">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(double left, String leftName, double right, String rightName) {
+<span class="fc" id="L1379">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1380">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(double left, String leftName, double right) {
+<span class="fc" id="L1396">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1397">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(float left, String leftName, float right, String rightName) {
+<span class="fc" id="L1413">        checkFloatingPoint(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1414">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(float left, String leftName, float right) {
+<span class="fc" id="L1430">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1431">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(int left, String leftName, int right, String rightName) {
+<span class="fc" id="L1446">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1447">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(int left, String leftName, int right) {
+<span class="fc" id="L1462">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1463">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(long left, String leftName, long right, String rightName) {
+<span class="fc" id="L1478">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1479">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(long left, String leftName, long right) {
+<span class="fc" id="L1494">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1495">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(short left, String leftName, short right, String rightName) {
+<span class="fc" id="L1510">        checkIntegral(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1511">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt;= right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt; right}
+     */
+    public static void checkGreaterThanOrEqual(short left, String leftName, short right) {
+<span class="fc" id="L1526">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1527">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &gt;= 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &lt; 0}, or either operand is null
+     */
+    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right, String rightName) {
+<span class="fc" id="L1543">        checkBigInteger(Operation.GREATER_THAN_OR_EQUAL, left, leftName, right, rightName);</span>
+<span class="fc" id="L1544">    }</span>
+
+    /**
+     * Checks that the left operand is greater than or equal to the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &gt;= 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &lt; 0}, or either operand is null
+     */
+    public static void checkGreaterThanOrEqual(BigInteger left, String leftName, BigInteger right) {
+<span class="fc" id="L1560">        checkGreaterThanOrEqual(left, leftName, right, null);</span>
+<span class="fc" id="L1561">    }</span>
+
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
+    public static void checkGreaterThan(byte left, String leftName, byte right, String rightName) {
+<span class="fc" id="L1576">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1577">    }</span>
+
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(byte left, String leftName, byte right) {
-<span class="fc" id="L413">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L414">    }</span>
+<span class="fc" id="L1592">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1593">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(char left, String leftName, char right, String rightName) {
-<span class="fc" id="L417">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L418">    }</span>
+<span class="fc" id="L1608">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1609">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(char left, String leftName, char right) {
-<span class="fc" id="L421">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L422">    }</span>
+<span class="fc" id="L1624">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1625">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(double left, String leftName, double right, String rightName) {
-<span class="fc" id="L425">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L426">    }</span>
+<span class="fc" id="L1641">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1642">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(double left, String leftName, double right) {
-<span class="fc" id="L429">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L430">    }</span>
+<span class="fc" id="L1658">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1659">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(float left, String leftName, float right, String rightName) {
-<span class="fc" id="L433">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L434">    }</span>
+<span class="fc" id="L1675">        checkFloatingPoint(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1676">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * Floating-point behavior follows Java operators, including their behavior for {@code NaN}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(float left, String leftName, float right) {
-<span class="fc" id="L437">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L438">    }</span>
+<span class="fc" id="L1692">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1693">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(int left, String leftName, int right, String rightName) {
-<span class="fc" id="L441">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L442">    }</span>
+<span class="fc" id="L1708">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1709">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(int left, String leftName, int right) {
-<span class="fc" id="L445">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L446">    }</span>
+<span class="fc" id="L1724">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1725">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(long left, String leftName, long right, String rightName) {
-<span class="fc" id="L449">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L450">    }</span>
+<span class="fc" id="L1740">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1741">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(long left, String leftName, long right) {
-<span class="fc" id="L453">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L454">    }</span>
+<span class="fc" id="L1756">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1757">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(short left, String leftName, short right, String rightName) {
-<span class="fc" id="L457">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L458">    }</span>
+<span class="fc" id="L1772">        checkIntegral(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1773">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left &gt; right}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left &lt;= right}
+     */
     public static void checkGreaterThan(short left, String leftName, short right) {
-<span class="fc" id="L461">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L462">    }</span>
+<span class="fc" id="L1788">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1789">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &gt; 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * If {@code rightName} is null, the failure message shows the right operand's value without a name.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @param rightName the right operand's name in a failure message; may be null
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &lt;= 0}, or either operand is null
+     */
     public static void checkGreaterThan(BigInteger left, String leftName, BigInteger right, String rightName) {
-<span class="fc" id="L465">        checkBigInteger(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
-<span class="fc" id="L466">    }</span>
+<span class="fc" id="L1805">        checkBigInteger(Operation.GREATER_THAN, left, leftName, right, rightName);</span>
+<span class="fc" id="L1806">    }</span>
 
+    /**
+     * Checks that the left operand is greater than the right operand.
+     *
+     * &lt;p&gt;For ordinary values, the required relation is {@code left.compareTo(right) &gt; 0}.
+     * BigInteger operands are compared by value using {@link BigInteger#compareTo(BigInteger)}.
+     * This overload is intended for a constant or otherwise self-explanatory right operand.
+     * The right operand's name is omitted from the failure message.
+     *
+     * @param left the left operand
+     * @param leftName the name used to identify the left operand in a failure message
+     * @param right the right operand
+     * @throws IllegalArgumentException if the failure condition {@code left.compareTo(right) &lt;= 0}, or either operand is null
+     */
     public static void checkGreaterThan(BigInteger left, String leftName, BigInteger right) {
-<span class="fc" id="L469">        checkGreaterThan(left, leftName, right, null);</span>
-<span class="fc" id="L470">    }</span>
+<span class="fc" id="L1822">        checkGreaterThan(left, leftName, right, null);</span>
+<span class="fc" id="L1823">    }</span>
 
     private static void checkIntegral(
             final Operation operation,
@@ -475,26 +1828,26 @@ public final class Arguments {
             final String leftName,
             final long right,
             final String rightName) {
-<span class="fc bfc" id="L478" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
+<span class="fc bfc" id="L1831" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; left &gt; right)
                 || (operation == Operation.EQUALS &amp;&amp; left != right)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; left &lt; right)
                 || (operation == Operation.GREATER_THAN &amp;&amp; left &lt;= right)) {
-<span class="fc bfc" id="L484" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L485">                final String msg = String.format(</span>
-<span class="fc" id="L486">                        &quot;%s (=%d) %s %d not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L1837" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L1838">                final String msg = String.format(</span>
+<span class="fc" id="L1839">                        &quot;%s (=%d) %s %d not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L488">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1841">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L490">                final String msg = String.format(</span>
+<span class="fc" id="L1843">                final String msg = String.format(</span>
                         &quot;%s (=%d) %s %s (=%d) not allowed!&quot;,
-<span class="fc" id="L492">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L1845">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L494">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1847">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L497">    }</span>
+<span class="fc" id="L1850">    }</span>
 
     private static void checkFloatingPoint(
             final Operation operation,
@@ -502,26 +1855,26 @@ public final class Arguments {
             final String leftName,
             final double right,
             final String rightName) {
-<span class="fc bfc" id="L505" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
+<span class="fc bfc" id="L1858" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; left &gt;= right)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; left &gt; right)
                 || (operation == Operation.EQUALS &amp;&amp; left != right)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; left &lt; right)
                 || (operation == Operation.GREATER_THAN &amp;&amp; left &lt;= right)) {
-<span class="fc bfc" id="L511" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L512">                final String msg = String.format(</span>
-<span class="fc" id="L513">                        &quot;%s (=%f) %s %f not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L1864" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L1865">                final String msg = String.format(</span>
+<span class="fc" id="L1866">                        &quot;%s (=%f) %s %f not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L515">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1868">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L517">                final String msg = String.format(</span>
+<span class="fc" id="L1870">                final String msg = String.format(</span>
                         &quot;%s (=%f) %s %s (=%f) not allowed!&quot;,
-<span class="fc" id="L519">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L1872">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L521">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1874">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L524">    }</span>
+<span class="fc" id="L1877">    }</span>
 
     private static void checkBigInteger(
             final Operation operation,
@@ -529,48 +1882,48 @@ public final class Arguments {
             final String leftName,
             final BigInteger right,
             final String rightName) {
-<span class="fc bfc" id="L532" title="All 4 branches covered.">        if (operation != Operation.EQUALS &amp;&amp; operation != Operation.NOT_EQUALS) {</span>
-<span class="fc bfc" id="L533" title="All 2 branches covered.">            if (left == null) {</span>
-<span class="fc bfc" id="L534" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, leftName == null ? &quot;left&quot; : leftName);</span>
+<span class="fc bfc" id="L1885" title="All 4 branches covered.">        if (operation != Operation.EQUALS &amp;&amp; operation != Operation.NOT_EQUALS) {</span>
+<span class="fc bfc" id="L1886" title="All 2 branches covered.">            if (left == null) {</span>
+<span class="fc bfc" id="L1887" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, leftName == null ? &quot;left&quot; : leftName);</span>
 
-<span class="fc" id="L536">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1889">                throw new IllegalArgumentException(msg);</span>
             }
 
-<span class="fc bfc" id="L539" title="All 2 branches covered.">            if (right == null) {</span>
-<span class="fc bfc" id="L540" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, rightName == null ? &quot;right&quot; : rightName);</span>
+<span class="fc bfc" id="L1892" title="All 2 branches covered.">            if (right == null) {</span>
+<span class="fc bfc" id="L1893" title="All 2 branches covered.">                final String msg = String.format(&quot;%s == null not allowed!&quot;, rightName == null ? &quot;right&quot; : rightName);</span>
 
-<span class="fc" id="L542">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1895">                throw new IllegalArgumentException(msg);</span>
             }
         }
 
-<span class="fc bfc" id="L546" title="All 8 branches covered.">        if ((operation == Operation.EQUALS || operation == Operation.NOT_EQUALS) &amp;&amp; (left == null || right == null)) {</span>
-<span class="fc" id="L547">            checkObjectEquals(operation, left, leftName, right, rightName);</span>
+<span class="fc bfc" id="L1899" title="All 8 branches covered.">        if ((operation == Operation.EQUALS || operation == Operation.NOT_EQUALS) &amp;&amp; (left == null || right == null)) {</span>
+<span class="fc" id="L1900">            checkObjectEquals(operation, left, leftName, right, rightName);</span>
 
-<span class="fc" id="L549">            return;</span>
+<span class="fc" id="L1902">            return;</span>
         }
 
-<span class="fc" id="L552">        final int result = left.compareTo(right);</span>
+<span class="fc" id="L1905">        final int result = left.compareTo(right);</span>
 
-<span class="fc bfc" id="L554" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
+<span class="fc bfc" id="L1907" title="All 24 branches covered.">        if ((operation == Operation.LESS_THAN &amp;&amp; result &gt;= 0)</span>
                 || (operation == Operation.LESS_THAN_OR_EQUAL &amp;&amp; result &gt; 0)
                 || (operation == Operation.EQUALS &amp;&amp; result != 0)
                 || (operation == Operation.NOT_EQUALS &amp;&amp; result == 0)
                 || (operation == Operation.GREATER_THAN_OR_EQUAL &amp;&amp; result &lt; 0)
                 || (operation == Operation.GREATER_THAN &amp;&amp; result &lt;= 0)) {
-<span class="fc bfc" id="L560" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L561">                final String msg = String.format(</span>
-<span class="fc" id="L562">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L1913" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L1914">                final String msg = String.format(</span>
+<span class="fc" id="L1915">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L564">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1917">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L566">                final String msg = String.format(</span>
+<span class="fc" id="L1919">                final String msg = String.format(</span>
                         &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="fc" id="L568">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L1921">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L570">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1923">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L573">    }</span>
+<span class="fc" id="L1926">    }</span>
 
     private static void checkBoolean(
             final Operation operation,
@@ -578,21 +1931,21 @@ public final class Arguments {
             final String leftName,
             final boolean right,
             final String rightName) {
-<span class="fc bfc" id="L581" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
-<span class="fc bfc" id="L582" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L583">                final String msg = String.format(</span>
-<span class="fc" id="L584">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L1934" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; left != right) || (operation == Operation.NOT_EQUALS &amp;&amp; left == right)) {</span>
+<span class="fc bfc" id="L1935" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L1936">                final String msg = String.format(</span>
+<span class="fc" id="L1937">                        &quot;%s (=%b) %s %b not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L586">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1939">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L588">                final String msg = String.format(</span>
+<span class="fc" id="L1941">                final String msg = String.format(</span>
                         &quot;%s (=%b) %s %s (=%b) not allowed!&quot;,
-<span class="fc" id="L590">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L1943">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L592">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1945">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L595">    }</span>
+<span class="fc" id="L1948">    }</span>
 
     private static void checkObjectEquals(
             final Operation operation,
@@ -600,31 +1953,31 @@ public final class Arguments {
             final String leftName,
             final Object right,
             final String rightName) {
-<span class="fc bfc" id="L603" title="All 8 branches covered.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
+<span class="fc bfc" id="L1956" title="All 8 branches covered.">        final boolean equals = (left == null &amp;&amp; right == null) || (left != null &amp;&amp; left.equals(right));</span>
 
-<span class="fc bfc" id="L605" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
-<span class="fc bfc" id="L606" title="All 2 branches covered.">            if (rightName == null) {</span>
-<span class="fc" id="L607">                final String msg = String.format(</span>
-<span class="fc" id="L608">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
+<span class="fc bfc" id="L1958" title="All 8 branches covered.">        if ((operation == Operation.EQUALS &amp;&amp; !equals) || (operation == Operation.NOT_EQUALS &amp;&amp; equals)) {</span>
+<span class="fc bfc" id="L1959" title="All 2 branches covered.">            if (rightName == null) {</span>
+<span class="fc" id="L1960">                final String msg = String.format(</span>
+<span class="fc" id="L1961">                        &quot;%s (=%s) %s %s not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation), right);</span>
 
-<span class="fc" id="L610">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1963">                throw new IllegalArgumentException(msg);</span>
             } else {
-<span class="fc" id="L612">                final String msg = String.format(</span>
+<span class="fc" id="L1965">                final String msg = String.format(</span>
                         &quot;%s (=%s) %s %s (=%s) not allowed!&quot;,
-<span class="fc" id="L614">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
+<span class="fc" id="L1967">                        leftName, left, OPERATION_STRING_MAP.get(operation), rightName, right);</span>
 
-<span class="fc" id="L616">                throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1969">                throw new IllegalArgumentException(msg);</span>
             }
         }
-<span class="fc" id="L619">    }</span>
+<span class="fc" id="L1972">    }</span>
 
     private static void checkObjectNull(final Operation operation, final Object left, final String leftName) {
-<span class="fc bfc" id="L622" title="All 8 branches covered.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
-<span class="fc" id="L623">            final String msg =</span>
-<span class="fc" id="L624">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
+<span class="fc bfc" id="L1975" title="All 8 branches covered.">        if ((operation == Operation.IS_NULL &amp;&amp; left != null) || (operation == Operation.IS_NOT_NULL &amp;&amp; left == null)) {</span>
+<span class="fc" id="L1976">            final String msg =</span>
+<span class="fc" id="L1977">                    String.format(&quot;%s (=%s) %s null not allowed!&quot;, leftName, left, OPERATION_STRING_MAP.get(operation));</span>
 
-<span class="fc" id="L626">            throw new IllegalArgumentException(msg);</span>
+<span class="fc" id="L1979">            throw new IllegalArgumentException(msg);</span>
         }
-<span class="fc" id="L628">    }</span>
+<span class="fc" id="L1981">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
