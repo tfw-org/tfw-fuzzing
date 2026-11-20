@@ -2,7 +2,7 @@
 
 import java.io.IOException;
 import java.math.BigInteger;
-import tfw.check.Argument;
+import tfw.check.Arguments;
 import tfw.check.ClosedManager;
 import tfw.immutable.iba.ImmutableBigIntegerArrayUtil;
 
@@ -35,7 +35,7 @@ import tfw.immutable.iba.ImmutableBigIntegerArrayUtil;
             throws IOException {
 <span class="nc" id="L36">        closedManager.checkClosed();</span>
 
-<span class="nc" id="L38">        Argument.assertNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L38">        Arguments.checkNotNull(array, &quot;array&quot;);</span>
 <span class="nc" id="L39">        ImmutableBigIntegerArrayUtil.validateGetParameters(</span>
 <span class="nc" id="L40">                array.length, arrayOffsetInBits, ibaStartInBits, lengthInBits(), lengthInBits);</span>
 

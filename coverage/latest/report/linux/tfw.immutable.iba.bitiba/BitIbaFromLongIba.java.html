@@ -2,7 +2,7 @@
 
 import java.io.IOException;
 import java.math.BigInteger;
-import tfw.check.Argument;
+import tfw.check.Arguments;
 import tfw.immutable.iba.longiba.LongIba;
 import tfw.immutable.ila.bitila.BitIlaUtil;
 
@@ -21,11 +21,11 @@ public final class BitIbaFromLongIba {
         private final BigInteger lengthInBits;
 
 <span class="nc" id="L23">        public BitIbaImpl(final LongIba longIba, final int firstLongOffsetInBits, final BigInteger lengthInBits) {</span>
-<span class="nc" id="L24">            Argument.assertNotNull(longIba, &quot;longIba&quot;);</span>
-<span class="nc" id="L25">            Argument.assertNotLessThan(firstLongOffsetInBits, 0, &quot;firstLongOffsetInBits&quot;);</span>
-<span class="nc" id="L26">            Argument.assertNotGreaterThan(firstLongOffsetInBits, 63, &quot;firstLongOffsetInBits&quot;);</span>
-<span class="nc" id="L27">            Argument.assertNotNull(lengthInBits, &quot;lengthInBits&quot;);</span>
-<span class="nc" id="L28">            Argument.assertGreaterThanOrEqualTo(lengthInBits, BigInteger.ZERO, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L24">            Arguments.checkNotNull(longIba, &quot;longIba&quot;);</span>
+<span class="nc" id="L25">            Arguments.checkGreaterThanOrEqual(firstLongOffsetInBits, &quot;firstLongOffsetInBits&quot;, 0);</span>
+<span class="nc" id="L26">            Arguments.checkLessThanOrEqual(firstLongOffsetInBits, &quot;firstLongOffsetInBits&quot;, 63);</span>
+<span class="nc" id="L27">            Arguments.checkNotNull(lengthInBits, &quot;lengthInBits&quot;);</span>
+<span class="nc" id="L28">            Arguments.checkGreaterThanOrEqual(lengthInBits, &quot;lengthInBits&quot;, BigInteger.ZERO);</span>
 
 <span class="nc" id="L30">            this.longIba = longIba;</span>
 <span class="nc" id="L31">            this.firstLongOffsetInBits = firstLongOffsetInBits;</span>

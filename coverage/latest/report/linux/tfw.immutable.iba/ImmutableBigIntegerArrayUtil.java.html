@@ -3,7 +3,7 @@
 import static tfw.immutable.iba.bitiba.BitIba.MAX_BITS_IN_ARRAY;
 
 import java.math.BigInteger;
-import tfw.check.Argument;
+import tfw.check.Arguments;
 
 public class ImmutableBigIntegerArrayUtil {
     private static final String MAX_BITS_IN_ARRAY_STRING = &quot;MAX_BITS_IN_ARRAY&quot;;
@@ -12,14 +12,14 @@ public class ImmutableBigIntegerArrayUtil {
 
     public static void validateGetParameters(
             int arrayLength, int arrayOffset, BigInteger ibaStart, BigInteger ibaLength, int length) {
-<span class="nc" id="L15">        Argument.assertNotLessThan(arrayOffset, 0, &quot;arrayOffset&quot;);</span>
-<span class="nc" id="L16">        Argument.assertLessThan(arrayOffset, MAX_BITS_IN_ARRAY, &quot;arrayOffset&quot;, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L17">        Argument.assertLessThan(arrayOffset + (long) length, arrayLength, &quot;arrayOffset+length&quot;, &quot;arrayLength&quot;);</span>
-<span class="nc" id="L18">        Argument.assertGreaterThanOrEqualTo(ibaStart, BigInteger.ZERO, &quot;ibaStart&quot;);</span>
-<span class="nc" id="L19">        Argument.assertNotLessThan(length, 0, &quot;length&quot;);</span>
-<span class="nc" id="L20">        Argument.assertLessThan(length, MAX_BITS_IN_ARRAY, &quot;length&quot;, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L21">        Argument.assertNotGreaterThan(</span>
-<span class="nc" id="L22">                ibaStart.add(BigInteger.valueOf(length)), ibaLength, &quot;ibaStart+length&quot;, &quot;IbaLength&quot;);</span>
+<span class="nc" id="L15">        Arguments.checkGreaterThanOrEqual(arrayOffset, &quot;arrayOffset&quot;, 0);</span>
+<span class="nc" id="L16">        Arguments.checkLessThan(arrayOffset, &quot;arrayOffset&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
+<span class="nc" id="L17">        Arguments.checkLessThan(arrayOffset + (long) length, &quot;arrayOffset+length&quot;, arrayLength, &quot;arrayLength&quot;);</span>
+<span class="nc" id="L18">        Arguments.checkGreaterThanOrEqual(ibaStart, &quot;ibaStart&quot;, BigInteger.ZERO);</span>
+<span class="nc" id="L19">        Arguments.checkGreaterThanOrEqual(length, &quot;length&quot;, 0);</span>
+<span class="nc" id="L20">        Arguments.checkLessThan(length, &quot;length&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
+<span class="nc" id="L21">        Arguments.checkLessThanOrEqual(</span>
+<span class="nc" id="L22">                ibaStart.add(BigInteger.valueOf(length)), &quot;ibaStart+length&quot;, ibaLength, &quot;IbaLength&quot;);</span>
 <span class="nc" id="L23">    }</span>
 
     public static void validateGetParameters(
@@ -28,20 +28,20 @@ public class ImmutableBigIntegerArrayUtil {
             BigInteger ibaStartInBits,
             BigInteger ibaLengthInBits,
             long lengthInBits) {
-<span class="nc" id="L31">        Argument.assertNotLessThan(arrayOffsetInBits, 0, &quot;arrayOffsetInBits&quot;);</span>
-<span class="nc" id="L32">        Argument.assertLessThan(arrayOffsetInBits, MAX_BITS_IN_ARRAY, &quot;arrayOffsetInBits&quot;, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L33">        Argument.assertLessThan(</span>
+<span class="nc" id="L31">        Arguments.checkGreaterThanOrEqual(arrayOffsetInBits, &quot;arrayOffsetInBits&quot;, 0);</span>
+<span class="nc" id="L32">        Arguments.checkLessThan(arrayOffsetInBits, &quot;arrayOffsetInBits&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
+<span class="nc" id="L33">        Arguments.checkLessThan(</span>
                 arrayOffsetInBits + lengthInBits,
-                arrayLength * (long) Long.SIZE,
                 &quot;arrayOffsetInBits+lengthInBits&quot;,
+                arrayLength * (long) Long.SIZE,
                 &quot;arrayLength*Long.SIZE&quot;);
-<span class="nc" id="L38">        Argument.assertGreaterThanOrEqualTo(ibaStartInBits, BigInteger.ZERO, &quot;ibaStartInBits&quot;);</span>
-<span class="nc" id="L39">        Argument.assertNotLessThan(lengthInBits, 0, &quot;lengthInBits&quot;);</span>
-<span class="nc" id="L40">        Argument.assertLessThan(lengthInBits, MAX_BITS_IN_ARRAY, &quot;lengthInBits&quot;, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L41">        Argument.assertNotGreaterThan(</span>
+<span class="nc" id="L38">        Arguments.checkGreaterThanOrEqual(ibaStartInBits, &quot;ibaStartInBits&quot;, BigInteger.ZERO);</span>
+<span class="nc" id="L39">        Arguments.checkGreaterThanOrEqual(lengthInBits, &quot;lengthInBits&quot;, 0);</span>
+<span class="nc" id="L40">        Arguments.checkLessThan(lengthInBits, &quot;lengthInBits&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
+<span class="nc" id="L41">        Arguments.checkLessThanOrEqual(</span>
 <span class="nc" id="L42">                ibaStartInBits.add(BigInteger.valueOf(lengthInBits)),</span>
-                ibaLengthInBits,
                 &quot;ibaStartInBits+lengthInBits&quot;,
+                ibaLengthInBits,
                 &quot;IbaLengthInBits&quot;);
 <span class="nc" id="L46">    }</span>
 }
