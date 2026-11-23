@@ -6,21 +6,25 @@ import java.math.BigInteger;
 import tfw.check.Arguments;
 
 public class ImmutableBigIntegerArrayUtil {
-    private static final String MAX_BITS_IN_ARRAY_STRING = &quot;MAX_BITS_IN_ARRAY&quot;;
+    private static final String ARRAY_LENGTH = &quot;arrayLength&quot;;
+    private static final String ARRAY_OFFSET = &quot;arrayOffset&quot;;
+    private static final String LENGTH = &quot;length&quot;;
+    private static final String ARRAY_OFFSET_IN_BITS = &quot;arrayOffsetInBits&quot;;
+    private static final String LENGTH_IN_BITS = &quot;lengthInBits&quot;;
 
     private ImmutableBigIntegerArrayUtil() {}
 
     public static void validateGetParameters(
             int arrayLength, int arrayOffset, BigInteger ibaStart, BigInteger ibaLength, int length) {
-<span class="nc" id="L15">        Arguments.checkGreaterThanOrEqual(arrayOffset, &quot;arrayOffset&quot;, 0);</span>
-<span class="nc" id="L16">        Arguments.checkLessThan(arrayOffset, &quot;arrayOffset&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L17">        Arguments.checkLessThan(arrayOffset + (long) length, &quot;arrayOffset+length&quot;, arrayLength, &quot;arrayLength&quot;);</span>
-<span class="nc" id="L18">        Arguments.checkGreaterThanOrEqual(ibaStart, &quot;ibaStart&quot;, BigInteger.ZERO);</span>
-<span class="nc" id="L19">        Arguments.checkGreaterThanOrEqual(length, &quot;length&quot;, 0);</span>
-<span class="nc" id="L20">        Arguments.checkLessThan(length, &quot;length&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L21">        Arguments.checkLessThanOrEqual(</span>
-<span class="nc" id="L22">                ibaStart.add(BigInteger.valueOf(length)), &quot;ibaStart+length&quot;, ibaLength, &quot;IbaLength&quot;);</span>
-<span class="nc" id="L23">    }</span>
+<span class="nc" id="L19">        Arguments.checkGreaterThanOrEqual(arrayLength, ARRAY_LENGTH, 0);</span>
+<span class="nc" id="L20">        Arguments.checkGreaterThanOrEqual(arrayOffset, ARRAY_OFFSET, 0);</span>
+<span class="nc" id="L21">        Arguments.checkGreaterThanOrEqual(length, LENGTH, 0);</span>
+<span class="nc" id="L22">        Arguments.checkNotNull(ibaLength, &quot;ibaLength&quot;);</span>
+<span class="nc" id="L23">        Arguments.checkGreaterThanOrEqual(ibaStart, &quot;ibaStart&quot;, BigInteger.ZERO);</span>
+<span class="nc" id="L24">        Arguments.checkLessThanOrEqual(length, LENGTH, arrayLength - arrayOffset, &quot;arrayLength-arrayOffset&quot;);</span>
+<span class="nc" id="L25">        Arguments.checkLessThanOrEqual(</span>
+<span class="nc" id="L26">                BigInteger.valueOf(length), LENGTH, ibaLength.subtract(ibaStart), &quot;ibaLength-ibaStart&quot;);</span>
+<span class="nc" id="L27">    }</span>
 
     public static void validateGetParameters(
             int arrayLength,
@@ -28,21 +32,24 @@ public class ImmutableBigIntegerArrayUtil {
             BigInteger ibaStartInBits,
             BigInteger ibaLengthInBits,
             long lengthInBits) {
-<span class="nc" id="L31">        Arguments.checkGreaterThanOrEqual(arrayOffsetInBits, &quot;arrayOffsetInBits&quot;, 0);</span>
-<span class="nc" id="L32">        Arguments.checkLessThan(arrayOffsetInBits, &quot;arrayOffsetInBits&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L33">        Arguments.checkLessThan(</span>
-                arrayOffsetInBits + lengthInBits,
-                &quot;arrayOffsetInBits+lengthInBits&quot;,
-                arrayLength * (long) Long.SIZE,
-                &quot;arrayLength*Long.SIZE&quot;);
-<span class="nc" id="L38">        Arguments.checkGreaterThanOrEqual(ibaStartInBits, &quot;ibaStartInBits&quot;, BigInteger.ZERO);</span>
-<span class="nc" id="L39">        Arguments.checkGreaterThanOrEqual(lengthInBits, &quot;lengthInBits&quot;, 0);</span>
-<span class="nc" id="L40">        Arguments.checkLessThan(lengthInBits, &quot;lengthInBits&quot;, MAX_BITS_IN_ARRAY, MAX_BITS_IN_ARRAY_STRING);</span>
-<span class="nc" id="L41">        Arguments.checkLessThanOrEqual(</span>
-<span class="nc" id="L42">                ibaStartInBits.add(BigInteger.valueOf(lengthInBits)),</span>
-                &quot;ibaStartInBits+lengthInBits&quot;,
-                ibaLengthInBits,
-                &quot;IbaLengthInBits&quot;);
-<span class="nc" id="L46">    }</span>
+<span class="nc" id="L35">        final long arrayLengthInBits = arrayLength * (long) Long.SIZE;</span>
+
+<span class="nc" id="L37">        Arguments.checkGreaterThanOrEqual(arrayOffsetInBits, ARRAY_OFFSET_IN_BITS, 0);</span>
+<span class="nc" id="L38">        Arguments.checkLessThanOrEqual(arrayOffsetInBits, ARRAY_OFFSET_IN_BITS, MAX_BITS_IN_ARRAY);</span>
+<span class="nc" id="L39">        Arguments.checkGreaterThanOrEqual(lengthInBits, LENGTH_IN_BITS, 0);</span>
+<span class="nc" id="L40">        Arguments.checkLessThan(lengthInBits, LENGTH_IN_BITS, MAX_BITS_IN_ARRAY);</span>
+<span class="nc" id="L41">        Arguments.checkNotNull(ibaLengthInBits, &quot;ibaLengthInBits&quot;);</span>
+<span class="nc" id="L42">        Arguments.checkGreaterThanOrEqual(ibaStartInBits, &quot;ibaStartInBits&quot;, BigInteger.ZERO);</span>
+<span class="nc" id="L43">        Arguments.checkLessThanOrEqual(</span>
+                lengthInBits,
+                LENGTH_IN_BITS,
+                arrayLengthInBits - arrayOffsetInBits,
+                &quot;arrayLength*Long.SIZE-arrayOffsetInBits&quot;);
+<span class="nc" id="L48">        Arguments.checkLessThanOrEqual(</span>
+<span class="nc" id="L49">                BigInteger.valueOf(lengthInBits),</span>
+                LENGTH_IN_BITS,
+<span class="nc" id="L51">                ibaLengthInBits.subtract(ibaStartInBits),</span>
+                &quot;ibaLengthInBits-ibaStartInBits&quot;);
+<span class="nc" id="L53">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -3,6 +3,7 @@
 import java.math.BigInteger;
 import tfw.check.Arguments;
 import tfw.immutable.iba.AbstractIbaFromArray;
+import tfw.immutable.iba.ImmutableBigIntegerArrayUtil;
 
 public final class ShortIbaFromArray {
     private ShortIbaFromArray() {
@@ -10,27 +11,36 @@ public final class ShortIbaFromArray {
     }
 
     public static ShortIba create(short[] array) {
-<span class="nc" id="L13">        return new ShortIbaImpl(array);</span>
+<span class="nc" id="L14">        return new ShortIbaImpl(array);</span>
     }
 
     private static class ShortIbaImpl extends AbstractIbaFromArray implements ShortIba {
         private final short[] array;
 
         private ShortIbaImpl(short[] array) {
-<span class="nc" id="L20">            super(checkAndReturnLength(array));</span>
+<span class="nc" id="L21">            super(checkAndReturnLength(array));</span>
 
-<span class="nc" id="L22">            this.array = array;</span>
-<span class="nc" id="L23">        }</span>
+<span class="nc" id="L23">            this.array = array;</span>
+<span class="nc" id="L24">        }</span>
 
         @Override
         public void get(short[] array, int offset, BigInteger start, int length) {
-<span class="nc" id="L27">            System.arraycopy(this.array, (int) start.longValue(), array, offset, length);</span>
-<span class="nc" id="L28">        }</span>
+<span class="nc" id="L28">            checkClosed();</span>
+
+<span class="nc" id="L30">            Arguments.checkNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L31">            ImmutableBigIntegerArrayUtil.validateGetParameters(array.length, offset, start, arrayLength, length);</span>
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            if (length == 0) {</span>
+<span class="nc" id="L34">                return;</span>
+            }
+
+<span class="nc" id="L37">            System.arraycopy(this.array, start.intValueExact(), array, offset, length);</span>
+<span class="nc" id="L38">        }</span>
 
         private static BigInteger checkAndReturnLength(short[] array) {
-<span class="nc" id="L31">            Arguments.checkNotNull(array, &quot;array&quot;);</span>
+<span class="nc" id="L41">            Arguments.checkNotNull(array, &quot;array&quot;);</span>
 
-<span class="nc" id="L33">            return BigInteger.valueOf(array.length);</span>
+<span class="nc" id="L43">            return BigInteger.valueOf(array.length);</span>
         }
     }
 }
